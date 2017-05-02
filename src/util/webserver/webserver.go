@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/julienschmidt/httprouter"
-	router "github.com/melodiez14/lastcake/src"
+	router "github.com/melodiez14/meiko/src"
 	"github.com/tokopedia/grace"
 )
 
@@ -26,7 +26,7 @@ type requestLogger struct {
 
 // Start is used by app.go for starting the webserver
 func Start(cfg Config) {
-	l := log.New(os.Stdout, "[lastcake] ", 0)
+	l := log.New(os.Stdout, "[meiko] ", 0)
 	port := fmt.Sprintf(":%s", cfg.Port)
 	r := httprouter.New()
 	router.Load(r)

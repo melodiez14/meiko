@@ -8,7 +8,7 @@
 		"username": "root",
 		"password": "",
 		"driver": "mysql",
-		"database": "lastcake"
+		"database": "meiko"
 	},
 	"redis": {
 

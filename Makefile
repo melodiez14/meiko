@@ -11,19 +11,19 @@ test:
 
 build:
 	@echo " >> building binaries"
-	@go build -o bin/lastcake app.go
+	@go build -o bin/meiko app.go
 
 start:
 	@echo " >> starting binaries"
-	@./bin/lastcake
+	@./bin/meiko
 
 pre-deploy:
-	sudo mv bin/lastcake /usr/local/bin/.
-	sudo cp -r files/etc/lastcake/. /etc/lastcake/.
+	sudo mv bin/meiko /usr/local/bin/.
+	sudo cp -r files/etc/meiko/. /etc/meiko/.
 
 profile-build:
-	go build -tags profile -o bin/lastcake app.go
+	go build -tags profile -o bin/meiko app.go
 
 profile: profile-build
 	export LCENV=development
-	sudo ./bin/lastcake
+	sudo ./bin/meiko

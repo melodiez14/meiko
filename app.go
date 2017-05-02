@@ -5,10 +5,10 @@ import (
 
 	"log"
 
-	"github.com/melodiez14/lastcake/src/util/conn"
-	"github.com/melodiez14/lastcake/src/util/env"
-	"github.com/melodiez14/lastcake/src/util/jsonconfig"
-	"github.com/melodiez14/lastcake/src/util/webserver"
+	"github.com/melodiez14/meiko/src/util/conn"
+	"github.com/melodiez14/meiko/src/util/env"
+	"github.com/melodiez14/meiko/src/util/jsonconfig"
+	"github.com/melodiez14/meiko/src/util/webserver"
 )
 
 type configuration struct {
@@ -24,7 +24,7 @@ func init() {
 func main() {
 	cfgenv := env.Get()
 	config := &configuration{}
-	isLoaded := jsonconfig.Load(&config, "/etc/lastcake", cfgenv) || jsonconfig.Load(&config, "./etc/lastcake", cfgenv)
+	isLoaded := jsonconfig.Load(&config, "/etc/meiko", cfgenv) || jsonconfig.Load(&config, "./etc/meiko", cfgenv)
 	if !isLoaded {
 		log.Fatal("Cannot load configuration")
 	}
