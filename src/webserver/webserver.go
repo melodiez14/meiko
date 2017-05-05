@@ -4,13 +4,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"fmt"
 
 	"github.com/julienschmidt/httprouter"
-	router "github.com/melodiez14/meiko/src"
 	"github.com/tokopedia/grace"
 )
 
@@ -26,15 +24,17 @@ type requestLogger struct {
 
 // Start is used by app.go for starting the webserver
 func Start(cfg Config) {
+	log.Println("Initializing web server")
 	l := log.New(os.Stdout, "[meiko] ", 0)
 	port := fmt.Sprintf(":%s", cfg.Port)
 	r := httprouter.New()
-	router.Load(r)
+	loadRouter(r)
+
 	grace.Serve(port, requestLogger{Handle: r, Logger: l})
 }
 
 func (rl requestLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	rl.Handle.ServeHTTP(w, r)
-	log.Printf("[%s] %s %s in %v", strings.Replace(os.Args[0], "./", "", -1), r.Method, r.URL.Path, time.Since(start))
+	log.Printf("[meiko] %s %s in %v", r.Method, r.URL.Path, time.Since(start))
 }
