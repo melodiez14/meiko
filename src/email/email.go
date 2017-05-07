@@ -2,12 +2,12 @@ package email
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
-	"net/mail"
 	"net/smtp"
+
+	"github.com/domodwyer/mailyak"
 )
 
 // ************************************************* //
@@ -43,10 +43,7 @@ type Config struct {
 
 // Request struct for sending an email
 type Request struct {
-	from    string
-	to      string
-	subject string
-	body    string
+	*mailyak.MailYak
 }
 
 var (
@@ -56,24 +53,27 @@ var (
 
 // Init is used for initialize a new email connection
 func Init(cfg Config) {
+
 	c = cfg
 	auth = smtp.PlainAuth("", c.UserName, c.Password, c.Address)
-	templateData := struct{}{}
-	to := "risal@live.com"
-
-	NewRequest(to, "This is from meiko!", "template.html", templateData).
-		Send()
 }
 
 // NewRequest is used for make a new email request
-func NewRequest(to string, subject, templateFileName string, data interface{}) *Request {
+func NewRequest(to string, subject string) *Request {
 
+	addr := fmt.Sprintf("%s:%d", c.Address, c.Port)
 	r := &Request{
-		to:      to,
-		subject: subject,
-		from:    "Meiko <idms.notification@gmail.com>",
+		mailyak.New(addr, auth),
 	}
+	r.To(to)
+	r.Subject(subject)
+	r.From(c.UserName)
+	r.FromName("Meiko")
+	return r
+}
 
+// SetTemplate is used for set an email html content. The parameters are templatePath which contain the path of email template and data is a struct of data which used in email template
+func (r *Request) SetTemplate(templatePath string, data interface{}) *Request {
 	t, err := template.New("new").Parse("<html><body>Hello, this is the body</body></html>")
 	if err != nil {
 		log.Println("Error parsing data to template")
@@ -84,58 +84,33 @@ func NewRequest(to string, subject, templateFileName string, data interface{}) *
 		log.Println("Error parsing template to buffer")
 		return r
 	}
-
-	r.body = buf.String()
-
+	r.HTML().Set(buf.String())
 	return r
 }
 
 // SetSender used for change the name of sender
 func (r *Request) SetSender(name, email string) *Request {
-	s := mail.Address{
-		Name:    "",
-		Address: "",
-	}
-	r.from = s.String()
+	r.From(email)
+	r.FromName(name)
 	return r
 }
 
 // SetTo used for change the name of sender
-func (r *Request) SetTo(name, email string) *Request {
-	t := mail.Address{
-		Name:    "",
-		Address: "",
-	}
-	r.to = t.String()
+func (r *Request) SetTo(email string) *Request {
+	r.To(email)
 	return r
 }
 
-// Send action to send an email
-func (r *Request) Send() {
+// SetAttachment used to add an attachment of email by using map[string]string. Example map["My Photo"]"/etc/myphoto.png"
+func (r *Request) SetAttachment(path map[string]string) {
+	r.Attach("", nil)
+}
 
-	if r == nil {
-		return
-	}
-
-	addr := fmt.Sprintf("%s:%d", c.Address, c.Port)
-	header := make(map[string]string)
-	header["From"] = r.from
-	header["To"] = r.to
-	header["Subject"] = r.subject
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = "text/html; charset=utf-8"
-	header["Content-Transfer-Encoding"] = "base64"
-
-	b := ""
-	for k, v := range header {
-		b += fmt.Sprintf("%s: %s\r\n", k, v)
-	}
-	b += "\r\n" + base64.StdEncoding.EncodeToString([]byte(r.body))
-
-	msg := []byte(b)
+// Deliver action to send an email
+func (r *Request) Deliver() {
 	go func() {
-		if err := smtp.SendMail(addr, auth, c.UserName, []string{r.to}, msg); err != nil {
-			log.Println("Error to send email")
+		if err := r.Send(); err != nil {
+			log.Println()
 		}
 	}()
 }
