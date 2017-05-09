@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/smtp"
+	"os"
 
 	"github.com/domodwyer/mailyak"
 )
@@ -41,6 +43,12 @@ type Config struct {
 	Port     int16  `json:"port"`
 }
 
+// Attachment is a struct used for add new attachment
+type Attachment struct {
+	Title string
+	Data  io.Reader
+}
+
 // Request struct for sending an email
 type Request struct {
 	*mailyak.MailYak
@@ -53,7 +61,6 @@ var (
 
 // Init is used for initialize a new email connection
 func Init(cfg Config) {
-
 	c = cfg
 	auth = smtp.PlainAuth("", c.UserName, c.Password, c.Address)
 }
@@ -72,9 +79,24 @@ func NewRequest(to string, subject string) *Request {
 	return r
 }
 
+// NewAttachment is a function for create new attachment by using title and path
+func NewAttachment(title, path string) Attachment {
+
+	data, err := os.Open(path)
+	if err != nil {
+		log.Println("Error: ", err)
+		return Attachment{}
+	}
+
+	return Attachment{
+		Title: title,
+		Data:  data,
+	}
+}
+
 // SetTemplate is used for set an email html content. The parameters are templatePath which contain the path of email template and data is a struct of data which used in email template
 func (r *Request) SetTemplate(templatePath string, data interface{}) *Request {
-	t, err := template.New("new").Parse("<html><body>Hello, this is the body</body></html>")
+	t, err := template.ParseFiles(templatePath)
 	if err != nil {
 		log.Println("Error parsing data to template")
 		return r
@@ -102,15 +124,18 @@ func (r *Request) SetTo(email string) *Request {
 }
 
 // SetAttachment used to add an attachment of email by using map[string]string. Example map["My Photo"]"/etc/myphoto.png"
-func (r *Request) SetAttachment(path map[string]string) {
-	r.Attach("", nil)
+func (r *Request) SetAttachment(attachment []Attachment) *Request {
+	for _, v := range attachment {
+		r.Attach(v.Title, v.Data)
+	}
+	return r
 }
 
 // Deliver action to send an email
 func (r *Request) Deliver() {
 	go func() {
 		if err := r.Send(); err != nil {
-			log.Println()
+			log.Println(err)
 		}
 	}()
 }

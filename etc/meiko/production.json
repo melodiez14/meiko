@@ -18,5 +18,8 @@
 		"password": "",
 		"address": "smtp.gmail.com",
 		"port": 587
+	},
+	"auth": {
+		"sessionkey": "_SID_Meiko_"
 	}
 }

@@ -26,3 +26,19 @@ func IsValidUserLogin(email, password string) error {
 	}
 	return nil
 }
+
+// func InsertUser(name, email, password, gender, college, note string, rolegroupID int64, status bool) (*User, error) {
+
+// 	u := &User{
+// 		Name:        name,
+// 		Email:       email,
+// 		Password:    password,
+// 		Gender:      gender,
+// 		College:     college,
+// 		Note:        note,
+// 		RolegroupID: rolegroupID,
+// 		Status:      status,
+// 	}
+// 	_ = u
+// 	return nil, nil
+// }

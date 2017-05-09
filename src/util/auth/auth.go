@@ -1,117 +1,101 @@
-// package auth
+package auth
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"net/http"
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
 
-// 	"github.com/julienschmidt/httprouter"
-// 	"github.com/melodiez14/meiko/src/util/env"
-// 	"github.com/tokopedia/reputation/src/utils/external"
-// 	"github.com/tokopedia/reputation/src/utils/template"
-// )
+	"github.com/garyburd/redigo/redis"
+	"github.com/julienschmidt/httprouter"
+	"github.com/melodiez14/meiko/src/module/user"
+	"github.com/melodiez14/meiko/src/util/conn"
+	"github.com/melodiez14/meiko/src/webserver/template"
+)
 
-// var SessionKey = map[string]string{
-// 	"production":  "_SID_Tokopedia_",
-// 	"staging":     "_SID_Tokopedia_Coba_",
-// 	"alpha":       "_SID_Tokopedia_Alpha_",
-// 	"development": "_SID_Tokopedia_",
-// }
+type (
+	Config struct {
+		SessionKey string `json:"sessionkey"`
+	}
+)
 
-// // MustAuthorize you must provide the Bearer token on header if you're using this middleware
-// func MustAuthorize(h httprouter.Handle) httprouter.Handle {
-// 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 		env := env.Get()
-// 		sessionKey := SessionKey[env]
-// 		cookie, err := r.Cookie(sessionKey)
-// 		if err != nil {
-// 			template.RenderResponse(w, r, new(template.Response).
-// 				SetCode(http.StatusForbidden).
-// 				AddError("Invalid Session"))
-// 			return
-// 		}
+const (
+	sessionPrefix = "session:"
+)
 
-// 		userData, err := getUserInfo(cookie.Value)
-// 		if err != nil {
-// 			template.RenderResponse(w, r, new(template.Response).
-// 				SetCode(http.StatusForbidden).
-// 				AddError("Invalid Session"))
-// 			return
-// 		}
-// 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-// 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-// 		r = r.WithContext(context.WithValue(r.Context(), "User", userData))
-// 		r = r.WithContext(context.WithValue(r.Context(), "Language", userData.Lang))
+var (
+	c                  Config
+	errSessionNotlogin = errors.New("SessionNotLogin")
+)
 
-// 		h(w, r, ps)
-// 	}
-// }
+func Init(cfg Config) {
+	c = cfg
+}
 
-// // OptionalAuthorize you don't really have to pass the Bearer token if using this middleware
-// func OptionalAuthorize(h httprouter.Handle) httprouter.Handle {
-// 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 		userData := &User{}
-// 		env := env.Get()
-// 		sessionKey := SessionKey[env]
-// 		cookie, err := r.Cookie(sessionKey)
-// 		if err == nil {
-// 			userData, _ = getUserInfo(cookie.Value)
-// 		}
-// 		r = r.WithContext(context.WithValue(r.Context(), "User", userData))
-// 		r = r.WithContext(context.WithValue(r.Context(), "Language", userData.Lang))
-// 		h(w, r, ps)
-// 	}
-// }
+// MustAuthorize you must provide the Bearer token on header if you're using this middleware
+func MustAuthorize(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		cookie, err := r.Cookie(c.SessionKey)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("Invalid Session"))
+			return
+		}
 
-// // UserThumbnail to get user image uri using imagerouter
-// func UserThumbnail(UserID int64) string {
-// 	if UserID == 0 {
-// 		return fmt.Sprintf("")
-// 	}
-// 	imgPath := external.URL.ImageRouter + "/image/v1"
+		userData, err := getUserInfo(cookie.Value)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("Invalid Session"))
+			return
+		}
 
-// 	return fmt.Sprintf("%s/u/%d/user_thumbnail/desktop", imgPath, UserID)
-// }
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		r = r.WithContext(context.WithValue(r.Context(), "User", userData))
 
-// // ShopThumbnail to get shop image uri using imagerouter
-// func ShopThumbnail(ShopID int64) string {
-// 	if ShopID == 0 {
-// 		return fmt.Sprintf("")
-// 	}
+		h(w, r, ps)
+	}
+}
 
-// 	imgPath := external.URL.ImageRouter + "/image/v1"
+// OptionalAuthorize you don't really have to pass the Bearer token if using this middleware
+func OptionalAuthorize(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		userData := &user.User{}
+		cookie, err := r.Cookie(c.SessionKey)
+		if err == nil {
+			userData, _ = getUserInfo(cookie.Value)
+		}
 
-// 	return fmt.Sprintf("%s/s/%d/shop_xs_thumbnail/desktop", imgPath, ShopID)
-// }
+		r = r.WithContext(context.WithValue(r.Context(), "User", userData))
+		h(w, r, ps)
+	}
+}
 
-// func getUserInfo(cookieValue string) (*User, error) {
-// 	userSession, err := SHelper.GetUser(cookieValue)
-// 	if err != nil {
-// 		return &User{}, err
-// 	}
-// 	userData := &User{
-// 		UserID:      userSession.UserID,
-// 		Email:       userSession.Email,
-// 		FullName:    userSession.FullName,
-// 		Lang:        userSession.Lang,
-// 		Status:      userSession.Status,
-// 		ShopID:      userSession.ShopID,
-// 		ShopThumb:   ShopThumbnail(userSession.ShopID),
-// 		UserThumb:   UserThumbnail(userSession.UserID),
-// 		AccessToken: userSession.AccessToken,
-// 	}
+func getUserInfo(session string) (*user.User, error) {
 
-// 	return userData, nil
-// }
+	session = strings.Trim(session, " ")
+	client := conn.Redis.Get()
+	defer client.Close()
 
-// func GetUserDataFromRequest(r *http.Request) (*User, error) {
-// 	if r.Context().Value("User") != nil {
-// 		userData := r.Context().Value("User").(*User)
-// 		if userData == nil {
-// 			return nil, fmt.Errorf("UserData not found")
-// 		}
+	key := sessionPrefix + session
+	jsd, err := redis.String(client.Do("GET", key))
 
-// 		return userData, nil
-// 	}
-// 	return nil, fmt.Errorf("Cannot get user data")
-// }
+	if err != nil && err != redis.ErrNil {
+		return nil, err
+	}
+
+	res := &user.User{}
+	err = json.Unmarshal([]byte(jsd), res)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, errSessionNotlogin
+	}
+
+	return res, nil
+}

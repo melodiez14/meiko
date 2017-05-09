@@ -8,6 +8,7 @@ import (
 
 	"github.com/melodiez14/meiko/src/cron"
 	"github.com/melodiez14/meiko/src/email"
+	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/util/env"
 	"github.com/melodiez14/meiko/src/util/jsonconfig"
@@ -19,6 +20,7 @@ type configuration struct {
 	Redis     conn.RedisConfig    `json:"redis"`
 	Webserver webserver.Config    `json:"webserver"`
 	Email     email.Config        `json:"email"`
+	Auth      auth.Config         `json:"auth"`
 }
 
 func init() {
@@ -40,6 +42,7 @@ func main() {
 	conn.InitDB(config.Database)
 	conn.InitRedis(config.Redis)
 	cron.Init()
+	auth.Init(config.Auth)
 	email.Init(config.Email)
 	webserver.Start(config.Webserver)
 }
