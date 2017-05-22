@@ -8,13 +8,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/attendance"
 	"github.com/melodiez14/meiko/src/module/course"
-	"github.com/melodiez14/meiko/src/module/user"
+	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
 func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	u := r.Context().Value("User").(*user.User)
+	u := r.Context().Value("User").(*auth.User)
 
 	courses, err := course.GetByUserID(u.ID)
 	if err != nil {

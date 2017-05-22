@@ -9,7 +9,6 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/julienschmidt/httprouter"
-	"github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
@@ -63,7 +62,7 @@ func MustAuthorize(h httprouter.Handle) httprouter.Handle {
 // OptionalAuthorize you don't really have to pass the Bearer token if using this middleware
 func OptionalAuthorize(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		userData := &user.User{}
+		userData := &User{}
 		cookie, err := r.Cookie(c.SessionKey)
 		if err == nil {
 			userData, _ = getUserInfo(cookie.Value)
@@ -74,7 +73,7 @@ func OptionalAuthorize(h httprouter.Handle) httprouter.Handle {
 	}
 }
 
-func getUserInfo(session string) (*user.User, error) {
+func getUserInfo(session string) (*User, error) {
 
 	session = strings.Trim(session, " ")
 	client := conn.Redis.Get()
@@ -87,7 +86,7 @@ func getUserInfo(session string) (*user.User, error) {
 		return nil, err
 	}
 
-	res := &user.User{}
+	res := &User{}
 	err = json.Unmarshal([]byte(jsd), res)
 	if err != nil {
 		return nil, err

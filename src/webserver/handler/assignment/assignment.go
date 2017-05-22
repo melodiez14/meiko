@@ -5,13 +5,13 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/assignment"
-	"github.com/melodiez14/meiko/src/module/user"
+	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
 func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	u := r.Context().Value("User").(*user.User)
+	u := r.Context().Value("User").(*auth.User)
 
 	a, err := assignment.GetIncompleteAssignment(u.ID)
 	if err != nil {
