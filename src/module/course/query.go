@@ -16,6 +16,6 @@ const queryGetCourseByUserID = `
 			FROM
 				p_users_courses
 			WHERE
-				users_id = (%s)
+				users_id = (%d)
 		);
 `

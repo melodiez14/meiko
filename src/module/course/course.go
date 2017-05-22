@@ -8,7 +8,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetCourseByUserID(userID string) ([]Course, error) {
+func GetByUserID(userID int64) ([]Course, error) {
 	var courses []Course
 	query := fmt.Sprintf(queryGetCourseByUserID, userID)
 	err := conn.DB.Select(&courses, query)
