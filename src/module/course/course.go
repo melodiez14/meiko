@@ -9,11 +9,11 @@ import (
 )
 
 func GetCourseByUserID(userID string) ([]Course, error) {
-	var course []Course
+	var courses []Course
 	query := fmt.Sprintf(queryGetCourseByUserID, userID)
-	err := conn.DB.Select(&course, query)
+	err := conn.DB.Select(&courses, query)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	return course, nil
+	return courses, nil
 }
