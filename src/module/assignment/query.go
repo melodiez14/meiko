@@ -22,7 +22,7 @@ const queryGetIncompleteAssignment = `
 					FROM
 						p_users_courses
 					WHERE
-						users_id = (%s)
+						users_id = (%d)
 				)
 		) AND id NOT IN (
 			SELECT
@@ -30,6 +30,6 @@ const queryGetIncompleteAssignment = `
 			FROM
 				p_users_assignments
 			WHERE
-				users_id = (%s)
+				users_id = (%d)
 		);
 `

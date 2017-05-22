@@ -14,7 +14,7 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	u := r.Context().Value("User").(*user.User)
 
-	c, err := course.GetCourseByUserID(u.ID)
+	c, err := course.GetByUserID(u.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
