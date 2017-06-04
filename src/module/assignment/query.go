@@ -26,7 +26,7 @@ const queryGetIncompleteByUserID = `
 				)
 		) AND id NOT IN (
 			SELECT
-				assigments_id
+				assignments_id
 			FROM
 				p_users_assignments
 			WHERE
@@ -42,7 +42,7 @@ const queryGetByCourseID = `
 		upload_date,
 		due_date
 	FROM
-		assigments
+		assignments
 	WHERE
 		EXISTS (
 			SELECT

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	sqlmock "gopkg.in/DATA-DOG/go-sqlmock.v1"
+
 	// mysql module used for sqlx purpose
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -35,4 +37,16 @@ func InitDB(cfg DatabaseConfig) {
 
 	DB = db
 	log.Println("Database successfully connected")
+}
+
+// InitDBMock used for initialize database connection mocking
+func InitDBMock() (*sqlmock.Sqlmock, error) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		return nil, err
+	}
+
+	DB = sqlx.NewDb(db, "sqlmock")
+
+	return &mock, nil
 }
