@@ -15,7 +15,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/hellomeiko", auth.OptionalAuthorize(handler.HelloMeiko))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
 	r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
-	r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetIncompleteHandler))
+	r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
 	r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
 	r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
 }

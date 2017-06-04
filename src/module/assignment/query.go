@@ -1,6 +1,6 @@
 package assignment
 
-const queryGetIncompleteAssignment = `
+const queryGetIncompleteByUserID = `
 	SELECT
 		id,
 		name,
@@ -26,10 +26,39 @@ const queryGetIncompleteAssignment = `
 				)
 		) AND id NOT IN (
 			SELECT
-				assigments_id
+				assignments_id
 			FROM
 				p_users_assignments
 			WHERE
 				users_id = (%d)
 		);
+`
+
+const queryGetByCourseID = `
+	SELECT
+		id,
+		name,
+		status,
+		upload_date,
+		due_date
+	FROM
+		assignments
+	WHERE
+		EXISTS (
+			SELECT
+				id
+			FROM
+				grade_parameters
+			WHERE
+				courses_id = (%d)
+		);
+`
+
+const queryGetCompleteByUserID = `
+	SELECT
+		assignments_id
+	FROM
+		p_users_assignments
+	WHERE
+		users_id = (%d);
 `
