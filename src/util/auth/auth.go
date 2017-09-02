@@ -62,7 +62,7 @@ func MustAuthorize(h httprouter.Handle) httprouter.Handle {
 // OptionalAuthorize you don't really have to pass the Bearer token if using this middleware
 func OptionalAuthorize(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		userData := &User{}
+		var userData *User
 		cookie, err := r.Cookie(c.SessionKey)
 		if err == nil {
 			userData, _ = getUserInfo(cookie.Value)

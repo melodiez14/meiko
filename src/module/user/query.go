@@ -16,9 +16,27 @@ const (
 			id = (%d)
 	`
 
-	getUserByEmailQuery = `
+	getUserEmailQuery = `
 		SELECT
-			*
+			id,
+			name,
+			gender,
+			college
+		FROM
+			users
+		WHERE
+			email = ('%s')
+	`
+
+	getUserLoginQuery = `
+		SELECT
+			id,
+			name,
+			gender,
+			college,
+			note,
+			rolegroups_id,
+			status
 		FROM
 			users
 		WHERE
@@ -26,26 +44,14 @@ const (
 			password = (md5('%s'))
 	`
 
-	insertUser = `
-		INSERT INTO
-			users (
-				name,
-				email,
-				password,
-				gender,
-				college,
-				note,
-				rolegroups_id,
-				status
-			)
-			VALUES (
-				(%s),
-				(%s),
-				(%s),
-				(%s),
-				(%s),
-				(%d),
-				(%d)
-			)
+	generateVerificationQuery = `
+		UPDATE
+			users
+		SET
+			email_verification_code = (%d),
+			email_verification_expire_date = (DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
+			email_verification_attempt = 0
+		WHERE
+			id = (%d)
 	`
 )

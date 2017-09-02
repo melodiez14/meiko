@@ -1,4 +1,4 @@
-package handler
+package user
 
 import (
 	"fmt"
@@ -29,6 +29,23 @@ func (s signInParams) Validate() (*signInArgs, error) {
 	args := &signInArgs{
 		Email:    s.Email,
 		Password: s.Password,
+	}
+	return args, nil
+}
+
+func (f forgotRequestParams) Validate() (*forgotRequestArgs, error) {
+	const emailRegex = `(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`
+	if len(f.Email) < 1 {
+		return nil, fmt.Errorf("Error validation : email cant't be empty")
+	}
+
+	v, err := regexp.MatchString(emailRegex, f.Email)
+	if err != nil || v == false {
+		return nil, fmt.Errorf("Error validation : email doesn't have a valid format")
+	}
+
+	args := &forgotRequestArgs{
+		Email: f.Email,
 	}
 	return args, nil
 }
