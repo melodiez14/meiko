@@ -1,7 +1,6 @@
 package course
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -14,7 +13,6 @@ import (
 func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	u := r.Context().Value("User").(*auth.User)
-	fmt.Println(u)
 	c, err := course.GetByUserID(u.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
