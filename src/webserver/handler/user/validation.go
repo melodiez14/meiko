@@ -2,77 +2,77 @@ package user
 
 import (
 	"fmt"
-	"regexp"
+	"html"
 	"strconv"
+
+	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
 func (s signInParams) Validate() (*signInArgs, error) {
-	const emailRegex = `(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`
+
+	// Email Validation
 	if len(s.Email) < 1 {
-		return nil, fmt.Errorf("Error validation : email cant't be empty")
+		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
-	v, err := regexp.MatchString(`(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`, s.Email)
-	if err != nil || v == false {
-		return nil, fmt.Errorf("Error validation : email doesn't have a valid format")
+	email, err := validator.NormalizeEmail(html.EscapeString(s.Email))
+	if err != nil {
+		return nil, err
 	}
 
-	if len(s.Password) < 1 {
-		return nil, fmt.Errorf("Error validation : password cant't be empty")
+	// Password Validation
+	password := html.EscapeString(s.Password)
+	fmt.Println(s.Password, password)
+	if len(password) < 6 {
+		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
 	}
-
-	// v, err = regexp.MatchString(`(^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,16})`, s.Email)
-	// err = nil
-	// if err != nil || v == false {
-	// 	return nil, fmt.Errorf("Error validation : password doesn't have a valid format")
-	// }
 
 	args := &signInArgs{
-		Email:    s.Email,
-		Password: s.Password,
+		Email:    email,
+		Password: password,
 	}
 	return args, nil
 }
 
 func (f forgotRequestParams) Validate() (*forgotRequestArgs, error) {
-	const emailRegex = `(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`
+
+	// Email Validation
 	if len(f.Email) < 1 {
 		return nil, fmt.Errorf("Error validation : email cant't be empty")
 	}
 
-	v, err := regexp.MatchString(emailRegex, f.Email)
-	if err != nil || v == false {
-		return nil, fmt.Errorf("Error validation : email doesn't have a valid format")
+	email, err := validator.NormalizeEmail(html.EscapeString(f.Email))
+	if err != nil {
+		return nil, err
 	}
 
 	args := &forgotRequestArgs{
-		Email: f.Email,
+		Email: email,
 	}
 	return args, nil
 }
 
 func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 
-	// fix the email validation regex
-	const emailRegex = `(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`
+	// Email Validation
 	if len(f.Email) < 1 {
 		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
-	v, err := regexp.MatchString(emailRegex, f.Email)
-	if err != nil || v == false {
-		return nil, fmt.Errorf("Error validation: email doesn't have a valid format")
+	email, err := validator.NormalizeEmail(html.EscapeString(f.Email))
+	if err != nil {
+		return nil, err
 	}
 
-	// Password == nil for code confirmation
-	// Password != nil for set new password
+	// Password Validation (Optional Field)
 	if len(f.Password) > 0 {
-		v, err = regexp.MatchString(`(^[a-zA-Z0-9]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)`, f.Password)
-		if err != nil || v == false {
-			return nil, fmt.Errorf("Error validation: password must be 6-8 characters")
+		f.Password = html.EscapeString(f.Password)
+		if len(f.Password) < 6 {
+			return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
 		}
 	}
 
+	// Code Validation
 	if len(f.Code) < 1 {
 		return nil, fmt.Errorf("Error validation : code cant't be empty")
 	} else if len(f.Code) != 4 {
@@ -85,7 +85,7 @@ func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 	}
 
 	args := &forgotConfirmationArgs{
-		Email:    f.Email,
+		Email:    email,
 		Code:     uint16(c),
 		Password: f.Password,
 	}
