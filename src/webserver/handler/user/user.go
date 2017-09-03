@@ -111,7 +111,16 @@ func ForgotConfirmation(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	return
 }
 
-func SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if sess != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+
 	param := signInParams{
 		Email:    r.FormValue("email"),
 		Password: r.FormValue("password"),
@@ -125,16 +134,31 @@ func SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	v := user.IsValidUserLogin(args.Email, args.Password)
-	if !v {
+	u, err := user.GetUserLogin(args.Email, args.Password)
+	fmt.Println(u)
+	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("Invalid email or password"))
 		return
 	}
 
-	// then set session to redis
-	// ===== here ====
+	s := auth.User{
+		ID:      u.ID,
+		Name:    u.Name,
+		Email:   u.Email,
+		Gender:  u.Gender,
+		College: u.College,
+		Note:    u.Note,
+		Status:  u.Status,
+	}
+
+	err = s.SetSession(w)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			SetMessage("Internal server error"))
+	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).

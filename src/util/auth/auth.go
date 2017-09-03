@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/julienschmidt/httprouter"
@@ -21,11 +24,13 @@ type (
 
 const (
 	sessionPrefix = "session:"
+	character     = "!QAZ@WSX#EDC$RFV%TGB^YHN&UJM*IK<(OL>)P:?_{+}|1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p-[=]"
 )
 
 var (
 	c                  Config
 	errSessionNotlogin = errors.New("SessionNotLogin")
+	charMaxIndex       = len(character)
 )
 
 func Init(cfg Config) {
@@ -97,4 +102,33 @@ func getUserInfo(session string) (*User, error) {
 	}
 
 	return res, nil
+}
+
+func (u User) SetSession(w http.ResponseWriter) error {
+
+	var cookie string
+	for i := 0; i < 32; i++ {
+		cookie = cookie + string(character[rand.Intn(charMaxIndex)])
+	}
+
+	key := sessionPrefix + cookie
+	data, err := json.Marshal(u)
+	if err != nil {
+		return fmt.Errorf(err.Error())
+	}
+
+	client := conn.Redis.Get()
+	_, err = redis.String(client.Do("SET", key, data))
+	if err != nil {
+		return fmt.Errorf("Failed to set session to Redis")
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    c.SessionKey,
+		Expires: time.Now().AddDate(0, 1, 0),
+		Value:   cookie,
+		Path:    "/",
+	})
+
+	return nil
 }

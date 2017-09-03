@@ -73,14 +73,15 @@ func SetNewPassword(email, password string) {
 	_ = conn.DB.MustExec(query)
 }
 
-func IsValidUserLogin(email, password string) bool {
+func GetUserLogin(email, password string) (*User, error) {
 	user := &User{}
 	query := fmt.Sprintf(getUserLoginQuery, email, password)
 	err := conn.DB.Get(user, query)
 	if err != nil {
-		return false
+		return nil, err
 	}
-	return true
+
+	return user, nil
 }
 
 // func InsertUser(name, email, password, gender, college, note string, rolegroupID int64, status bool) (*User, error) {
