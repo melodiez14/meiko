@@ -54,4 +54,37 @@ const (
 		WHERE
 			id = (%d)
 	`
+
+	getConfirmationQuery = `
+		SELECT
+			id,
+			email_verification_attempt,
+			email_verification_code
+		FROM
+			users
+		WHERE
+			email = ('%s') AND
+			NOW() < email_verification_expire_date
+	`
+
+	attemptIncrementQuery = `
+		UPDATE
+			users
+		SET
+			email_verification_attempt = email_verification_attempt + 1
+		WHERE
+			id = (%d)
+	`
+
+	setNewPasswordQuery = `
+		UPDATE
+			users
+		SET
+			password = md5('%s'),
+			email_verification_code = NULL,
+			email_verification_expire_date = NULL,
+			email_verification_attempt = NULL
+		WHERE
+			email = ('%s')
+	`
 )

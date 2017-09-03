@@ -65,6 +65,52 @@ func ForgotRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	return
 }
 
+func ForgotConfirmation(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	u := r.Context().Value("User").(*auth.User)
+	if u != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+
+	param := forgotConfirmationParams{
+		Email:    r.FormValue("email"),
+		Code:     r.FormValue("code"),
+		Password: r.FormValue("password"),
+	}
+
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError(err.Error()))
+		return
+	}
+
+	v := user.IsValidConfirmationCode(args.Email, args.Code)
+	if !v {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid confirmation code"))
+		return
+	}
+
+	if len(args.Password) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK))
+		return
+	}
+
+	go user.SetNewPassword(args.Email, args.Password)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("New password has been updated").
+		SetCode(http.StatusOK))
+	return
+}
+
 func SignIn(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	param := signInParams{
 		Email:    r.FormValue("email"),

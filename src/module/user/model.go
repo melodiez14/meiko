@@ -1,6 +1,7 @@
 package user
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -21,4 +22,10 @@ type Verification struct {
 	ExpireDuration string
 	ExpireDate     time.Time `db:"email_verification_expire_date"`
 	Attempt        uint8     `db:"email_verification_attempt"`
+}
+
+type Confirmation struct {
+	ID      int64         `db:"id"`
+	Code    sql.NullInt64 `db:"email_verification_code"`
+	Attempt sql.NullInt64 `db:"email_verification_attempt"`
 }

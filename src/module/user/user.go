@@ -31,7 +31,7 @@ func GetUserByEmail(email string) (*User, error) {
 func GenerateVerification(id int64) (*Verification, error) {
 
 	v := &Verification{
-		Code:           uint16(rand.Uint32() / uint32(9999)),
+		Code:           uint16(rand.Intn(8999) + 1000),
 		ExpireDuration: "30 Minutes",
 		ExpireDate:     time.Now().Add(30 * time.Minute),
 		Attempt:        0,
@@ -45,6 +45,32 @@ func GenerateVerification(id int64) (*Verification, error) {
 	}
 
 	return v, nil
+}
+
+func IsValidConfirmationCode(email string, code uint16) bool {
+	var c Confirmation
+	query := fmt.Sprintf(getConfirmationQuery, email)
+	err := conn.DB.Get(&c, query)
+	if err != nil {
+		return false
+	}
+
+	if !c.Attempt.Valid || c.Attempt.Int64 >= 3 {
+		return false
+	}
+
+	if !c.Code.Valid || c.Code.Int64 != int64(code) {
+		query = fmt.Sprintf(attemptIncrementQuery, c.ID)
+		_ = conn.DB.MustExec(query)
+		return false
+	}
+
+	return true
+}
+
+func SetNewPassword(email, password string) {
+	query := fmt.Sprintf(setNewPasswordQuery, password, email)
+	_ = conn.DB.MustExec(query)
 }
 
 func IsValidUserLogin(email, password string) bool {

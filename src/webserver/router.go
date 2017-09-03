@@ -12,7 +12,8 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
-	r.POST("/api/v1/user/forgot", auth.OptionalAuthorize(user.ForgotRequestHandler))
+	r.POST("/api/v1/user/forgot/request", auth.OptionalAuthorize(user.ForgotRequestHandler))
+	r.POST("/api/v1/user/forgot/confirmation", auth.OptionalAuthorize(user.ForgotConfirmation))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
 	r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
 	r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))

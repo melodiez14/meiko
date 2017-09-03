@@ -23,3 +23,15 @@ type forgotRequestResponse struct {
 	ExpireDuration string
 	MaxAttempt     uint8
 }
+
+type forgotConfirmationParams struct {
+	Email    string
+	Password string
+	Code     string
+}
+
+type forgotConfirmationArgs struct {
+	Email    string
+	Password string
+	Code     uint16
+}
