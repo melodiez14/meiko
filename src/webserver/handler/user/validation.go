@@ -22,7 +22,6 @@ func (s signInParams) Validate() (*signInArgs, error) {
 
 	// Password Validation
 	password := html.EscapeString(s.Password)
-	fmt.Println(s.Password, password)
 	if len(password) < 6 {
 		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
 	}
@@ -38,7 +37,7 @@ func (f forgotRequestParams) Validate() (*forgotRequestArgs, error) {
 
 	// Email Validation
 	if len(f.Email) < 1 {
-		return nil, fmt.Errorf("Error validation : email cant't be empty")
+		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
 	email, err := validator.NormalizeEmail(html.EscapeString(f.Email))
@@ -74,14 +73,14 @@ func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 
 	// Code Validation
 	if len(f.Code) < 1 {
-		return nil, fmt.Errorf("Error validation : code cant't be empty")
+		return nil, fmt.Errorf("Error validation: code cant't be empty")
 	} else if len(f.Code) != 4 {
-		return nil, fmt.Errorf("Error validation : code must be 4 digits")
+		return nil, fmt.Errorf("Error validation: code must be 4 digits")
 	}
 
 	c, err := strconv.ParseInt(f.Code, 10, 16)
 	if err != nil {
-		return nil, fmt.Errorf("Error validation : code should be numeric")
+		return nil, fmt.Errorf("Error validation: code should be numeric")
 	}
 
 	args := &forgotConfirmationArgs{
