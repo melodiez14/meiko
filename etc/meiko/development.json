@@ -14,9 +14,9 @@
 		"address": "localhost:6379"
 	},
 	"email": {
-		"username": "",
-		"password": "",
-		"address": "smtp.gmail.com",
+		"username": "meikodevelopment@outlook.com",
+		"password": "sandiaman01",
+		"address": "smtp.live.com",
 		"port": 587
 	},
 	"auth": {

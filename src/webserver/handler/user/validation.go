@@ -8,6 +8,45 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
+func (s signUpParams) Validate() (*signUpArgs, error) {
+
+	// Email Validation
+	if len(s.Email) < 1 {
+		return nil, fmt.Errorf("Error validation: email cant't be empty")
+	}
+	s.Email = html.EscapeString(s.Email)
+
+	// Password Validation
+	password := html.EscapeString(s.Password)
+	if len(password) < 6 {
+		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	}
+
+	// ID validation
+	id, err := strconv.ParseInt(s.ID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("Error validation: ID must be numeric")
+	}
+
+	// Name validation
+	if len(s.Name) < 1 {
+		return nil, fmt.Errorf("Error validation: name cant't be empty")
+	}
+
+	v := validator.IsAlpha(html.EscapeString(s.Name))
+	if !v {
+		return nil, fmt.Errorf("Error validation: name contains alphabet only")
+	}
+
+	args := &signUpArgs{
+		ID:       id,
+		Name:     s.Name,
+		Email:    s.Email,
+		Password: s.Password,
+	}
+	return args, nil
+}
+
 func (s signInParams) Validate() (*signInArgs, error) {
 
 	// Email Validation
