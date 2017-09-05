@@ -148,8 +148,8 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	_, err = user.GetUserByID(args.ID)
-	if err != nil && err != sql.ErrNoRows {
+	id, err := user.GetUserByID(args.ID)
+	if (err != nil || id != nil) && err != sql.ErrNoRows {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError(fmt.Sprintf("%d has been registered!", args.ID)))

@@ -5,6 +5,9 @@ import (
 	"html"
 	"strconv"
 
+	"regexp"
+
+	"github.com/melodiez14/meiko/src/util/helper"
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
@@ -14,15 +17,42 @@ func (s signUpParams) Validate() (*signUpArgs, error) {
 	if len(s.Email) < 1 {
 		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
-	s.Email = html.EscapeString(s.Email)
+	if len(s.Email) > 45 {
+		return nil, fmt.Errorf("Error validation : email too longer")
+	}
+
+	if !validator.IsEmail(s.Email) {
+		return nil, fmt.Errorf("%s is not an email", s.Email)
+	}
+	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
+	if err != nil {
+		return nil, err
+	}
 
 	// Password Validation
 	password := html.EscapeString(s.Password)
+	if len(password) < 1 {
+		return nil, fmt.Errorf("Error validation: password can't be empty")
+	}
 	if len(password) < 6 {
 		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
 	}
-
+	regexPassword := []string{`[a-z]`, `[A-Z]`, `[0-9]`}
+	for _, val := range regexPassword {
+		is, _ := regexp.MatchString(val, password)
+		if !is {
+			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
+		}
+	}
 	// ID validation
+	if len(s.ID) < 1 {
+		return nil, fmt.Errorf("Error validation: ID can't be empty")
+	}
+
+	if len(s.ID) != 12 {
+		return nil, fmt.Errorf(fmt.Sprintf("ID : %s is wrong", s.ID))
+	}
+
 	id, err := strconv.ParseInt(s.ID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("Error validation: ID must be numeric")
@@ -32,16 +62,19 @@ func (s signUpParams) Validate() (*signUpArgs, error) {
 	if len(s.Name) < 1 {
 		return nil, fmt.Errorf("Error validation: name cant't be empty")
 	}
-
-	v := validator.IsAlpha(html.EscapeString(s.Name))
-	if !v {
-		return nil, fmt.Errorf("Error validation: name contains alphabet only")
+	if len(s.Name) > 50 {
+		return nil, fmt.Errorf("Error validation: name cant't to long")
 	}
 
+	v, err := regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Name))
+	if !v || err != nil {
+		return nil, fmt.Errorf("Error validation: name contains alphabet only")
+	}
+	// Result
 	args := &signUpArgs{
 		ID:       id,
 		Name:     s.Name,
-		Email:    s.Email,
+		Email:    email,
 		Password: s.Password,
 	}
 	return args, nil
