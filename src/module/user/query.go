@@ -1,6 +1,25 @@
 package user
 
 const (
+	insertNewUserQuery = `
+		INSERT INTO
+			users(
+				id,
+				name,
+				email,
+				password,
+				created_at,
+				updated_at
+			)
+		VALUES (
+			(%d),
+			('%s'),
+			('%s'),
+			(md5('%s')),
+			NOW(),
+			NOW()
+		)
+	`
 	getUserByIDQuery = `
 		SELECT
 			id,
@@ -50,7 +69,8 @@ const (
 		SET
 			email_verification_code = (%d),
 			email_verification_expire_date = (DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
-			email_verification_attempt = 0
+			email_verification_attempt = 0,
+			updated_at = NOW()
 		WHERE
 			id = (%d)
 	`
@@ -71,7 +91,8 @@ const (
 		UPDATE
 			users
 		SET
-			email_verification_attempt = email_verification_attempt + 1
+			email_verification_attempt = email_verification_attempt + 1,
+			updated_at = NOW()
 		WHERE
 			id = (%d)
 	`
@@ -83,7 +104,8 @@ const (
 			password = md5('%s'),
 			email_verification_code = NULL,
 			email_verification_expire_date = NULL,
-			email_verification_attempt = NULL
+			email_verification_attempt = NULL,
+			updated_at = NOW()
 		WHERE
 			email = ('%s')
 	`

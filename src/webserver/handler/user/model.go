@@ -1,5 +1,19 @@
 package user
 
+type signUpParams struct {
+	ID       string
+	Name     string
+	Email    string
+	Password string
+}
+
+type signUpArgs struct {
+	ID       int64
+	Name     string
+	Email    string
+	Password string
+}
+
 type signInParams struct {
 	Email    string
 	Password string
