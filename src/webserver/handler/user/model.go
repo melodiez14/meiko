@@ -33,9 +33,9 @@ type forgotRequestArgs struct {
 }
 
 type forgotRequestResponse struct {
-	Email          string
-	ExpireDuration string
-	MaxAttempt     uint8
+	Email          string `json:"email"`
+	ExpireDuration string `json:"expire_duration"`
+	MaxAttempt     uint8  `json:"max_attempt"`
 }
 
 type forgotConfirmationParams struct {
@@ -48,4 +48,10 @@ type forgotConfirmationArgs struct {
 	Email    string
 	Password string
 	Code     uint16
+}
+
+type getVerifiedUserResponse struct {
+	ID    int64
+	Name  string
+	Email string
 }

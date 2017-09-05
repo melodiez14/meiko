@@ -6,8 +6,8 @@ import (
 
 	"database/sql"
 
-	"github.com/asepnur/meiko/src/email"
 	"github.com/julienschmidt/httprouter"
+	"github.com/melodiez14/meiko/src/email"
 	"github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
@@ -168,7 +168,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// change to email template
-	email.NewRequest(args.Email, "Reset Password").Deliver()
+	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", g.Code)).Deliver()
 
 	// for debugging purpose
 	fmt.Println(g.Code)
@@ -176,6 +176,36 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Sign Up success"))
+	return
+
+}
+
+func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	// need confirmation
+	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	u, _ := user.GetByStatus(alias.UserStatusVerified)
+
+	res := []getVerifiedUserResponse{}
+	for _, val := range u {
+		res = append(res, getVerifiedUserResponse{
+			Name:  val.Name,
+			Email: val.Email,
+			ID:    val.ID,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
 	return
 
 }
@@ -213,12 +243,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 	// check whether user activated
 	switch u.Status {
-	case alias.UserStatusInactivated:
+	case alias.UserStatusUnverified:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			SetMessage("Email unactivated"))
 		return
-	case alias.UserStatusProcessing:
+	case alias.UserStatusVerified:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("Waiting for admin approval"))

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/helper"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -131,4 +133,19 @@ func (u User) SetSession(w http.ResponseWriter) error {
 	})
 
 	return nil
+}
+
+func (u User) IsHasRoles(module string, roles ...string) bool {
+
+	if len(roles) < 1 || len(u.Roles[module]) < 1 {
+		return false
+	}
+
+	for _, val := range roles {
+		if !helper.IsStringInSlice(val, u.Roles[module]) {
+			return false
+		}
+	}
+
+	return true
 }

@@ -12,6 +12,16 @@ func Int64InSlice(val int64, arr []int64) bool {
 	}
 	return false
 }
+
+func IsStringInSlice(val string, arr []string) bool {
+	for _, v := range arr {
+		if val == v {
+			return true
+		}
+	}
+	return false
+}
+
 func NormalizeEmail(str string) (string, error) {
 
 	parts := strings.Split(str, "@")

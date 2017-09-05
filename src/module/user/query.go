@@ -109,4 +109,13 @@ const (
 		WHERE
 			email = ('%s')
 	`
+
+	getUserByStatusQuery = `
+		SELECT
+			id,
+			name,
+			email
+		WHERE
+			status = (%d)
+	`
 )

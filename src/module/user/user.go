@@ -89,3 +89,14 @@ func InsertNewUser(id int64, name, email, password string) {
 	query := fmt.Sprintf(insertNewUserQuery, id, name, email, password)
 	_ = conn.DB.MustExec(query)
 }
+
+func GetByStatus(status int8) ([]User, error) {
+	users := []User{}
+	query := fmt.Sprintf(getUserByStatusQuery, status)
+	err := conn.DB.Select(users, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
