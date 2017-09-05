@@ -26,6 +26,7 @@ func GetUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+
 }
 
 func GenerateVerification(id int64) (*Verification, error) {
@@ -84,18 +85,7 @@ func GetUserLogin(email, password string) (*User, error) {
 	return user, nil
 }
 
-// func InsertUser(name, email, password, gender, college, note string, rolegroupID int64, status bool) (*User, error) {
-
-// 	u := &User{
-// 		Name:        name,
-// 		Email:       email,
-// 		Password:    password,
-// 		Gender:      gender,
-// 		College:     college,
-// 		Note:        note,
-// 		RolegroupID: rolegroupID,
-// 		Status:      status,
-// 	}
-// 	_ = u
-// 	return nil, nil
-// }
+func InsertNewUser(id int64, name, email, password string) {
+	query := fmt.Sprintf(insertNewUserQuery, id, name, email, password)
+	_ = conn.DB.MustExec(query)
+}
