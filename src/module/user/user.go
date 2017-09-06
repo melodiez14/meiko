@@ -93,7 +93,7 @@ func InsertNewUser(id int64, name, email, password string) {
 func GetByStatus(status int8) ([]User, error) {
 	users := []User{}
 	query := fmt.Sprintf(getUserByStatusQuery, status)
-	err := conn.DB.Select(users, query)
+	err := conn.DB.Select(&users, query)
 	if err != nil {
 		return nil, err
 	}

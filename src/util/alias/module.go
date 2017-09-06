@@ -1,15 +1,18 @@
 package alias
 
 const (
-	ModuleUser   = "user"
-	ModuleCourse = "course"
+	ModuleUser       = "users"
+	ModuleCourse     = "courses"
+	ModuleModule     = "modules"
+	ModuleRole       = "roles"
+	ModuleAttendance = "attendances"
 
-	RoleCreate  = "CREATE"
-	RoleRead    = "READ"
-	RoleUpdate  = "UPDATE"
-	RoleDelete  = "DELETE"
-	RoleXCreate = "XCREATE"
-	RoleXRead   = "XREAD"
-	RoleXUpdate = "XUPDATE"
-	RoleXDelete = "XDELETE"
+	RoleCreate  = "create"
+	RoleRead    = "read"
+	RoleUpdate  = "update"
+	RoleDelete  = "delete"
+	RoleXCreate = "xcreate"
+	RoleXRead   = "xread"
+	RoleXUpdate = "xupdate"
+	RoleXDelete = "xdelete"
 )

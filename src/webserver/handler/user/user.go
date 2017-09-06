@@ -8,6 +8,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/email"
+	"github.com/melodiez14/meiko/src/module/module"
 	"github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
@@ -258,8 +259,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Invalid email or password"))
+			AddError("Internal Error"))
 		return
+	}
+
+	roles := make(map[string][]string)
+	if u.RoleGroupsID.Valid {
+		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
 	}
 
 	s := auth.User{
@@ -270,6 +276,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		College: u.College,
 		Note:    u.Note,
 		Status:  u.Status,
+		Roles:   roles,
 	}
 
 	err = s.SetSession(w)
