@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"log"
+
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
@@ -51,6 +53,7 @@ func GenerateVerification(id int64) (*Verification, error) {
 func IsValidConfirmationCode(email string, code uint16) bool {
 	var c Confirmation
 	query := fmt.Sprintf(getConfirmationQuery, email)
+	log.Println(query)
 	err := conn.DB.Get(&c, query)
 	if err != nil {
 		return false
@@ -71,6 +74,10 @@ func IsValidConfirmationCode(email string, code uint16) bool {
 
 func SetNewPassword(email, password string) {
 	query := fmt.Sprintf(setNewPasswordQuery, password, email)
+	_ = conn.DB.MustExec(query)
+}
+func UpdateCodeUser(email string, status int) {
+	query := fmt.Sprintf(setStatusUserQuery, email, status)
 	_ = conn.DB.MustExec(query)
 }
 

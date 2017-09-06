@@ -12,6 +12,7 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
+	r.POST("/api/v1/user/verified", auth.OptionalAuthorize(user.RequestVerifiedUserHandler))
 	r.POST("/api/v1/user/register", auth.OptionalAuthorize(user.SignUpHandler))
 	r.POST("/api/v1/user/forgot/request", auth.OptionalAuthorize(user.ForgotRequestHandler))
 	r.POST("/api/v1/user/forgot/confirmation", auth.OptionalAuthorize(user.ForgotConfirmation))
