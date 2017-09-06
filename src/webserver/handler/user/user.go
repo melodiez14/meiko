@@ -180,7 +180,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 }
 
-<<<<<<< Updated upstream
 func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -208,8 +207,8 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		SetCode(http.StatusOK).
 		SetData(res))
 	return
+}
 
-=======
 func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	if sess != nil {
@@ -243,15 +242,27 @@ func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httpr
 			AddError("Invalid confirmation code"))
 		return
 	}
-	go user.UpdateCodeUser(args.Email, alias.UserStatusProcessing)
+	go user.UpdateCodeUser(args.Email, alias.UserStatusVerified)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage(fmt.Sprintf("Your account with this %s is being Verified ", args.Email)).
 		SetCode(http.StatusOK))
 	return
->>>>>>> Stashed changes
-}
 
+}
+func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	err := auth.DestroySession(r, w)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			SetMessage("Internal server error"))
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Logout Sukses"))
+	return
+}
 func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)

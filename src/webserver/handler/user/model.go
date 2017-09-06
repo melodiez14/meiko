@@ -50,12 +50,11 @@ type forgotConfirmationArgs struct {
 	Code     uint16
 }
 
-<<<<<<< Updated upstream
 type getVerifiedUserResponse struct {
 	ID    int64
 	Name  string
 	Email string
-=======
+}
 type setStatusUserParams struct {
 	Email string
 	Code  string
@@ -63,5 +62,4 @@ type setStatusUserParams struct {
 type setStatusUserArgs struct {
 	Email string
 	Code  uint16
->>>>>>> Stashed changes
 }

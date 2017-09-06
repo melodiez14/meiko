@@ -109,7 +109,6 @@ const (
 		WHERE
 			email = ('%s')
 	`
-<<<<<<< Updated upstream
 
 	getUserByStatusQuery = `
 		SELECT
@@ -119,7 +118,7 @@ const (
 		WHERE
 			status = (%d)
 	`
-=======
+
 	setStatusUserQuery = `
 		UPADATE 
 			users
@@ -129,6 +128,4 @@ const (
 		WHERE
 			email = ('%s')
 	`
-	getCodeByEmail = ``
->>>>>>> Stashed changes
 )
