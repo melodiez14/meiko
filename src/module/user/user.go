@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"log"
-
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
@@ -53,7 +51,6 @@ func GenerateVerification(id int64) (*Verification, error) {
 func IsValidConfirmationCode(email string, code uint16) bool {
 	var c Confirmation
 	query := fmt.Sprintf(getConfirmationQuery, email)
-	log.Println(query)
 	err := conn.DB.Get(&c, query)
 	if err != nil {
 		return false

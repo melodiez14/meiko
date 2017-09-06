@@ -25,8 +25,9 @@ type (
 )
 
 const (
-	sessionPrefix = "session:"
-	character     = "!QAZ@WSX#EDC$RFV%TGB^YHN&UJM*IK<(OL>)P:?_{+}|1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p-[=]"
+	sessionPrefix     = "session:"
+	character         = "!QAZ@WSX#EDC$RFV%TGB^YHN&UJM*IK<(OL>)P:?_{+}|1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p-[=]"
+	listPrefixSession = "session:list:"
 )
 
 var (
@@ -141,9 +142,19 @@ func (u User) SetSession(w http.ResponseWriter) error {
 	}
 
 	client := conn.Redis.Get()
+	//defer client.Close()
+	// Session cookie
 	_, err = redis.String(client.Do("SET", key, data))
 	if err != nil {
 		return fmt.Errorf("Failed to set session to Redis")
+	}
+
+	val := key
+	key = fmt.Sprintf("%s%d", listPrefixSession, u.ID)
+	// Sesion List Informations
+	_, err = redis.Bool(client.Do("SADD", key, val))
+	if err != nil {
+		return fmt.Errorf("Failed to add list session to Redis")
 	}
 
 	http.SetCookie(w, &http.Cookie{

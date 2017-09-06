@@ -210,6 +210,28 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	return
 }
 
+func GetUserAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	s := auth.User{
+		ID:      sess.ID,
+		Name:    sess.Name,
+		Email:   sess.Email,
+		Gender:  sess.Gender,
+		College: sess.College,
+		Note:    sess.Note,
+		Status:  sess.Status,
+		Roles:   sess.Roles,
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(s))
+	return
+
+}
+func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+}
+
 func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	if sess != nil {
@@ -337,6 +359,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
 			SetMessage("Internal server error"))
+		return
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
