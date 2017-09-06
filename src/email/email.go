@@ -59,6 +59,10 @@ var (
 	c    Config
 )
 
+func PrintConfig() {
+	fmt.Println(c)
+}
+
 // Init is used for initialize a new email connection
 func Init(cfg Config) {
 	c = cfg

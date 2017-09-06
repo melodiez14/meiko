@@ -208,9 +208,62 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		SetCode(http.StatusOK).
 		SetData(res))
 	return
-
 }
 
+func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if sess != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+	param := setStatusUserParams{
+		Email: r.FormValue("email"),
+		Code:  r.FormValue("code"),
+	}
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	_, err = user.GetUserByEmail(args.Email)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid email"))
+		return
+	}
+	v := user.IsValidConfirmationCode(args.Email, args.Code)
+	if !v {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid confirmation code"))
+		return
+	}
+	go user.UpdateCodeUser(args.Email, alias.UserStatusVerified)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage(fmt.Sprintf("Your account with this %s is being Verified ", args.Email)).
+		SetCode(http.StatusOK))
+	return
+
+}
+func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	err := auth.DestroySession(r, w)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			SetMessage("Internal server error"))
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Logout Sukses"))
+	return
+}
 func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)

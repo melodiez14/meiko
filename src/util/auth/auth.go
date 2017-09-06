@@ -106,6 +106,27 @@ func getUserInfo(session string) (*User, error) {
 	return res, nil
 }
 
+// DestroySession bla
+func DestroySession(r *http.Request, w http.ResponseWriter) error {
+	cookie, _ := r.Cookie(c.SessionKey)
+	session := strings.Trim(cookie.Value, " ")
+	client := conn.Redis.Get()
+	defer client.Close()
+
+	key := sessionPrefix + session
+	_, err := redis.Bool(client.Do("DEL", key))
+	if err != nil && err != redis.ErrNil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    c.SessionKey,
+		Expires: time.Now(),
+		Value:   "unuse",
+		Path:    "/",
+	})
+	return nil
+}
 func (u User) SetSession(w http.ResponseWriter) error {
 
 	var cookie string

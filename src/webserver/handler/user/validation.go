@@ -11,6 +11,47 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
+func (s setStatusUserParams) Validate() (*setStatusUserArgs, error) {
+	// Email Validation
+	if len(s.Email) < 1 {
+		return nil, fmt.Errorf("Error validation: email cant't be empty")
+	}
+	if len(s.Email) > 45 {
+		return nil, fmt.Errorf("Error validation : email too longer")
+	}
+
+	if !validator.IsEmail(s.Email) {
+		return nil, fmt.Errorf("%s is not an email", s.Email)
+	}
+	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
+	if err != nil {
+		return nil, err
+	}
+
+	//Code Validation
+	if len(s.Code) < 1 {
+		return nil, fmt.Errorf("Error validation : Code can't be empty")
+	} else if len(s.Code) != 4 {
+		return nil, fmt.Errorf("Error validation : Wrong code")
+	}
+	val, err := regexp.MatchString(`[0-9]+$`, s.Code)
+	if !val || err != nil {
+		return nil, fmt.Errorf("Error validation: Wrong code")
+	}
+
+	c, err := strconv.ParseInt(s.Code, 10, 16)
+	if err != nil {
+		return nil, fmt.Errorf("Error validation: Wrong code")
+	}
+
+	args := &setStatusUserArgs{
+		Email: email,
+		Code:  uint16(c),
+	}
+
+	return args, nil
+
+}
 func (s signUpParams) Validate() (*signUpArgs, error) {
 
 	// Email Validation
@@ -87,7 +128,7 @@ func (s signInParams) Validate() (*signInArgs, error) {
 		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
-	email, err := validator.NormalizeEmail(html.EscapeString(s.Email))
+	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +153,7 @@ func (f forgotRequestParams) Validate() (*forgotRequestArgs, error) {
 		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
-	email, err := validator.NormalizeEmail(html.EscapeString(f.Email))
+	email, err := helper.NormalizeEmail(html.EscapeString(f.Email))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +171,7 @@ func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 		return nil, fmt.Errorf("Error validation: email cant't be empty")
 	}
 
-	email, err := validator.NormalizeEmail(html.EscapeString(f.Email))
+	email, err := helper.NormalizeEmail(html.EscapeString(f.Email))
 	if err != nil {
 		return nil, err
 	}

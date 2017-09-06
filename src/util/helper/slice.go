@@ -23,7 +23,6 @@ func IsStringInSlice(val string, arr []string) bool {
 }
 
 func NormalizeEmail(str string) (string, error) {
-
 	parts := strings.Split(str, "@")
 	parts[0] = strings.ToLower(parts[0])
 	parts[1] = strings.ToLower(parts[1])

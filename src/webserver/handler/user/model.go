@@ -55,3 +55,11 @@ type getVerifiedUserResponse struct {
 	Name  string
 	Email string
 }
+type setStatusUserParams struct {
+	Email string
+	Code  string
+}
+type setStatusUserArgs struct {
+	Email string
+	Code  uint16
+}
