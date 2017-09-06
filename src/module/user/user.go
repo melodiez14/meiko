@@ -29,6 +29,10 @@ func GetUserByEmail(email string) (*User, error) {
 
 }
 
+func SetUpdateUserAccount(name, phone, lineID, College, note string, gender int8, id int64) {
+	query := fmt.Sprintf(updateUserAccountQuery, name, gender, phone, lineID, College, note, id)
+	_ = conn.DB.MustExec(query)
+}
 func SetChangePassword(password string, id int64) {
 	query := fmt.Sprintf(setChangePasswordQuery, password, id)
 	_ = conn.DB.MustExec(query)

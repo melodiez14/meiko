@@ -11,6 +11,62 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
+// ongoing
+func (s setUserAccoutParams) Validate() (*setUserAccoutArgs, error) {
+	// Name validation
+	if len(s.Name) < 1 {
+		return nil, fmt.Errorf("Error validation: name cant't be empty")
+	}
+	if len(s.Name) > 50 {
+		return nil, fmt.Errorf("Error validation: name cant't to long")
+	}
+
+	v, err := regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Name))
+	if !v || err != nil {
+		return nil, fmt.Errorf("Error validation: name contains alphabet only")
+	}
+	//Gender
+	if len(s.Gender) != 1 {
+		return nil, fmt.Errorf("Error validation : wrong input gender")
+	}
+	v, err = regexp.MatchString(`[0-2]+$`, html.EscapeString(s.Gender))
+	if !v || err != nil {
+		return nil, fmt.Errorf("Error validation: wrong input gender")
+	}
+	// Phone process
+	if len(s.Phone) < 12 && len(s.Phone) > 1 || len(s.Phone) > 14 {
+		return nil, fmt.Errorf("Error validation : wrong input phone number")
+	}
+
+	v, err = regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Phone))
+	if v || err != nil {
+		return nil, fmt.Errorf("Error validation: wrong input phone number")
+	}
+	//Line ID
+	if len(s.LineID) > 45 {
+		return nil, fmt.Errorf("Error validation: Line Id too long")
+	}
+
+	//College
+	if len(s.College) > 100 {
+		return nil, fmt.Errorf("Error validation: College too long")
+	}
+	//Note
+	if len(s.Note) > 100 {
+		return nil, fmt.Errorf("Error validation: Note too long")
+	}
+	i, _ := strconv.ParseInt(s.Gender, 10, 8)
+	gender := int8(i)
+	args := &setUserAccoutArgs{
+		Name:    s.Name,
+		Gender:  gender,
+		Phone:   s.Phone,
+		LineID:  s.LineID,
+		College: s.College,
+		Note:    s.Note,
+	}
+	return args, nil
+}
 func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
 	// Password
 	if len(s.Password) < 1 {

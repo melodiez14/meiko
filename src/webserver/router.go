@@ -12,8 +12,9 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
-	r.POST("/api/v1/user/changepassword", auth.MustAuthorize(user.ChangePassword))
-	r.GET("/api/v1/user/edit", auth.MustAuthorize(user.GetUserAccount))
+	r.POST("/api/v1/user/updateuser", auth.MustAuthorize(user.UpdateUserAccountHandler))
+	r.POST("/api/v1/user/changepassword", auth.MustAuthorize(user.ChangePasswordHandler))
+	r.GET("/api/v1/user/edit", auth.MustAuthorize(user.GetUserAccountHandler))
 	r.DELETE("/api/v1/user/logout", auth.MustAuthorize(user.LogoutHandler))
 	r.POST("/api/v1/user/verified", auth.OptionalAuthorize(user.RequestVerifiedUserHandler))
 	r.POST("/api/v1/user/register", auth.OptionalAuthorize(user.SignUpHandler))

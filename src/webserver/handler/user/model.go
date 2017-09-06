@@ -68,7 +68,7 @@ type setUserAccoutParams struct {
 	Gender  string
 	Phone   string
 	LineID  string
-	Collage string
+	College string
 	Note    string
 }
 
@@ -77,7 +77,7 @@ type setUserAccoutArgs struct {
 	Gender  int8
 	Phone   string
 	LineID  string
-	Collage string
+	College string
 	Note    string
 }
 type setChangePasswordParams struct {

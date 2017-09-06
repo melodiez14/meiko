@@ -128,6 +128,23 @@ func DestroySession(r *http.Request, w http.ResponseWriter) error {
 	})
 	return nil
 }
+
+// Update Session
+func (u User) UpdateSession(r *http.Request, w http.ResponseWriter) error {
+	cookie, _ := r.Cookie(c.SessionKey)
+	session := strings.Trim(cookie.Value, " ")
+	key := sessionPrefix + session
+	data, err := json.Marshal(u)
+
+	client := conn.Redis.Get()
+	defer client.Close()
+
+	_, err = redis.String(client.Do("SET", key, data))
+	if err != nil && err != redis.ErrNil {
+		return err
+	}
+	return nil
+}
 func (u User) SetSession(w http.ResponseWriter) error {
 
 	var cookie string

@@ -133,7 +133,7 @@ const (
 		WHERE
 			email = ('%s')
 	`
-	updateAccountQuery = `
+	updateUserAccountQuery = `
 		UPDATE
 			users
 		SET
@@ -141,7 +141,7 @@ const (
 			gender = (%d),
 			phone = ('%s'),
 			line_id = ('%s'),
-			collage = ('%s),
+			college = ('%s'),
 			note = ('%s'), 
 			Updated_at = NOW()
 		WHERE
