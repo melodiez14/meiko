@@ -76,8 +76,9 @@ func SetNewPassword(email, password string) {
 	query := fmt.Sprintf(setNewPasswordQuery, password, email)
 	_ = conn.DB.MustExec(query)
 }
-func UpdateCodeUser(email string, status int) {
-	query := fmt.Sprintf(setStatusUserQuery, email, status)
+
+func SetStatus(email string, status int8) {
+	query := fmt.Sprintf(setStatusUserQuery, status, email)
 	_ = conn.DB.MustExec(query)
 }
 
@@ -106,4 +107,15 @@ func GetByStatus(status int8) ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func GetByIDStatus(id int64, status int8) (*User, error) {
+	user := &User{}
+	query := fmt.Sprintf(getUserByIDStatusQuery, id, status)
+	err := conn.DB.Get(user, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

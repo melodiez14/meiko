@@ -12,13 +12,14 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
-	r.GET("/api/v1/user/logout", auth.MustAuthorize(user.LogoutHandler))
-	r.POST("/api/v1/user/verified", auth.OptionalAuthorize(user.RequestVerifiedUserHandler))
+	r.DELETE("/api/v1/user/logout", auth.MustAuthorize(user.LogoutHandler))
+	r.POST("/api/v1/user/verify", auth.OptionalAuthorize(user.RequestVerifiedUserHandler))
 	r.POST("/api/v1/user/register", auth.OptionalAuthorize(user.SignUpHandler))
 	r.POST("/api/v1/user/forgot/request", auth.OptionalAuthorize(user.ForgotRequestHandler))
 	r.POST("/api/v1/user/forgot/confirmation", auth.OptionalAuthorize(user.ForgotConfirmation))
 	r.POST("/api/v1/user/login", auth.OptionalAuthorize(user.LoginHandler))
-	r.GET("/api/v1/user/validated", auth.OptionalAuthorize(user.GetValidatedUser))
+	r.GET("/api/v1/user/activate", auth.MustAuthorize(user.ActivationHandler))
+	r.GET("/api/v1/user/validated", auth.MustAuthorize(user.GetValidatedUser))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
 	r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
 	r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))

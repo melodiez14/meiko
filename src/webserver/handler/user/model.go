@@ -59,7 +59,18 @@ type setStatusUserParams struct {
 	Email string
 	Code  string
 }
+
 type setStatusUserArgs struct {
 	Email string
 	Code  uint16
+}
+
+type activationParams struct {
+	ID     string
+	Status string
+}
+
+type activationArgs struct {
+	ID     int64
+	Status int8
 }

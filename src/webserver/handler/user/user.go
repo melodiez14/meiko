@@ -116,6 +116,56 @@ func ForgotConfirmation(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	return
 }
 
+// ActivationHandler is used for activate and deactivate account by admin
+// Params: user_id (ex.140810140016) and status (ex.active or inactive)
+func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	param := activationParams{
+		ID:     r.FormValue("user_id"),
+		Status: r.FormValue("status"),
+	}
+
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	var oldStatus int8
+	switch args.Status {
+	case alias.UserStatusVerified:
+		oldStatus = alias.UserStatusActivated
+	case alias.UserStatusActivated:
+		oldStatus = alias.UserStatusVerified
+	}
+
+	u, err := user.GetByIDStatus(args.ID, oldStatus)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	go user.SetStatus(u.Email, args.Status)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Status Updated"))
+	return
+}
+
 func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	u := r.Context().Value("User").(*auth.User)
@@ -193,6 +243,7 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
+	// should add pagination and status activated
 	u, _ := user.GetByStatus(alias.UserStatusVerified)
 
 	res := []getVerifiedUserResponse{}
@@ -243,7 +294,7 @@ func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httpr
 			AddError("Invalid confirmation code"))
 		return
 	}
-	go user.UpdateCodeUser(args.Email, alias.UserStatusVerified)
+	go user.SetStatus(args.Email, alias.UserStatusVerified)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage(fmt.Sprintf("Your account with this %s is being Verified ", args.Email)).
@@ -251,6 +302,7 @@ func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	return
 
 }
+
 func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	err := auth.DestroySession(r, w)
 	if err != nil {
@@ -264,6 +316,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetMessage("Logout Sukses"))
 	return
 }
+
 func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
