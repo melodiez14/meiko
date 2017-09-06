@@ -115,6 +115,8 @@ const (
 			id,
 			name,
 			email
+		FROM
+			users
 		WHERE
 			status = (%d)
 	`
