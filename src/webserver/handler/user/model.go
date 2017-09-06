@@ -63,3 +63,27 @@ type setStatusUserArgs struct {
 	Email string
 	Code  uint16
 }
+type setUserAccoutParams struct {
+	Name    string
+	Gender  string
+	Phone   string
+	LineID  string
+	Collage string
+	Note    string
+}
+
+type setUserAccoutArgs struct {
+	Name    string
+	Gender  int8
+	Phone   string
+	LineID  string
+	Collage string
+	Note    string
+}
+type setChangePasswordParams struct {
+	Password        string
+	ConfirmPassword string
+}
+type setChangePasswordArgs struct {
+	Password string
+}

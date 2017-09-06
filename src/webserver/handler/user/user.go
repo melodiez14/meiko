@@ -212,15 +212,22 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 func GetUserAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
-	s := auth.User{
-		ID:      sess.ID,
-		Name:    sess.Name,
-		Email:   sess.Email,
-		Gender:  sess.Gender,
-		College: sess.College,
-		Note:    sess.Note,
-		Status:  sess.Status,
-		Roles:   sess.Roles,
+	val, err := user.GetUserByID(sess.ID)
+	fmt.Println(val)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
+		return
+	}
+
+	s := setUserAccoutArgs{
+		Name:    val.Name,
+		Gender:  val.Gender,
+		Phone:   val.Phone.String,
+		LineID:  val.LineID.String,
+		Collage: val.College,
+		Note:    val.College,
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
@@ -228,8 +235,32 @@ func GetUserAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	return
 
 }
-func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+// func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// 	param := setStatusUserParams{
+// 		Email: r.FormValue("email"),
+// 		Code:  r.FormValue("code"),
+// 	}
+// 	_ = param
+// }
+func ChangePassword(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	id := r.Context().Value("User").(*auth.User).ID
+	param := setChangePasswordParams{
+		Password:        r.FormValue("password"),
+		ConfirmPassword: r.FormValue("confirmPassword"),
+	}
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	go user.SetChangePassword(args.Password, id)
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Password has changed").
+		SetCode(http.StatusOK))
+	return
 }
 
 func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -283,7 +314,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Logout Sukses"))
+		SetMessage("Logout success"))
 	return
 }
 func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

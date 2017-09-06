@@ -11,6 +11,48 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
+func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
+	// Password
+	if len(s.Password) < 1 {
+		return nil, fmt.Errorf("Error validation: password can't be empty")
+	} else if len(s.ConfirmPassword) < 1 {
+		return nil, fmt.Errorf("Eroor validation: Confirmation password can't be empty")
+	}
+
+	if len(s.Password) < 6 {
+		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	} else if len(s.ConfirmPassword) < 6 {
+		return nil, fmt.Errorf("Error validation : Confirmation password at least consist of 6 characters")
+	}
+
+	password := html.EscapeString(s.Password)
+	cp := html.EscapeString(s.ConfirmPassword)
+
+	regexPassword := []string{`[a-z]`, `[A-Z]`, `[0-9]`}
+	for _, val := range regexPassword {
+		is, _ := regexp.MatchString(val, password)
+		if !is {
+			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
+		}
+	}
+
+	for _, val := range regexPassword {
+		is, _ := regexp.MatchString(val, cp)
+		if !is {
+			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
+		}
+	}
+
+	if password != cp {
+		return nil, fmt.Errorf("Error validation: Password not match")
+	}
+	args := &setChangePasswordArgs{
+		Password: password,
+	}
+
+	return args, nil
+
+}
 func (s setStatusUserParams) Validate() (*setStatusUserArgs, error) {
 	// Email Validation
 	if len(s.Email) < 1 {

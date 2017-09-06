@@ -6,14 +6,16 @@ import (
 )
 
 type User struct {
-	ID           int64         `db:"id"`
-	Name         string        `db:"name"`
-	Email        string        `db:"email"`
-	Gender       int8          `db:"gender"`
-	College      string        `db:"college"`
-	Note         string        `db:"note"`
-	Status       int8          `db:"status"`
-	RoleGroupsID sql.NullInt64 `db:"rolegroups_id"`
+	ID           int64          `db:"id"`
+	Name         string         `db:"name"`
+	Email        string         `db:"email"`
+	Gender       int8           `db:"gender"`
+	College      string         `db:"college"`
+	Note         string         `db:"note"`
+	Status       int8           `db:"status"`
+	LineID       sql.NullString `db:"line_id"`
+	Phone        sql.NullString `db:"phone"`
+	RoleGroupsID sql.NullInt64  `db:"rolegroups_id"`
 }
 
 type Verification struct {

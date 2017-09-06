@@ -20,6 +20,7 @@ const (
 			NOW()
 		)
 	`
+
 	getUserByIDQuery = `
 		SELECT
 			id,
@@ -28,7 +29,9 @@ const (
 			college,
 			note,
 			rolegroups_id,
-			status
+			status,
+			phone,
+			line_id
 		FROM
 			users
 		WHERE
@@ -129,5 +132,28 @@ const (
 			updated_at = NOW()
 		WHERE
 			email = ('%s')
+	`
+	updateAccountQuery = `
+		UPDATE
+			users
+		SET
+			name = ('%s'),
+			gender = (%d),
+			phone = ('%s'),
+			line_id = ('%s'),
+			collage = ('%s),
+			note = ('%s'), 
+			Updated_at = NOW()
+		WHERE
+			id = (%d)
+	`
+	setChangePasswordQuery = `
+		UPDATE
+			users
+		SET
+			password = md5('%s'),
+			updated_at = NOW()
+		WHERE
+			id = (%d)
 	`
 )

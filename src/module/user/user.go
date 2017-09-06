@@ -29,6 +29,11 @@ func GetUserByEmail(email string) (*User, error) {
 
 }
 
+func SetChangePassword(password string, id int64) {
+	query := fmt.Sprintf(setChangePasswordQuery, password, id)
+	_ = conn.DB.MustExec(query)
+}
+
 func GenerateVerification(id int64) (*Verification, error) {
 
 	v := &Verification{
