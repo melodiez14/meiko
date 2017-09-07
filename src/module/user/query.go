@@ -143,7 +143,7 @@ const (
 			line_id = ('%s'),
 			college = ('%s'),
 			note = ('%s'), 
-			Updated_at = NOW()
+			updated_at = NOW()
 		WHERE
 			id = (%d)
 	`
@@ -161,6 +161,7 @@ const (
 		SELECT
 			id,
 			name,
+			email,
 			gender,
 			college,
 			note,

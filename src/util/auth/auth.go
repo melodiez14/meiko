@@ -172,7 +172,8 @@ func (u User) SetSession(w http.ResponseWriter) error {
 	}
 
 	client := conn.Redis.Get()
-	//defer client.Close()
+	defer client.Close()
+
 	// Session cookie
 	_, err = redis.String(client.Do("SET", key, data))
 	if err != nil {
