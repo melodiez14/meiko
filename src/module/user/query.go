@@ -125,7 +125,7 @@ const (
 	`
 
 	setStatusUserQuery = `
-		UPADATE 
+		UPDATE 
 			users
 		SET 
 			status = (%d),
@@ -155,5 +155,22 @@ const (
 			updated_at = NOW()
 		WHERE
 			id = (%d)
+`
+
+	getUserByIDStatusQuery = `
+		SELECT
+			id,
+			name,
+			gender,
+			college,
+			note,
+			rolegroups_id,
+			status
+		FROM
+			users
+		WHERE
+			id = (%d) AND
+			status = (%d)
+		LIMIT 1
 	`
 )

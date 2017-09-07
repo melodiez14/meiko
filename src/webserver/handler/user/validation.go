@@ -5,6 +5,8 @@ import (
 	"html"
 	"strconv"
 
+	"github.com/melodiez14/meiko/src/util/alias"
+
 	"regexp"
 
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -298,6 +300,36 @@ func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 		Email:    email,
 		Code:     uint16(c),
 		Password: f.Password,
+	}
+
+	return args, nil
+}
+
+func (param activationParams) Validate() (*activationArgs, error) {
+
+	// Check is param empty
+	if len(param.ID) < 1 || len(param.Status) < 1 {
+		return nil, fmt.Errorf("Bad Request")
+	}
+
+	id, err := strconv.ParseInt(param.ID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	var status int8
+	switch param.Status {
+	case "active":
+		status = alias.UserStatusActivated
+	case "inactive":
+		status = alias.UserStatusVerified
+	default:
+		return nil, fmt.Errorf("Error validation: wrong status")
+	}
+
+	args := &activationArgs{
+		ID:     id,
+		Status: status,
 	}
 
 	return args, nil

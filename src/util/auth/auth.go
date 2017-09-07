@@ -108,14 +108,21 @@ func getUserInfo(session string) (*User, error) {
 }
 
 // DestroySession bla
-func DestroySession(r *http.Request, w http.ResponseWriter) error {
+func (u User) DestroySession(r *http.Request, w http.ResponseWriter) error {
 	cookie, _ := r.Cookie(c.SessionKey)
 	session := strings.Trim(cookie.Value, " ")
 	client := conn.Redis.Get()
 	defer client.Close()
 
 	key := sessionPrefix + session
+	keyList := fmt.Sprintf("%s%d", listPrefixSession, u.ID)
+
 	_, err := redis.Bool(client.Do("DEL", key))
+	if err != nil && err != redis.ErrNil {
+		return err
+	}
+
+	_, err = redis.Bool(client.Do("SREM", keyList, key))
 	if err != nil && err != redis.ErrNil {
 		return err
 	}
@@ -130,20 +137,26 @@ func DestroySession(r *http.Request, w http.ResponseWriter) error {
 }
 
 // Update Session
-func (u User) UpdateSession(r *http.Request, w http.ResponseWriter) error {
-	cookie, _ := r.Cookie(c.SessionKey)
-	session := strings.Trim(cookie.Value, " ")
-	key := sessionPrefix + session
+func (u User) UpdateSession(w http.ResponseWriter) {
+	listSession := fmt.Sprintf("%s%d", listPrefixSession, u.ID)
 	data, err := json.Marshal(u)
 
 	client := conn.Redis.Get()
 	defer client.Close()
 
-	_, err = redis.String(client.Do("SET", key, data))
-	if err != nil && err != redis.ErrNil {
-		return err
+	keys, err := redis.Strings(client.Do("SMEMBERS", listSession))
+	if err != nil {
+		fmt.Printf("Error func UpdateSession: %s", err.Error())
 	}
-	return nil
+
+	for _, key := range keys {
+		_, err = redis.String(client.Do("SET", key, data))
+	}
+
+	if err != nil {
+		fmt.Printf("Error func UpdateSession: %s", err.Error())
+	}
+
 }
 func (u User) SetSession(w http.ResponseWriter) error {
 

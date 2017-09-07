@@ -59,10 +59,12 @@ type setStatusUserParams struct {
 	Email string
 	Code  string
 }
+
 type setStatusUserArgs struct {
 	Email string
 	Code  uint16
 }
+
 type setUserAccoutParams struct {
 	Name    string
 	Gender  string
@@ -86,4 +88,14 @@ type setChangePasswordParams struct {
 }
 type setChangePasswordArgs struct {
 	Password string
+}
+
+type activationParams struct {
+	ID     string
+	Status string
+}
+
+type activationArgs struct {
+	ID     int64
+	Status int8
 }
