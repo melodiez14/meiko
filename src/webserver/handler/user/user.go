@@ -158,7 +158,27 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	go user.SetStatus(u.Email, args.Status)
+	go func() {
+		user.SetStatus(u.Email, args.Status)
+
+		roles := make(map[string][]string)
+		if u.RoleGroupsID.Valid {
+			roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+		}
+
+		s := auth.User{
+			ID:      u.ID,
+			Name:    u.Name,
+			Email:   u.Email,
+			Gender:  u.Gender,
+			College: u.College,
+			Note:    u.Note,
+			Status:  u.Status,
+			Roles:   roles,
+		}
+
+		s.UpdateSession(w)
+	}()
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
@@ -261,6 +281,104 @@ func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	return
 }
 
+func GetUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	val, err := user.GetUserByID(sess.ID)
+	fmt.Println(val)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
+		return
+	}
+
+	s := setUserAccoutArgs{
+		Name:    val.Name,
+		Gender:  val.Gender,
+		Phone:   val.Phone.String,
+		LineID:  val.LineID.String,
+		College: val.College,
+		Note:    val.College,
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(s))
+	return
+
+}
+
+//UpdateUserAccountHandler
+func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	param := setUserAccoutParams{
+		Name:    r.FormValue("name"),
+		Gender:  r.FormValue("gender"),
+		Phone:   r.FormValue("phone"),
+		LineID:  r.FormValue("line_id"),
+		College: r.FormValue("College"),
+		Note:    r.FormValue("note"),
+	}
+
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	user.SetUpdateUserAccount(args.Name, args.Phone, args.LineID, args.College, args.Note, args.Gender, sess.ID)
+
+	u, err := user.GetUserByID(sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Internal error"))
+		return
+	}
+	roles := make(map[string][]string)
+	if u.RoleGroupsID.Valid {
+		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+	}
+
+	s := auth.User{
+		ID:      u.ID,
+		Name:    u.Name,
+		Email:   u.Email,
+		Gender:  u.Gender,
+		College: u.College,
+		Note:    u.Note,
+		Status:  u.Status,
+		Roles:   roles,
+	}
+
+	s.UpdateSession(w)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Data updated").
+		SetCode(http.StatusOK))
+	return
+}
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	id := r.Context().Value("User").(*auth.User).ID
+	param := setChangePasswordParams{
+		Password:        r.FormValue("password"),
+		ConfirmPassword: r.FormValue("confirmPassword"),
+	}
+	args, err := param.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	go user.SetChangePassword(args.Password, id)
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Password has changed").
+		SetCode(http.StatusOK))
+	return
+}
+
 func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	if sess != nil {
@@ -304,7 +422,9 @@ func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httpr
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	err := auth.DestroySession(r, w)
+	sess := r.Context().Value("User").(*auth.User)
+	err := sess.DestroySession(r, w)
+
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -313,7 +433,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Logout Sukses"))
+		SetMessage("Logout success"))
 	return
 }
 
@@ -365,7 +485,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Internal Error"))
+			AddError("Internal server error"))
 		return
 	}
 
@@ -390,6 +510,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
 			SetMessage("Internal server error"))
+		return
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

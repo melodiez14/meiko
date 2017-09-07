@@ -13,6 +13,104 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
+// ongoing
+func (s setUserAccoutParams) Validate() (*setUserAccoutArgs, error) {
+	// Name validation
+	if len(s.Name) < 1 {
+		return nil, fmt.Errorf("Error validation: name cant't be empty")
+	}
+	if len(s.Name) > 50 {
+		return nil, fmt.Errorf("Error validation: name cant't to long")
+	}
+
+	v, err := regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Name))
+	if !v || err != nil {
+		return nil, fmt.Errorf("Error validation: name contains alphabet only")
+	}
+	//Gender
+	if len(s.Gender) != 1 {
+		return nil, fmt.Errorf("Error validation : wrong input gender")
+	}
+	v, err = regexp.MatchString(`[0-2]+$`, html.EscapeString(s.Gender))
+	if !v || err != nil {
+		return nil, fmt.Errorf("Error validation: wrong input gender")
+	}
+	// Phone process
+	if len(s.Phone) < 12 && len(s.Phone) > 1 || len(s.Phone) > 14 {
+		return nil, fmt.Errorf("Error validation : wrong input phone number")
+	}
+
+	v, err = regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Phone))
+	if v || err != nil {
+		return nil, fmt.Errorf("Error validation: wrong input phone number")
+	}
+	//Line ID
+	if len(s.LineID) > 45 {
+		return nil, fmt.Errorf("Error validation: Line Id too long")
+	}
+
+	//College
+	if len(s.College) > 100 {
+		return nil, fmt.Errorf("Error validation: College too long")
+	}
+	//Note
+	if len(s.Note) > 100 {
+		return nil, fmt.Errorf("Error validation: Note too long")
+	}
+	i, _ := strconv.ParseInt(s.Gender, 10, 8)
+	gender := int8(i)
+	args := &setUserAccoutArgs{
+		Name:    s.Name,
+		Gender:  gender,
+		Phone:   s.Phone,
+		LineID:  s.LineID,
+		College: s.College,
+		Note:    s.Note,
+	}
+	return args, nil
+}
+func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
+	// Password
+	if len(s.Password) < 1 {
+		return nil, fmt.Errorf("Error validation: password can't be empty")
+	} else if len(s.ConfirmPassword) < 1 {
+		return nil, fmt.Errorf("Eroor validation: Confirmation password can't be empty")
+	}
+
+	if len(s.Password) < 6 {
+		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	} else if len(s.ConfirmPassword) < 6 {
+		return nil, fmt.Errorf("Error validation : Confirmation password at least consist of 6 characters")
+	}
+
+	password := html.EscapeString(s.Password)
+	cp := html.EscapeString(s.ConfirmPassword)
+
+	regexPassword := []string{`[a-z]`, `[A-Z]`, `[0-9]`}
+	for _, val := range regexPassword {
+		is, _ := regexp.MatchString(val, password)
+		if !is {
+			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
+		}
+	}
+
+	for _, val := range regexPassword {
+		is, _ := regexp.MatchString(val, cp)
+		if !is {
+			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
+		}
+	}
+
+	if password != cp {
+		return nil, fmt.Errorf("Error validation: Password not match")
+	}
+	args := &setChangePasswordArgs{
+		Password: password,
+	}
+
+	return args, nil
+
+}
 func (s setStatusUserParams) Validate() (*setStatusUserArgs, error) {
 	// Email Validation
 	if len(s.Email) < 1 {
