@@ -1,8 +1,10 @@
 package user
 
 import (
+	"database/sql"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 type (
 	QueryGet    struct{ string }
 	QuerySelect struct{ string }
+	QueryInsert struct{ string }
 	QueryUpdate struct{ string }
 )
 
@@ -156,16 +159,52 @@ func (q QuerySelect) Exec() ([]User, error) {
 	return user, nil
 }
 
+func Insert(column map[string]interface{}) QueryInsert {
+
+	c := []string{"created_at", "updated_at"}
+	v := []string{"NOW()", "NOW()"}
+	for i, val := range column {
+		switch val.(type) {
+		case int, int8, int64:
+			c = append(c, i)
+			v = append(v, fmt.Sprintf("(%d)", val))
+		case string:
+			c = append(c, i)
+			v = append(v, fmt.Sprintf("('%s')", val))
+		}
+	}
+	columnQuery := strings.Join(c, ", ")
+	valueQuery := strings.Join(v, ", ")
+	return QueryInsert{fmt.Sprintf(queryInsert, columnQuery, valueQuery)}
+}
+
+func (q QueryInsert) Exec() error {
+	result, err := conn.DB.Exec(q.string)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
 func Update(column map[string]interface{}) QueryUpdate {
 	c := []string{"updated_at = NOW()"}
-	for i, v := range column {
-		switch v.(type) {
+	for i, val := range column {
+		switch val.(type) {
 		case int, int8, int64:
-			c = append(c, fmt.Sprintf("%s = (%d)", i, v))
+			c = append(c, fmt.Sprintf("%s = (%d)", i, val))
 		case string:
-			c = append(c, fmt.Sprintf("%s = ('%s')", i, v))
-		case nil:
-			c = append(c, fmt.Sprintf("%s = NULL", i))
+			c = append(c, fmt.Sprintf("%s = ('%s')", i, val))
+		case sql.NullString:
+			str := reflect.ValueOf(val).Interface().(sql.NullString)
+			if str.Valid {
+				c = append(c, fmt.Sprintf("%s = ('%s')", i, str.String))
+			} else {
+				c = append(c, fmt.Sprintf("%s = NULL", i))
+			}
 		}
 	}
 	columnQuery := strings.Join(c, ", ")
@@ -206,6 +245,7 @@ func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUp
 }
 
 func (q QueryUpdate) Exec() error {
+	print(q.string)
 	result, err := conn.DB.Exec(q.string)
 	if err != nil {
 		return err
@@ -215,36 +255,6 @@ func (q QueryUpdate) Exec() error {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
-}
-
-func GetUserByID(id int64) (User, error) {
-	var user User
-	query := fmt.Sprintf(getUserByIDQuery, id)
-	err := conn.DB.Get(&user, query)
-	if err != nil {
-		return user, err
-	}
-	return user, nil
-}
-
-func GetUserByEmail(email string) (User, error) {
-	var user User
-	query := fmt.Sprintf(getUserEmailQuery, email)
-	err := conn.DB.Get(&user, query)
-	if err != nil {
-		return user, err
-	}
-	return user, nil
-}
-
-func SetUpdateUserAccount(name, phone, lineID, College, note string, gender int8, id int64) {
-	query := fmt.Sprintf(updateUserAccountQuery, name, gender, phone, lineID, College, note, id)
-	_ = conn.DB.MustExec(query)
-}
-
-func SetChangePassword(password string, id int64) {
-	query := fmt.Sprintf(setChangePasswordQuery, password, id)
-	_ = conn.DB.MustExec(query)
 }
 
 func GenerateVerification(id int64) (Verification, error) {
@@ -287,50 +297,7 @@ func IsValidConfirmationCode(email string, code uint16) bool {
 	return true
 }
 
-func SetNewPassword(email, password string) {
-	query := fmt.Sprintf(setNewPasswordQuery, password, email)
+func UpdateNewPassword(email, password string) {
+	query := fmt.Sprintf(updateNewPasswordQuery, password, email)
 	_ = conn.DB.MustExec(query)
-}
-
-func SetStatus(email string, status int8) {
-	query := fmt.Sprintf(setStatusUserQuery, status, email)
-	_ = conn.DB.MustExec(query)
-}
-
-func GetUserLogin(email, password string) (User, error) {
-	var user User
-	query := fmt.Sprintf(getUserLoginQuery, email, password)
-	err := conn.DB.Get(&user, query)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
-}
-
-func InsertNewUser(id int64, name, email, password string) {
-	query := fmt.Sprintf(insertNewUserQuery, id, name, email, password)
-	_ = conn.DB.MustExec(query)
-}
-
-func GetByStatus(status int8) ([]User, error) {
-	users := []User{}
-	query := fmt.Sprintf(getUserByStatusQuery, status)
-	err := conn.DB.Select(&users, query)
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func GetByIDStatus(id int64, status int8) (User, error) {
-	var user User
-	query := fmt.Sprintf(getUserByIDStatusQuery, id, status)
-	err := conn.DB.Get(&user, query)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
 }

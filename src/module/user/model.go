@@ -18,10 +18,11 @@ const (
 	ColRoleGroupsID = "rolegroups_id"
 	ColPassword     = "password"
 
-	OperatorEquals = "="
-	OperatorIn     = "IN"
-	OperatorMore   = ">"
-	OperatorLess   = "<"
+	OperatorEquals  = "="
+	OperatorUnquals = "!="
+	OperatorIn      = "IN"
+	OperatorMore    = ">"
+	OperatorLess    = "<"
 )
 
 type User struct {

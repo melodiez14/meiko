@@ -1,6 +1,7 @@
 package user
 
 import (
+	"database/sql"
 	"fmt"
 	"html"
 	"strconv"
@@ -53,7 +54,7 @@ func (params signUpParams) Validate() (signUpArgs, error) {
 		ID:       id,
 		Name:     name,
 		Email:    email,
-		Password: params.Password,
+		Password: helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }
@@ -70,7 +71,7 @@ func (params emailVerificationParams) Validate() (emailVerificationArgs, error) 
 
 	// IsResendCode validation
 	if !helper.IsEmpty(params.IsResendCode) {
-		if params.IsResendCode != "true" {
+		if params.IsResendCode == "true" {
 			return emailVerificationArgs{
 				Email:        email,
 				IsResendCode: true,
@@ -185,7 +186,7 @@ func (params signInParams) Validate() (signInArgs, error) {
 
 	args = signInArgs{
 		Email:    email,
-		Password: params.Password,
+		Password: helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }
@@ -238,24 +239,28 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 	}
 
 	// Phone validation (can be empty)
+	var phone sql.NullString
 	if !helper.IsEmpty(params.Phone) {
 		if !helper.IsPhone(params.Phone) {
 			return args, fmt.Errorf("Error validation: wrong input phone")
 		}
+		phone = sql.NullString{String: params.Phone, Valid: true}
 	}
 
 	// Line verification (can be empty)
+	var lineID sql.NullString
 	if !helper.IsEmpty(params.LineID) {
 		if len(params.LineID) > alias.UserLineIDLengthMax {
 			return args, fmt.Errorf("Error validation: Line Id too long")
 		}
+		lineID = sql.NullString{String: params.LineID, Valid: true}
 	}
 
 	args = updateProfileArgs{
 		Name:    name,
 		Gender:  gender,
-		Phone:   params.Phone,
-		LineID:  params.LineID,
+		Phone:   phone,
+		LineID:  lineID,
 		College: college,
 		Note:    params.Note,
 	}

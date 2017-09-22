@@ -78,14 +78,26 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	user.InsertNewUser(args.ID, args.Name, args.Email, args.Password)
+	// insert new user
+	err = user.Insert(map[string]interface{}{
+		user.ColID:       args.ID,
+		user.ColName:     args.Name,
+		user.ColEmail:    args.Email,
+		user.ColPassword: args.Password,
+	}).Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal server error"))
+		return
+	}
 
 	// send code activation to email
 	verification, err := user.GenerateVerification(args.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Server error"))
+			AddError("Internal server error"))
 		return
 	}
 
@@ -99,7 +111,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetCode(http.StatusOK).
 		SetMessage("SignUp success"))
 	return
-
 }
 
 // EmailVerificationHandler handles the http request for resend activation code or activate the email
@@ -155,7 +166,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError).
-				AddError("Server error"))
+				AddError("Internal server error"))
 			return
 		}
 
@@ -179,7 +190,9 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	go user.SetStatus(args.Email, alias.UserStatusVerified)
+	go user.Update(map[string]interface{}{
+		user.ColStatus: alias.UserStatusVerified,
+	}).Where(user.ColEmail, user.OperatorEquals, args.Email).Exec()
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage(fmt.Sprintf("Your account %s is being activated by admin", args.Email)).
@@ -307,7 +320,11 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	go func() {
-		user.SetStatus(u.Email, args.Status)
+		// change if args.Status == activated update redis
+		// if args.Status == Verified delete redis
+		_ = user.Update(map[string]interface{}{
+			user.ColStatus: args.Status,
+		}).Where(user.ColEmail, user.OperatorEquals, u.Email).Exec()
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
@@ -369,7 +386,10 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	u, err := user.GetUserLogin(args.Email, args.Password)
+	u, err := user.Get().
+		Where(user.ColEmail, user.OperatorEquals, args.Email).
+		AndWhere(user.ColPassword, user.OperatorEquals, args.Password).
+		Exec()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -489,7 +509,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError).
-				AddError("Server error"))
+				AddError("Internal server error"))
 			return
 		}
 
@@ -525,7 +545,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	go user.SetNewPassword(args.Email, args.Password)
+	go user.UpdateNewPassword(args.Email, args.Password)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage("New password has been updated").
@@ -559,7 +579,7 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		Phone:   u.Phone.String,
 		LineID:  u.LineID.String,
 		College: u.College,
-		Note:    u.College,
+		Note:    u.Note,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -607,6 +627,32 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
+	if args.Phone.Valid {
+		_, err := user.Get(user.ColPhone).
+			Where(user.ColPhone, user.OperatorEquals, args.Phone.String).
+			AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
+			Exec()
+		if err == nil || (err != nil && err != sql.ErrNoRows) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError(fmt.Sprintf("phone %s has been registered!", args.Phone.String)))
+			return
+		}
+	}
+
+	if args.LineID.Valid {
+		_, err := user.Get(user.ColLineID).
+			Where(user.ColLineID, user.OperatorEquals, args.LineID.String).
+			AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
+			Exec()
+		if err == nil || (err != nil && err != sql.ErrNoRows) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError(fmt.Sprintf("line id %s has been registered!", args.LineID.String)))
+			return
+		}
+	}
+
 	err = user.Update(map[string]interface{}{
 		user.ColName:    args.Name,
 		user.ColPhone:   args.Phone,
@@ -618,7 +664,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Internal error"))
+			AddError("Internal server error"))
 		return
 	}
 
@@ -626,7 +672,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Internal error"))
+			AddError("Internal server error"))
 		return
 	}
 
@@ -692,7 +738,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Old password is incorrect!"))
+			AddError("Incorect old password!"))
 		return
 	}
 

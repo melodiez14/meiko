@@ -1,73 +1,10 @@
 package user
 
 const (
-	queryGet           = "SELECT %s FROM users"
-	querySelect        = "SELECT %s FROM users"
-	queryUpdate        = "UPDATE users SET %s"
-	insertNewUserQuery = `
-		INSERT INTO
-			users(
-				id,
-				name,
-				email,
-				password,
-				created_at,
-				updated_at
-			)
-		VALUES (
-			(%d),
-			('%s'),
-			('%s'),
-			(md5('%s')),
-			NOW(),
-			NOW()
-		)
-	`
-
-	getUserByIDQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status,
-			phone,
-			line_id
-		FROM
-			users
-		WHERE
-			id = (%d)
-	`
-
-	getUserEmailQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college
-		FROM
-			users
-		WHERE
-			email = ('%s')
-	`
-
-	getUserLoginQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status
-		FROM
-			users
-		WHERE
-			email = ('%s') AND
-			password = (md5('%s'))
-	`
+	queryGet    = "SELECT %s FROM users"
+	querySelect = "SELECT %s FROM users"
+	queryInsert = "INSERT INTO users (%s) VALUES (%s)"
+	queryUpdate = "UPDATE users SET %s"
 
 	generateVerificationQuery = `
 		UPDATE
@@ -103,7 +40,7 @@ const (
 			id = (%d)
 	`
 
-	setNewPasswordQuery = `
+	updateNewPasswordQuery = `
 		UPDATE
 			users
 		SET
@@ -114,67 +51,5 @@ const (
 			updated_at = NOW()
 		WHERE
 			email = ('%s')
-	`
-
-	getUserByStatusQuery = `
-		SELECT
-			id,
-			name,
-			email
-		FROM
-			users
-		WHERE
-			status = (%d)
-	`
-
-	setStatusUserQuery = `
-		UPDATE 
-			users
-		SET 
-			status = (%d),
-			updated_at = NOW()
-		WHERE
-			email = ('%s')
-	`
-	updateUserAccountQuery = `
-		UPDATE
-			users
-		SET
-			name = ('%s'),
-			gender = (%d),
-			phone = ('%s'),
-			line_id = ('%s'),
-			college = ('%s'),
-			note = ('%s'), 
-			updated_at = NOW()
-		WHERE
-			id = (%d)
-	`
-	setChangePasswordQuery = `
-		UPDATE
-			users
-		SET
-			password = md5('%s'),
-			updated_at = NOW()
-		WHERE
-			id = (%d)
-`
-
-	getUserByIDStatusQuery = `
-		SELECT
-			id,
-			name,
-			email,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status
-		FROM
-			users
-		WHERE
-			id = (%d) AND
-			status = (%d)
-		LIMIT 1
 	`
 )

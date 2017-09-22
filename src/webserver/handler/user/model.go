@@ -1,5 +1,9 @@
 package user
 
+import (
+	"database/sql"
+)
+
 type signUpParams struct {
 	ID       string
 	Name     string
@@ -85,8 +89,8 @@ type updateProfileParams struct {
 type updateProfileArgs struct {
 	Name    string
 	Gender  int8
-	Phone   string
-	LineID  string
+	Phone   sql.NullString
+	LineID  sql.NullString
 	College string
 	Note    string
 }
