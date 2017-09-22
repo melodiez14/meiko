@@ -3,6 +3,7 @@ package user
 const (
 	queryGet           = "SELECT %s FROM users"
 	querySelect        = "SELECT %s FROM users"
+	queryUpdate        = "UPDATE users SET %s"
 	insertNewUserQuery = `
 		INSERT INTO
 			users(

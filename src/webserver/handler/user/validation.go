@@ -7,14 +7,18 @@ import (
 
 	"github.com/melodiez14/meiko/src/util/alias"
 
-	"regexp"
-
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
 func (params signUpParams) Validate() (signUpArgs, error) {
 
 	var args signUpArgs
+	params = signUpParams{
+		ID:       params.ID,
+		Name:     params.Name,
+		Email:    params.Email,
+		Password: html.EscapeString(params.Password),
+	}
 
 	// ID validation
 	id, err := helper.NormalizeUserID(params.ID)
@@ -65,30 +69,30 @@ func (params emailVerificationParams) Validate() (emailVerificationArgs, error) 
 	}
 
 	// IsResendCode validation
-	isResendCode := false
-	if len(params.IsResendCode) > 0 {
-		if params.IsResendCode == "true" {
-			isResendCode = true
+	if !helper.IsEmpty(params.IsResendCode) {
+		if params.IsResendCode != "true" {
+			return emailVerificationArgs{
+				Email:        email,
+				IsResendCode: true,
+				Code:         0,
+			}, nil
 		}
 	}
 
 	// Code validation: if isResendCode is true, pass the Code validation
-	var code int64
-	if !isResendCode {
-		if helper.IsEmpty(params.Code) {
-			return args, fmt.Errorf("Error validation: Code can't be empty")
-		} else if len(params.Code) != 4 {
-			return args, fmt.Errorf("Error validation: Wrong code")
-		}
-		code, err = strconv.ParseInt(params.Code, 10, 16)
-		if err != nil {
-			return args, fmt.Errorf("Error validation: Wrong code")
-		}
+	if helper.IsEmpty(params.Code) {
+		return args, fmt.Errorf("Error validation: Code can't be empty")
+	} else if len(params.Code) != alias.UserCodeLength {
+		return args, fmt.Errorf("Error validation: Wrong code")
+	}
+	code, err := strconv.ParseInt(params.Code, 10, 16)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: Wrong code")
 	}
 
 	args = emailVerificationArgs{
 		Email:        email,
-		IsResendCode: isResendCode,
+		IsResendCode: false,
 		Code:         uint16(code),
 	}
 	return args, nil
@@ -154,10 +158,42 @@ func (params activationParams) Validate() (activationArgs, error) {
 	return args, nil
 }
 
-func (params setUserAccoutParams) Validate() (setUserAccoutArgs, error) {
+func (params signInParams) Validate() (signInArgs, error) {
 
-	var args setUserAccoutArgs
-	params = setUserAccoutParams{
+	var args signInArgs
+	params = signInParams{
+		Email:    params.Email,
+		Password: html.EscapeString(params.Password),
+	}
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
+	}
+
+	// Password validation
+	if helper.IsEmpty(params.Password) {
+		return args, fmt.Errorf("Error validation: password can't be empty")
+	}
+	if len(params.Password) < alias.UserPasswordLengthMin {
+		return args, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	}
+	if !helper.IsPassword(params.Password) {
+		return args, fmt.Errorf("Error validation: password should contains at least uppercase, lowercase, and numeric")
+	}
+
+	args = signInArgs{
+		Email:    email,
+		Password: params.Password,
+	}
+	return args, nil
+}
+
+func (params updateProfileParams) Validate() (updateProfileArgs, error) {
+
+	var args updateProfileArgs
+	params = updateProfileParams{
 		Name:    params.Name,
 		Note:    html.EscapeString(params.Note),
 		Gender:  params.Gender,
@@ -167,20 +203,21 @@ func (params setUserAccoutParams) Validate() (setUserAccoutArgs, error) {
 	}
 
 	// Name validation
-	if len(params.Name) < 1 {
-		return args, fmt.Errorf("Error validation: name cant't be empty")
-	}
-	if len(params.Name) > 50 {
-		return args, fmt.Errorf("Error validation: name is too long")
-	}
 	name, err := helper.NormalizeName(params.Name)
 	if err != nil {
 		return args, err
 	}
 
-	// gender validation
+	// Note validation
+	if !helper.IsEmpty(params.Note) {
+		if len(params.Note) > alias.UserNoteLengthMax {
+			return args, fmt.Errorf("Error validation: Note too long")
+		}
+	}
+
+	// Gender validation
 	var gender int8 = alias.UserGenderUndefined
-	if len(params.Gender) > 0 {
+	if !helper.IsEmpty(params.Gender) {
 		switch params.Gender {
 		case "male":
 			gender = alias.UserGenderMale
@@ -191,41 +228,30 @@ func (params setUserAccoutParams) Validate() (setUserAccoutArgs, error) {
 		}
 	}
 
-	// Phone validation (can be empty)
-	if len(params.Phone) > 0 {
-		if !helper.IsPhone(params.Phone) {
-			return args, fmt.Errorf("Error validation: wrong input gender")
-		}
-	}
-
-	// Line verification (can be empty)
-	if len(params.LineID) > 0 {
-		if len(params.LineID) > 45 {
-			return args, fmt.Errorf("Error validation: Line Id too long")
-		}
-	}
-
 	// College validation (need more validation)
 	var college string
-	if len(params.College) > 0 {
-		if len(params.College) > 100 {
-			return args, fmt.Errorf("Error validation: College too long")
-		}
+	if !helper.IsEmpty(params.College) {
 		college, err = helper.NormalizeCollege(params.College)
 		if err != nil {
 			return args, fmt.Errorf("Error validation: Not valid college")
 		}
-
 	}
 
-	// Note validation
-	if len(params.Note) > 0 {
-		if len(params.Note) > 100 {
-			return args, fmt.Errorf("Error validation: Note too long")
+	// Phone validation (can be empty)
+	if !helper.IsEmpty(params.Phone) {
+		if !helper.IsPhone(params.Phone) {
+			return args, fmt.Errorf("Error validation: wrong input phone")
 		}
 	}
 
-	args = setUserAccoutArgs{
+	// Line verification (can be empty)
+	if !helper.IsEmpty(params.LineID) {
+		if len(params.LineID) > alias.UserLineIDLengthMax {
+			return args, fmt.Errorf("Error validation: Line Id too long")
+		}
+	}
+
+	args = updateProfileArgs{
 		Name:    name,
 		Gender:  gender,
 		Phone:   params.Phone,
@@ -237,129 +263,110 @@ func (params setUserAccoutParams) Validate() (setUserAccoutArgs, error) {
 	return args, nil
 }
 
-func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
-	// Password
-	if len(s.Password) < 1 {
-		return nil, fmt.Errorf("Error validation: password can't be empty")
-	} else if len(s.ConfirmPassword) < 1 {
-		return nil, fmt.Errorf("Eroor validation: Confirmation password can't be empty")
+func (params changePasswordParams) Validate() (changePasswordArgs, error) {
+
+	var args changePasswordArgs
+	params = changePasswordParams{
+		OldPassword:     html.EscapeString(params.OldPassword),
+		Password:        html.EscapeString(params.Password),
+		ConfirmPassword: html.EscapeString(params.ConfirmPassword),
 	}
 
-	if len(s.Password) < 6 {
-		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
-	} else if len(s.ConfirmPassword) < 6 {
-		return nil, fmt.Errorf("Error validation : Confirmation password at least consist of 6 characters")
+	// Old password validation
+	if helper.IsEmpty(params.OldPassword) {
+		return args, fmt.Errorf("Error validation: old password can't be empty")
+	}
+	if len(params.OldPassword) < alias.UserPasswordLengthMin {
+		return args, fmt.Errorf("Error validation: old password at least consist of 6 characters")
+	}
+	if !helper.IsPassword(params.OldPassword) {
+		return args, fmt.Errorf("Error validation: old password should contains at least uppercase, lowercase, and numeric")
 	}
 
-	password := html.EscapeString(s.Password)
-	cp := html.EscapeString(s.ConfirmPassword)
-
-	regexPassword := []string{`[a-z]`, `[A-Z]`, `[0-9]`}
-	for _, val := range regexPassword {
-		is, _ := regexp.MatchString(val, password)
-		if !is {
-			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
-		}
+	// Password validation
+	if helper.IsEmpty(params.Password) {
+		return args, fmt.Errorf("Error validation: password can't be empty")
+	}
+	if len(params.Password) < alias.UserPasswordLengthMin {
+		return args, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	}
+	if !helper.IsPassword(params.Password) {
+		return args, fmt.Errorf("Error validation: password should contains at least uppercase, lowercase, and numeric")
 	}
 
-	for _, val := range regexPassword {
-		is, _ := regexp.MatchString(val, cp)
-		if !is {
-			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
-		}
+	if params.Password != params.ConfirmPassword {
+		return args, fmt.Errorf("password is not match")
 	}
 
-	if password != cp {
-		return nil, fmt.Errorf("Error validation: Password not match")
-	}
-	args := &setChangePasswordArgs{
-		Password: password,
-	}
-
-	return args, nil
-
-}
-
-func (s signInParams) Validate() (*signInArgs, error) {
-
-	// Email Validation
-	if len(s.Email) < 1 {
-		return nil, fmt.Errorf("Error validation: email cant't be empty")
-	}
-
-	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
-	if err != nil {
-		return nil, err
-	}
-
-	// Password Validation
-	password := html.EscapeString(s.Password)
-	if len(password) < 6 {
-		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
-	}
-
-	args := &signInArgs{
-		Email:    email,
-		Password: password,
+	args = changePasswordArgs{
+		OldPassword: helper.StringToMD5(params.OldPassword),
+		Password:    helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }
 
-func (f forgotRequestParams) Validate() (*forgotRequestArgs, error) {
+func (params forgotParams) Validate() (forgotArgs, error) {
 
-	// Email Validation
-	if len(f.Email) < 1 {
-		return nil, fmt.Errorf("Error validation: email cant't be empty")
+	var args forgotArgs
+	params = forgotParams{
+		Email:      params.Email,
+		IsSendCode: params.IsSendCode,
+		Code:       params.Code,
+		Password:   html.EscapeString(params.Password),
 	}
 
-	email, err := helper.NormalizeEmail(html.EscapeString(f.Email))
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
 	if err != nil {
-		return nil, err
+		return args, fmt.Errorf("Error validation: %s", err.Error())
 	}
 
-	args := &forgotRequestArgs{
-		Email: email,
-	}
-	return args, nil
-}
-
-func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
-
-	// Email Validation
-	if len(f.Email) < 1 {
-		return nil, fmt.Errorf("Error validation: email cant't be empty")
-	}
-
-	email, err := helper.NormalizeEmail(html.EscapeString(f.Email))
-	if err != nil {
-		return nil, err
-	}
-
-	// Password Validation (Optional Field)
-	if len(f.Password) > 0 {
-		f.Password = html.EscapeString(f.Password)
-		if len(f.Password) < 6 {
-			return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	// IsSendCode validation
+	if !helper.IsEmpty(params.IsSendCode) {
+		if params.IsSendCode == "true" {
+			return forgotArgs{
+				Email:      email,
+				IsSendCode: true,
+				Code:       0,
+				Password:   "",
+			}, nil
 		}
 	}
 
 	// Code Validation
-	if len(f.Code) < 1 {
-		return nil, fmt.Errorf("Error validation: code cant't be empty")
-	} else if len(f.Code) != 4 {
-		return nil, fmt.Errorf("Error validation: code must be 4 digits")
+	if helper.IsEmpty(params.Code) {
+		return args, fmt.Errorf("Error validation: code cant't be empty")
+	} else if len(params.Code) != alias.UserCodeLength {
+		return args, fmt.Errorf("Error validation: code must be 4 digits")
 	}
-
-	c, err := strconv.ParseInt(f.Code, 10, 16)
+	code, err := strconv.ParseInt(params.Code, 10, 16)
 	if err != nil {
-		return nil, fmt.Errorf("Error validation: code should be numeric")
+		return args, fmt.Errorf("Error validation: code should be numeric")
 	}
 
-	args := &forgotConfirmationArgs{
-		Email:    email,
-		Code:     uint16(c),
-		Password: f.Password,
+	// Password Validation (Optional Field)
+	if helper.IsEmpty(params.Password) {
+		return forgotArgs{
+			Email:      email,
+			IsSendCode: false,
+			Code:       uint16(code),
+			Password:   "",
+		}, nil
 	}
 
+	// Password validation
+	if len(params.Password) < alias.UserPasswordLengthMin {
+		return args, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	}
+	if !helper.IsPassword(params.Password) {
+		return args, fmt.Errorf("Error validation: password should contains at least uppercase, lowercase, and numeric")
+	}
+
+	args = forgotArgs{
+		Email:      email,
+		IsSendCode: false,
+		Code:       uint16(code),
+		Password:   params.Password,
+	}
 	return args, nil
 }

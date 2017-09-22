@@ -16,6 +16,7 @@ const (
 	ColLineID       = "line_id"
 	ColPhone        = "phone"
 	ColRoleGroupsID = "rolegroups_id"
+	ColPassword     = "password"
 
 	OperatorEquals = "="
 	OperatorIn     = "IN"

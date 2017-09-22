@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/melodiez14/meiko/src/util/helper"
+
 	"database/sql"
 
 	"github.com/julienschmidt/httprouter"
@@ -54,6 +56,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	// check is email registered
 	_, err = user.Get(user.ColEmail).
 		Where(user.ColEmail, user.OperatorEquals, args.Email).
 		Exec()
@@ -64,8 +67,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	// check is id registered
 	_, err = user.Get(user.ColID).
-		Where(user.ColEmail, user.OperatorEquals, args.ID).
+		Where(user.ColID, user.OperatorEquals, args.ID).
 		Exec()
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -98,7 +102,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 }
 
-// EmailActivationHandler handles the http request for resend activation code or activate the email
+// EmailVerificationHandler handles the http request for resend activation code or activate the email
 /*
 	@params:
 		email	= required, email format, 0<characters<45
@@ -249,7 +253,7 @@ func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	return
 }
 
-// ActivationHandler handles the http request for change user status to activated or verified. Accessing this handler needs XUPDATE ability
+// ActivationHandler handles the http request for changing user status to activated or verified. Accessing this handler needs XUPDATE ability
 /*
 	@params:
 		user_id	= required, numeric, characters=12
@@ -332,222 +336,17 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	return
 }
 
-func ForgotRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	u := r.Context().Value("User").(*auth.User)
-	if u != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
-			AddError("You have already logged in"))
-		return
-	}
-
-	param := forgotRequestParams{
-		Email: r.FormValue("email"),
-	}
-
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-
-	us, err := user.GetUserByEmail(args.Email)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Invalid email"))
-		return
-	}
-
-	v, err := user.GenerateVerification(us.ID)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError("Server error"))
-		return
-	}
-
-	// change to email template
-	email.NewRequest(us.Email, "Reset Password").Deliver()
-	// for debugging purposes
-	fmt.Println(v.Code)
-
-	res := forgotRequestResponse{
-		Email:          us.Email,
-		ExpireDuration: v.ExpireDuration,
-		MaxAttempt:     3,
-	}
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetData(res))
-	return
-}
-
-func ForgotConfirmation(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	u := r.Context().Value("User").(*auth.User)
-	if u != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
-			AddError("You have already logged in"))
-		return
-	}
-
-	param := forgotConfirmationParams{
-		Email:    r.FormValue("email"),
-		Code:     r.FormValue("code"),
-		Password: r.FormValue("password"),
-	}
-
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
-			AddError(err.Error()))
-		return
-	}
-
-	v := user.IsValidConfirmationCode(args.Email, args.Code)
-	if !v {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Invalid confirmation code"))
-		return
-	}
-
-	if len(args.Password) < 1 {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusOK))
-		return
-	}
-
-	go user.SetNewPassword(args.Email, args.Password)
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetMessage("New password has been updated").
-		SetCode(http.StatusOK))
-	return
-}
-
-func GetUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	sess := r.Context().Value("User").(*auth.User)
-	val, err := user.GetUserByID(sess.ID)
-
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
-		return
-	}
-
-	s := setUserAccoutArgs{
-		Name:    val.Name,
-		Gender:  val.Gender,
-		Phone:   val.Phone.String,
-		LineID:  val.LineID.String,
-		College: val.College,
-		Note:    val.College,
-	}
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetData(s))
-	return
-
-}
-
-// UpdateUserAccountHandler
-func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	sess := r.Context().Value("User").(*auth.User)
-	param := setUserAccoutParams{
-		Name:    r.FormValue("name"),
-		Gender:  r.FormValue("gender"),
-		Phone:   r.FormValue("phone"),
-		LineID:  r.FormValue("line_id"),
-		College: r.FormValue("College"),
-		Note:    r.FormValue("note"),
-	}
-
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-
-	user.SetUpdateUserAccount(args.Name, args.Phone, args.LineID, args.College, args.Note, args.Gender, sess.ID)
-
-	u, err := user.GetUserByID(sess.ID)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("Internal error"))
-		return
-	}
-	roles := make(map[string][]string)
-	if u.RoleGroupsID.Valid {
-		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
-	}
-
-	s := auth.User{
-		ID:      u.ID,
-		Name:    u.Name,
-		Email:   u.Email,
-		Gender:  u.Gender,
-		College: u.College,
-		Note:    u.Note,
-		Status:  u.Status,
-		Roles:   roles,
-	}
-
-	s.UpdateSession(w)
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetMessage("Data updated").
-		SetCode(http.StatusOK))
-	return
-}
-func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id := r.Context().Value("User").(*auth.User).ID
-	param := setChangePasswordParams{
-		Password:        r.FormValue("password"),
-		ConfirmPassword: r.FormValue("confirmPassword"),
-	}
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-	go user.SetChangePassword(args.Password, id)
-	template.RenderJSONResponse(w, new(template.Response).
-		SetMessage("Password has changed").
-		SetCode(http.StatusOK))
-	return
-}
-
-func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	sess := r.Context().Value("User").(*auth.User)
-	err := sess.DestroySession(r, w)
-
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			SetMessage("Internal server error"))
-	}
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetMessage("Logout success"))
-	return
-}
-
-func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// SignInHandler handles the http request for create a new session of user
+/*
+	@params:
+		email	= required, email format, 0<characters<45
+		password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		email	= risal.falah@gmail.com
+		password= Qwerty123
+	@return
+*/
+func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 	if sess != nil {
@@ -557,12 +356,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		return
 	}
 
-	param := signInParams{
+	params := signInParams{
 		Email:    r.FormValue("email"),
 		Password: r.FormValue("password"),
 	}
 
-	args, err := param.Validate()
+	args, err := params.Validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -612,6 +411,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		College: u.College,
 		Note:    u.Note,
 		Status:  u.Status,
+		LineID:  u.LineID.String,
+		Phone:   u.Phone.String,
 		Roles:   roles,
 	}
 
@@ -626,5 +427,300 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Login success"))
+	return
+}
+
+// ForgotHandler handles the http request for create a new session of user
+// If resend is true so only email and resend is used. It used for requesting the code to send to email
+// If resend is empty so code can't be empty
+// If resend is empty, code is not empty, and password is not empty, it will set the new password
+/*
+	@params:
+		email	= required, email format, 0<characters<45
+		resend	= optional, value=true or empty
+		code	= required if resend is empty, numeric, characters=4
+		password= optional if code is empty, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		email=risal.falah@gmail.com
+		resend=true
+		code=1234 or empty if resend is true
+		password= Qwerty123
+	@return
+*/
+func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if sess != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+
+	params := forgotParams{
+		Email:      r.FormValue("email"),
+		IsSendCode: r.FormValue("resend"),
+		Code:       r.FormValue("code"),
+		Password:   r.FormValue("password"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError(err.Error()))
+		return
+	}
+
+	// if send code to email then return
+	if args.IsSendCode {
+		u, err := user.Get(user.ColID).
+			Where(user.ColEmail, user.OperatorEquals, args.Email).
+			Exec()
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Email is not registered"))
+			return
+		}
+
+		// generate verification code
+		verification, err := user.GenerateVerification(u.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError).
+				AddError("Server error"))
+			return
+		}
+
+		// change to email template
+		email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
+
+		// for debugging purpose
+		fmt.Println(verification.Code)
+
+		res := forgotResponse{
+			Email:          args.Email,
+			ExpireDuration: verification.ExpireDuration,
+			MaxAttempt:     3,
+		}
+
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(res))
+		return
+	}
+
+	v := user.IsValidConfirmationCode(args.Email, args.Code)
+	if !v {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid confirmation code"))
+		return
+	}
+
+	if helper.IsEmpty(args.Password) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK))
+		return
+	}
+
+	go user.SetNewPassword(args.Email, args.Password)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("New password has been updated").
+		SetCode(http.StatusOK))
+	return
+}
+
+func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	u, err := user.Get().Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
+		return
+	}
+
+	var gender string
+	switch u.Gender {
+	case alias.UserGenderMale:
+		gender = "male"
+	case alias.UserGenderFemale:
+		gender = "female"
+	}
+
+	res := getProfileResponse{
+		Name:    u.Name,
+		Gender:  gender,
+		Phone:   u.Phone.String,
+		LineID:  u.LineID.String,
+		College: u.College,
+		Note:    u.College,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+
+}
+
+// UpdateProfileHandler handles the http request for updating the user profile
+/*
+	@params:
+		name	= required, alphaspace, 0<characters<50
+		gender	= optional, male or female
+		phone	= optional, numeric, 10<=characters<=12
+		line_id	= optional, 0<characters<=45
+		college	= optional, 0<characters<=45, alphaspace
+		note	= optional, 0<characters<=100
+	@example:
+		name=Risal Falah
+		gender=male
+		phone=085860141146
+		line_id=risalfa
+		college=Universitas Padjadjaran
+		note=Hello my name is risal
+	@return
+*/
+func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := updateProfileParams{
+		Name:    r.FormValue("name"),
+		Gender:  r.FormValue("gender"),
+		Phone:   r.FormValue("phone"),
+		LineID:  r.FormValue("line_id"),
+		College: r.FormValue("college"),
+		Note:    r.FormValue("note"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	err = user.Update(map[string]interface{}{
+		user.ColName:    args.Name,
+		user.ColPhone:   args.Phone,
+		user.ColLineID:  args.LineID,
+		user.ColCollege: args.College,
+		user.ColNote:    args.Note,
+		user.ColGender:  args.Gender,
+	}).Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal error"))
+		return
+	}
+
+	u, err := user.Get().Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal error"))
+		return
+	}
+
+	roles := make(map[string][]string)
+	if u.RoleGroupsID.Valid {
+		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+	}
+
+	s := auth.User{
+		ID:      u.ID,
+		Name:    u.Name,
+		Email:   u.Email,
+		Gender:  u.Gender,
+		College: u.College,
+		Note:    u.Note,
+		Status:  u.Status,
+		Roles:   roles,
+	}
+
+	s.UpdateSession(w)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Data updated").
+		SetCode(http.StatusOK))
+	return
+}
+
+// ChangePasswordHandler handles the http request for updating user password
+/*
+	@params:
+		old_password			= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+		password				= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+		password_confirmation	= required, should be same as password
+	@example:
+		old_password			= Qwerty123
+		password				= Qwerty321
+		password_confirmation	= Qwerty321
+	@return
+*/
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := changePasswordParams{
+		OldPassword:     r.FormValue("old_password"),
+		Password:        r.FormValue("password"),
+		ConfirmPassword: r.FormValue("password_confirmation"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// Update new password
+	err = user.Update(map[string]interface{}{user.ColPassword: args.Password}).
+		Where(user.ColID, user.OperatorEquals, sess.ID).
+		AndWhere(user.ColPassword, user.OperatorEquals, args.OldPassword).
+		Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Old password is incorrect!"))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Password has been changed").
+		SetCode(http.StatusOK))
+	return
+}
+
+// SignOutHandler handles the http request for destroying the session
+/*
+	@params:
+	@example:
+	@return
+*/
+func SignOutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	err := sess.DestroySession(r, w)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			SetMessage("Internal server error"))
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Logout success"))
 	return
 }

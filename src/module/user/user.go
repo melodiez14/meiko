@@ -12,6 +12,7 @@ import (
 type (
 	QueryGet    struct{ string }
 	QuerySelect struct{ string }
+	QueryUpdate struct{ string }
 )
 
 func Get(column ...string) QueryGet {
@@ -153,6 +154,67 @@ func (q QuerySelect) Exec() ([]User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+func Update(column map[string]interface{}) QueryUpdate {
+	c := []string{"updated_at = NOW()"}
+	for i, v := range column {
+		switch v.(type) {
+		case int, int8, int64:
+			c = append(c, fmt.Sprintf("%s = (%d)", i, v))
+		case string:
+			c = append(c, fmt.Sprintf("%s = ('%s')", i, v))
+		case nil:
+			c = append(c, fmt.Sprintf("%s = NULL", i))
+		}
+	}
+	columnQuery := strings.Join(c, ", ")
+	return QueryUpdate{fmt.Sprintf(queryUpdate, columnQuery)}
+}
+
+func (q QueryUpdate) Where(column, operator string, value interface{}) QueryUpdate {
+	switch value.(type) {
+	case int, int8, int64:
+		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
+	case string:
+		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	default:
+		return q
+	}
+}
+
+func (q QueryUpdate) AndWhere(column, operator string, value interface{}) QueryUpdate {
+	switch value.(type) {
+	case int, int8, int64:
+		return QueryUpdate{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
+	case string:
+		return QueryUpdate{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
+	default:
+		return q
+	}
+}
+
+func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUpdate {
+	switch value.(type) {
+	case int, int8, int64:
+		return QueryUpdate{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
+	case string:
+		return QueryUpdate{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
+	default:
+		return q
+	}
+}
+
+func (q QueryUpdate) Exec() error {
+	result, err := conn.DB.Exec(q.string)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
 }
 
 func GetUserByID(id int64) (User, error) {

@@ -104,16 +104,21 @@ func NormalizeName(name string) (string, error) {
 }
 
 func NormalizeCollege(college string) (string, error) {
+
+	if len(college) > alias.UserCollegeLengthMax {
+		return "", fmt.Errorf("College is too long")
+	}
+
 	return Normalize(college, IsAlphaSpace)
 }
 
 func NormalizeEmail(email string) (string, error) {
 
-	if len(email) < 1 {
+	if IsEmpty(email) {
 		return "", fmt.Errorf("Email can't be empty")
 	}
 
-	if len(email) > 45 {
+	if len(email) > alias.UserEmailLengthMax {
 		return "", fmt.Errorf("Email is too long")
 	}
 

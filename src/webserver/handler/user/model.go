@@ -36,30 +36,24 @@ type signInArgs struct {
 	Password string
 }
 
-type forgotRequestParams struct {
-	Email string
-}
-
-type forgotRequestArgs struct {
-	Email string
-}
-
-type forgotRequestResponse struct {
+type forgotResponse struct {
 	Email          string `json:"email"`
 	ExpireDuration string `json:"expire_duration"`
 	MaxAttempt     uint8  `json:"max_attempt"`
 }
 
-type forgotConfirmationParams struct {
-	Email    string
-	Password string
-	Code     string
+type forgotParams struct {
+	Email      string
+	IsSendCode string
+	Password   string
+	Code       string
 }
 
-type forgotConfirmationArgs struct {
-	Email    string
-	Password string
-	Code     uint16
+type forgotArgs struct {
+	Email      string
+	IsSendCode bool
+	Password   string
+	Code       uint16
 }
 
 type getVerifiedParams struct {
@@ -79,7 +73,7 @@ type getVerifiedResponse struct {
 	Status string `json:"status"`
 }
 
-type setUserAccoutParams struct {
+type updateProfileParams struct {
 	Name    string
 	Gender  string
 	Phone   string
@@ -88,7 +82,7 @@ type setUserAccoutParams struct {
 	Note    string
 }
 
-type setUserAccoutArgs struct {
+type updateProfileArgs struct {
 	Name    string
 	Gender  int8
 	Phone   string
@@ -96,12 +90,25 @@ type setUserAccoutArgs struct {
 	College string
 	Note    string
 }
-type setChangePasswordParams struct {
+
+type getProfileResponse struct {
+	Name    string `json:"name"`
+	Gender  string `json:"gender"`
+	Phone   string `json:"phone"`
+	LineID  string `json:"line_id"`
+	College string `json:"college"`
+	Note    string `json:"note"`
+}
+
+type changePasswordParams struct {
+	OldPassword     string
 	Password        string
 	ConfirmPassword string
 }
-type setChangePasswordArgs struct {
-	Password string
+
+type changePasswordArgs struct {
+	OldPassword string
+	Password    string
 }
 
 type activationParams struct {
