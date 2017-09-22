@@ -96,6 +96,10 @@ func NormalizeName(name string) (string, error) {
 	if len(name) > alias.UserNameLengthMax {
 		return "", fmt.Errorf("name is too long")
 	}
+	name, err := Normalize(name, IsAlphaSpace)
+	if err != nil {
+		return "", fmt.Errorf("name should be alphabet and space only")
+	}
 	return Normalize(name, IsAlphaSpace)
 }
 

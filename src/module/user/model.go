@@ -5,6 +5,24 @@ import (
 	"time"
 )
 
+const (
+	ColID           = "id"
+	ColName         = "name"
+	ColEmail        = "email"
+	ColGender       = "gender"
+	ColCollege      = "college"
+	ColNote         = "note"
+	ColStatus       = "status"
+	ColLineID       = "line_id"
+	ColPhone        = "phone"
+	ColRoleGroupsID = "rolegroups_id"
+
+	OperatorEquals = "="
+	OperatorIn     = "IN"
+	OperatorMore   = ">"
+	OperatorLess   = "<"
+)
+
 type User struct {
 	ID           int64          `db:"id"`
 	Name         string         `db:"name"`

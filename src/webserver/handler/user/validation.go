@@ -10,18 +10,11 @@ import (
 	"regexp"
 
 	"github.com/melodiez14/meiko/src/util/helper"
-	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
 func (params signUpParams) Validate() (signUpArgs, error) {
 
 	var args signUpArgs
-	params = signUpParams{
-		ID:       html.EscapeString(params.ID),
-		Name:     html.EscapeString(params.Name),
-		Email:    html.EscapeString(params.Email),
-		Password: html.EscapeString(params.Password),
-	}
 
 	// ID validation
 	id, err := helper.NormalizeUserID(params.ID)
@@ -58,6 +51,106 @@ func (params signUpParams) Validate() (signUpArgs, error) {
 		Email:    email,
 		Password: params.Password,
 	}
+	return args, nil
+}
+
+func (params emailVerificationParams) Validate() (emailVerificationArgs, error) {
+
+	var args emailVerificationArgs
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, err
+	}
+
+	// IsResendCode validation
+	isResendCode := false
+	if len(params.IsResendCode) > 0 {
+		if params.IsResendCode == "true" {
+			isResendCode = true
+		}
+	}
+
+	// Code validation: if isResendCode is true, pass the Code validation
+	var code int64
+	if !isResendCode {
+		if helper.IsEmpty(params.Code) {
+			return args, fmt.Errorf("Error validation: Code can't be empty")
+		} else if len(params.Code) != 4 {
+			return args, fmt.Errorf("Error validation: Wrong code")
+		}
+		code, err = strconv.ParseInt(params.Code, 10, 16)
+		if err != nil {
+			return args, fmt.Errorf("Error validation: Wrong code")
+		}
+	}
+
+	args = emailVerificationArgs{
+		Email:        email,
+		IsResendCode: isResendCode,
+		Code:         uint16(code),
+	}
+	return args, nil
+}
+
+func (params getVerifiedParams) Validate() (getVerifiedArgs, error) {
+
+	var args getVerifiedArgs
+	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	page, err := strconv.ParseInt(params.Page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	total, err := strconv.ParseInt(params.Total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	args = getVerifiedArgs{
+		Page:  page,
+		Total: total,
+	}
+	return args, nil
+}
+
+func (params activationParams) Validate() (activationArgs, error) {
+
+	var args activationArgs
+	// Check is params empty
+	if helper.IsEmpty(params.ID) || helper.IsEmpty(params.Status) {
+		return args, fmt.Errorf("Bad Request")
+	}
+
+	id, err := strconv.ParseInt(params.ID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	var status int8
+	switch params.Status {
+	case "active":
+		status = alias.UserStatusActivated
+	case "inactive":
+		status = alias.UserStatusVerified
+	default:
+		return args, fmt.Errorf("Error validation: wrong status")
+	}
+
+	args = activationArgs{
+		ID:     id,
+		Status: status,
+	}
+
 	return args, nil
 }
 
@@ -186,47 +279,6 @@ func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
 	return args, nil
 
 }
-func (s setStatusUserParams) Validate() (*setStatusUserArgs, error) {
-	// Email Validation
-	if len(s.Email) < 1 {
-		return nil, fmt.Errorf("Error validation: email cant't be empty")
-	}
-	if len(s.Email) > 45 {
-		return nil, fmt.Errorf("Error validation : email too longer")
-	}
-
-	if !validator.IsEmail(s.Email) {
-		return nil, fmt.Errorf("%s is not an email", s.Email)
-	}
-	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
-	if err != nil {
-		return nil, err
-	}
-
-	//Code Validation
-	if len(s.Code) < 1 {
-		return nil, fmt.Errorf("Error validation : Code can't be empty")
-	} else if len(s.Code) != 4 {
-		return nil, fmt.Errorf("Error validation : Wrong code")
-	}
-	val, err := regexp.MatchString(`[0-9]+$`, s.Code)
-	if !val || err != nil {
-		return nil, fmt.Errorf("Error validation: Wrong code")
-	}
-
-	c, err := strconv.ParseInt(s.Code, 10, 16)
-	if err != nil {
-		return nil, fmt.Errorf("Error validation: Wrong code")
-	}
-
-	args := &setStatusUserArgs{
-		Email: email,
-		Code:  uint16(c),
-	}
-
-	return args, nil
-
-}
 
 func (s signInParams) Validate() (*signInArgs, error) {
 
@@ -307,36 +359,6 @@ func (f forgotConfirmationParams) Validate() (*forgotConfirmationArgs, error) {
 		Email:    email,
 		Code:     uint16(c),
 		Password: f.Password,
-	}
-
-	return args, nil
-}
-
-func (param activationParams) Validate() (*activationArgs, error) {
-
-	// Check is param empty
-	if len(param.ID) < 1 || len(param.Status) < 1 {
-		return nil, fmt.Errorf("Bad Request")
-	}
-
-	id, err := strconv.ParseInt(param.ID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("Error validation: ID should be numeric")
-	}
-
-	var status int8
-	switch param.Status {
-	case "active":
-		status = alias.UserStatusActivated
-	case "inactive":
-		status = alias.UserStatusVerified
-	default:
-		return nil, fmt.Errorf("Error validation: wrong status")
-	}
-
-	args := &activationArgs{
-		ID:     id,
-		Status: status,
 	}
 
 	return args, nil

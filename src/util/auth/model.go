@@ -8,5 +8,7 @@ type User struct {
 	College string              `json:"college"`
 	Note    string              `json:"note"`
 	Roles   map[string][]string `json:"roles"`
+	LineID  string              `json:"line_id"`
+	Phone   string              `json:"phone"`
 	Status  int8                `json:"active"`
 }

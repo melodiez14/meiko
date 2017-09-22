@@ -18,21 +18,21 @@ import (
 // SignUpHandler handles the http request for first registration process
 /*
 	@params:
-		id		= required, numeric, characters=12
+		user_id	= required, numeric, characters=12
 		name	= required, alphaspace, 0<characters<50
 		email	= required, email format, 0<characters<45
 		password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 	@example:
-		id=140810140016,
-		name=Risal Falah,
-		email=risal.falah@gmail.com,
+		id=140810140016
+		name=Risal Falah
+		email=risal.falah@gmail.com
 		password=Qwerty1
 	@return
 */
 func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	u := r.Context().Value("User").(*auth.User)
-	if u != nil {
+	sess := r.Context().Value("User").(*auth.User)
+	if sess != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusFound).
 			AddError("You have already logged in"))
@@ -40,7 +40,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := signUpParams{
-		ID:       r.FormValue("id"),
+		ID:       r.FormValue("user_id"),
 		Name:     r.FormValue("name"),
 		Email:    r.FormValue("email"),
 		Password: r.FormValue("password"),
@@ -54,7 +54,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	_, err = user.GetUserByEmail(args.Email)
+	_, err = user.Get(user.ColEmail).
+		Where(user.ColEmail, user.OperatorEquals, args.Email).
+		Exec()
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -62,7 +64,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	_, err = user.GetUserByID(args.ID)
+	_, err = user.Get(user.ColID).
+		Where(user.ColEmail, user.OperatorEquals, args.ID).
+		Exec()
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -73,7 +77,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	user.InsertNewUser(args.ID, args.Name, args.Email, args.Password)
 
 	// send code activation to email
-	g, err := user.GenerateVerification(args.ID)
+	verification, err := user.GenerateVerification(args.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -82,16 +86,250 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// change to email template
-	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", g.Code)).Deliver()
+	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
 
 	// for debugging purpose
-	fmt.Println(g.Code)
+	fmt.Println(verification.Code)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("SignUp success"))
 	return
 
+}
+
+// EmailActivationHandler handles the http request for resend activation code or activate the email
+/*
+	@params:
+		email	= required, email format, 0<characters<45
+		resend	= optional, value=true or empty
+		code	= required if resend is empty, numeric, characters=4
+	@example:
+		email=risal.falah@gmail.com
+		resend=true
+		code=1234 or empty if resend is true
+	@return
+*/
+func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if sess != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+
+	params := emailVerificationParams{
+		Email:        r.FormValue("email"),
+		IsResendCode: r.FormValue("resend"),
+		Code:         r.FormValue("code"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	u, err := user.Get(user.ColID).
+		Where(user.ColEmail, user.OperatorEquals, args.Email).
+		AndWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusUnverified).
+		Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid email or has been verified"))
+		return
+	}
+
+	if args.IsResendCode {
+		// generate verification code
+		verification, err := user.GenerateVerification(u.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError).
+				AddError("Server error"))
+			return
+		}
+
+		// change to email template
+		email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
+
+		// for debugging purpose
+		fmt.Println(verification.Code)
+
+		template.RenderJSONResponse(w, new(template.Response).
+			SetMessage(fmt.Sprintf("Code has been sent to email")).
+			SetCode(http.StatusOK))
+		return
+	}
+
+	valid := user.IsValidConfirmationCode(args.Email, args.Code)
+	if !valid {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid confirmation code"))
+		return
+	}
+
+	go user.SetStatus(args.Email, alias.UserStatusVerified)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage(fmt.Sprintf("Your account %s is being activated by admin", args.Email)).
+		SetCode(http.StatusOK))
+	return
+}
+
+// ReadUserHandler handles the http request for listing all verified and activated users. Accessing this handler needs XREAD ability
+/*
+	@params:
+		pg	= required, positive numeric
+		ttl	= required, positive numeric
+	@example:
+		pg=1
+		ttl=10
+	@return
+		[]{name, email, status, user_id}
+*/
+func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := getVerifiedParams{
+		Page:  r.FormValue("pg"),
+		Total: r.FormValue("ttl"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(err.Error()))
+		return
+	}
+
+	// get verified user by page
+	offset := (args.Page - 1) * args.Total
+	u, _ := user.Select(user.ColID, user.ColName, user.ColEmail, user.ColStatus).
+		Where(user.ColStatus, user.OperatorEquals, alias.UserStatusVerified).
+		OrWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusActivated).
+		Limit(args.Total).
+		Offset(offset).
+		Exec()
+
+	var status string
+	res := []getVerifiedResponse{}
+	for _, val := range u {
+		if val.Status == alias.UserStatusActivated {
+			status = "active"
+		} else {
+			status = "inactive"
+		}
+		res = append(res, getVerifiedResponse{
+			Name:   val.Name,
+			Email:  val.Email,
+			ID:     val.ID,
+			Status: status,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// ActivationHandler handles the http request for change user status to activated or verified. Accessing this handler needs XUPDATE ability
+/*
+	@params:
+		user_id	= required, numeric, characters=12
+		status	= required, string
+	@example:
+		user_id = 140810140016
+		status	= active or inactive
+	@return
+*/
+func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := activationParams{
+		ID:     r.FormValue("user_id"),
+		Status: r.FormValue("status"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	var oldStatus int8
+	switch args.Status {
+	case alias.UserStatusVerified:
+		oldStatus = alias.UserStatusActivated
+	case alias.UserStatusActivated:
+		oldStatus = alias.UserStatusVerified
+	}
+
+	u, err := user.Get().
+		Where(user.ColID, user.OperatorEquals, args.ID).
+		AndWhere(user.ColStatus, user.OperatorEquals, oldStatus).
+		Exec()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	go func() {
+		user.SetStatus(u.Email, args.Status)
+
+		roles := make(map[string][]string)
+		if u.RoleGroupsID.Valid {
+			roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+		}
+
+		s := auth.User{
+			ID:      u.ID,
+			Name:    u.Name,
+			Email:   u.Email,
+			Gender:  u.Gender,
+			College: u.College,
+			Note:    u.Note,
+			Status:  u.Status,
+			LineID:  u.LineID.String,
+			Phone:   u.Phone.String,
+			Roles:   roles,
+		}
+
+		s.UpdateSession(w)
+	}()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Status Updated"))
+	return
 }
 
 func ForgotRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -195,110 +433,10 @@ func ForgotConfirmation(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	return
 }
 
-// ActivationHandler is used for activate and deactivate account by admin
-// Params: user_id (ex.140810140016) and status (ex.active or inactive)
-func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	sess := r.Context().Value("User").(*auth.User)
-
-	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXCreate) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
-
-	param := activationParams{
-		ID:     r.FormValue("user_id"),
-		Status: r.FormValue("status"),
-	}
-
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
-		return
-	}
-
-	var oldStatus int8
-	switch args.Status {
-	case alias.UserStatusVerified:
-		oldStatus = alias.UserStatusActivated
-	case alias.UserStatusActivated:
-		oldStatus = alias.UserStatusVerified
-	}
-
-	u, err := user.GetByIDStatus(args.ID, oldStatus)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
-		return
-	}
-
-	go func() {
-		user.SetStatus(u.Email, args.Status)
-
-		roles := make(map[string][]string)
-		if u.RoleGroupsID.Valid {
-			roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
-		}
-
-		s := auth.User{
-			ID:      u.ID,
-			Name:    u.Name,
-			Email:   u.Email,
-			Gender:  u.Gender,
-			College: u.College,
-			Note:    u.Note,
-			Status:  u.Status,
-			Roles:   roles,
-		}
-
-		s.UpdateSession(w)
-	}()
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetMessage("Status Updated"))
-	return
-}
-
-func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	sess := r.Context().Value("User").(*auth.User)
-
-	// need confirmation
-	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXRead) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
-
-	// should add pagination and status activated
-	u, _ := user.GetByStatus(alias.UserStatusVerified)
-
-	res := []getVerifiedUserResponse{}
-	for _, val := range u {
-		res = append(res, getVerifiedUserResponse{
-			Name:  val.Name,
-			Email: val.Email,
-			ID:    val.ID,
-		})
-	}
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetData(res))
-	return
-}
-
 func GetUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	val, err := user.GetUserByID(sess.ID)
-	fmt.Println(val)
+
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -391,48 +529,6 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		SetMessage("Password has changed").
 		SetCode(http.StatusOK))
 	return
-}
-
-func RequestVerifiedUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	sess := r.Context().Value("User").(*auth.User)
-	if sess != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
-			AddError("You have already logged in"))
-		return
-	}
-	param := setStatusUserParams{
-		Email: r.FormValue("email"),
-		Code:  r.FormValue("code"),
-	}
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-	_, err = user.GetUserByEmail(args.Email)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Invalid email"))
-		return
-	}
-	v := user.IsValidConfirmationCode(args.Email, args.Code)
-	if !v {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Invalid confirmation code"))
-		return
-	}
-	go user.SetStatus(args.Email, alias.UserStatusVerified)
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetMessage(fmt.Sprintf("Your account with this %s is being Verified ", args.Email)).
-		SetCode(http.StatusOK))
-	return
-
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

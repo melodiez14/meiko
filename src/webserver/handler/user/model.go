@@ -14,6 +14,18 @@ type signUpArgs struct {
 	Password string
 }
 
+type emailVerificationParams struct {
+	Email        string
+	IsResendCode string
+	Code         string
+}
+
+type emailVerificationArgs struct {
+	Email        string
+	IsResendCode bool
+	Code         uint16
+}
+
 type signInParams struct {
 	Email    string
 	Password string
@@ -50,19 +62,21 @@ type forgotConfirmationArgs struct {
 	Code     uint16
 }
 
-type getVerifiedUserResponse struct {
-	ID    int64
-	Name  string
-	Email string
-}
-type setStatusUserParams struct {
-	Email string
-	Code  string
+type getVerifiedParams struct {
+	Page  string
+	Total string
 }
 
-type setStatusUserArgs struct {
-	Email string
-	Code  uint16
+type getVerifiedArgs struct {
+	Page  int64
+	Total int64
+}
+
+type getVerifiedResponse struct {
+	ID     int64  `json:"user_id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Status string `json:"status"`
 }
 
 type setUserAccoutParams struct {
