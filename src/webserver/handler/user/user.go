@@ -15,6 +15,85 @@ import (
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
+// SignUpHandler handles the http request for first registration process
+/*
+	@params:
+		id		= required, numeric, characters=12
+		name	= required, alphaspace, 0<characters<50
+		email	= required, email format, 0<characters<45
+		password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		id=140810140016,
+		name=Risal Falah,
+		email=risal.falah@gmail.com,
+		password=Qwerty1
+	@return
+*/
+func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	u := r.Context().Value("User").(*auth.User)
+	if u != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusFound).
+			AddError("You have already logged in"))
+		return
+	}
+
+	params := signUpParams{
+		ID:       r.FormValue("id"),
+		Name:     r.FormValue("name"),
+		Email:    r.FormValue("email"),
+		Password: r.FormValue("password"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	_, err = user.GetUserByEmail(args.Email)
+	if err == nil || (err != nil && err != sql.ErrNoRows) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%s has been registered", args.Email)))
+		return
+	}
+
+	_, err = user.GetUserByID(args.ID)
+	if err == nil || (err != nil && err != sql.ErrNoRows) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%d has been registered!", args.ID)))
+		return
+	}
+
+	user.InsertNewUser(args.ID, args.Name, args.Email, args.Password)
+
+	// send code activation to email
+	g, err := user.GenerateVerification(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Server error"))
+		return
+	}
+
+	// change to email template
+	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", g.Code)).Deliver()
+
+	// for debugging purpose
+	fmt.Println(g.Code)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("SignUp success"))
+	return
+
+}
+
 func ForgotRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	u := r.Context().Value("User").(*auth.User)
@@ -186,71 +265,6 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	return
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	u := r.Context().Value("User").(*auth.User)
-	if u != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
-			AddError("You have already logged in"))
-		return
-	}
-
-	param := signUpParams{
-		ID:       r.FormValue("id"),
-		Name:     r.FormValue("name"),
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-	}
-
-	args, err := param.Validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-
-	us, err := user.GetUserByEmail(args.Email)
-	if (err != nil || us != nil) && err != sql.ErrNoRows {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%s has been registered", args.Email)))
-		return
-	}
-
-	id, err := user.GetUserByID(args.ID)
-	if (err != nil || id != nil) && err != sql.ErrNoRows {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%d has been registered!", args.ID)))
-		return
-	}
-
-	user.InsertNewUser(args.ID, args.Name, args.Email, args.Password)
-
-	// send code activation  to email
-	g, err := user.GenerateVerification(args.ID)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError("Server error"))
-		return
-	}
-
-	// change to email template
-	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", g.Code)).Deliver()
-
-	// for debugging purpose
-	fmt.Println(g.Code)
-
-	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK).
-		SetMessage("Sign Up success"))
-	return
-
-}
-
 func GetValidatedUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -307,7 +321,7 @@ func GetUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 
 }
 
-//UpdateUserAccountHandler
+// UpdateUserAccountHandler
 func UpdateUserAccountHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	param := setUserAccoutParams{

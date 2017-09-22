@@ -13,62 +13,137 @@ import (
 	validator "gopkg.in/asaskevich/govalidator.v4"
 )
 
-// ongoing
-func (s setUserAccoutParams) Validate() (*setUserAccoutArgs, error) {
+func (params signUpParams) Validate() (signUpArgs, error) {
+
+	var args signUpArgs
+	params = signUpParams{
+		ID:       html.EscapeString(params.ID),
+		Name:     html.EscapeString(params.Name),
+		Email:    html.EscapeString(params.Email),
+		Password: html.EscapeString(params.Password),
+	}
+
+	// ID validation
+	id, err := helper.NormalizeUserID(params.ID)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
+	}
+
 	// Name validation
-	if len(s.Name) < 1 {
-		return nil, fmt.Errorf("Error validation: name cant't be empty")
-	}
-	if len(s.Name) > 50 {
-		return nil, fmt.Errorf("Error validation: name cant't to long")
+	name, err := helper.NormalizeName(params.Name)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
 	}
 
-	v, err := regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Name))
-	if !v || err != nil {
-		return nil, fmt.Errorf("Error validation: name contains alphabet only")
-	}
-	//Gender
-	if len(s.Gender) != 1 {
-		return nil, fmt.Errorf("Error validation : wrong input gender")
-	}
-	v, err = regexp.MatchString(`[0-2]+$`, html.EscapeString(s.Gender))
-	if !v || err != nil {
-		return nil, fmt.Errorf("Error validation: wrong input gender")
-	}
-	// Phone process
-	if len(s.Phone) < 12 && len(s.Phone) > 1 || len(s.Phone) > 14 {
-		return nil, fmt.Errorf("Error validation : wrong input phone number")
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
 	}
 
-	v, err = regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Phone))
-	if v || err != nil {
-		return nil, fmt.Errorf("Error validation: wrong input phone number")
+	// Password validation
+	if helper.IsEmpty(params.Password) {
+		return args, fmt.Errorf("Error validation: password can't be empty")
 	}
-	//Line ID
-	if len(s.LineID) > 45 {
-		return nil, fmt.Errorf("Error validation: Line Id too long")
+	if len(params.Password) < alias.UserPasswordLengthMin {
+		return args, fmt.Errorf("Error validation: password at least consist of 6 characters")
+	}
+	if !helper.IsPassword(params.Password) {
+		return args, fmt.Errorf("Error validation: password should contains at least uppercase, lowercase, and numeric")
 	}
 
-	//College
-	if len(s.College) > 100 {
-		return nil, fmt.Errorf("Error validation: College too long")
-	}
-	//Note
-	if len(s.Note) > 100 {
-		return nil, fmt.Errorf("Error validation: Note too long")
-	}
-	i, _ := strconv.ParseInt(s.Gender, 10, 8)
-	gender := int8(i)
-	args := &setUserAccoutArgs{
-		Name:    s.Name,
-		Gender:  gender,
-		Phone:   s.Phone,
-		LineID:  s.LineID,
-		College: s.College,
-		Note:    s.Note,
+	args = signUpArgs{
+		ID:       id,
+		Name:     name,
+		Email:    email,
+		Password: params.Password,
 	}
 	return args, nil
 }
+
+func (params setUserAccoutParams) Validate() (setUserAccoutArgs, error) {
+
+	var args setUserAccoutArgs
+	params = setUserAccoutParams{
+		Name:    params.Name,
+		Note:    html.EscapeString(params.Note),
+		Gender:  params.Gender,
+		College: params.College,
+		Phone:   params.Phone,
+		LineID:  html.EscapeString(params.LineID),
+	}
+
+	// Name validation
+	if len(params.Name) < 1 {
+		return args, fmt.Errorf("Error validation: name cant't be empty")
+	}
+	if len(params.Name) > 50 {
+		return args, fmt.Errorf("Error validation: name is too long")
+	}
+	name, err := helper.NormalizeName(params.Name)
+	if err != nil {
+		return args, err
+	}
+
+	// gender validation
+	var gender int8 = alias.UserGenderUndefined
+	if len(params.Gender) > 0 {
+		switch params.Gender {
+		case "male":
+			gender = alias.UserGenderMale
+		case "female":
+			gender = alias.UserGenderFemale
+		default:
+			return args, fmt.Errorf("Error validation: wrong gender")
+		}
+	}
+
+	// Phone validation (can be empty)
+	if len(params.Phone) > 0 {
+		if !helper.IsPhone(params.Phone) {
+			return args, fmt.Errorf("Error validation: wrong input gender")
+		}
+	}
+
+	// Line verification (can be empty)
+	if len(params.LineID) > 0 {
+		if len(params.LineID) > 45 {
+			return args, fmt.Errorf("Error validation: Line Id too long")
+		}
+	}
+
+	// College validation (need more validation)
+	var college string
+	if len(params.College) > 0 {
+		if len(params.College) > 100 {
+			return args, fmt.Errorf("Error validation: College too long")
+		}
+		college, err = helper.NormalizeCollege(params.College)
+		if err != nil {
+			return args, fmt.Errorf("Error validation: Not valid college")
+		}
+
+	}
+
+	// Note validation
+	if len(params.Note) > 0 {
+		if len(params.Note) > 100 {
+			return args, fmt.Errorf("Error validation: Note too long")
+		}
+	}
+
+	args = setUserAccoutArgs{
+		Name:    name,
+		Gender:  gender,
+		Phone:   params.Phone,
+		LineID:  params.LineID,
+		College: college,
+		Note:    params.Note,
+	}
+
+	return args, nil
+}
+
 func (s setChangePasswordParams) Validate() (*setChangePasswordArgs, error) {
 	// Password
 	if len(s.Password) < 1 {
@@ -151,74 +226,6 @@ func (s setStatusUserParams) Validate() (*setStatusUserArgs, error) {
 
 	return args, nil
 
-}
-func (s signUpParams) Validate() (*signUpArgs, error) {
-
-	// Email Validation
-	if len(s.Email) < 1 {
-		return nil, fmt.Errorf("Error validation: email cant't be empty")
-	}
-	if len(s.Email) > 45 {
-		return nil, fmt.Errorf("Error validation : email too longer")
-	}
-
-	if !validator.IsEmail(s.Email) {
-		return nil, fmt.Errorf("%s is not an email", s.Email)
-	}
-	email, err := helper.NormalizeEmail(html.EscapeString(s.Email))
-	if err != nil {
-		return nil, err
-	}
-
-	// Password Validation
-	password := html.EscapeString(s.Password)
-	if len(password) < 1 {
-		return nil, fmt.Errorf("Error validation: password can't be empty")
-	}
-	if len(password) < 6 {
-		return nil, fmt.Errorf("Error validation: password at least consist of 6 characters")
-	}
-	regexPassword := []string{`[a-z]`, `[A-Z]`, `[0-9]`}
-	for _, val := range regexPassword {
-		is, _ := regexp.MatchString(val, password)
-		if !is {
-			return nil, fmt.Errorf("Error validation: password must contains alphanumeric upper and lower case")
-		}
-	}
-	// ID validation
-	if len(s.ID) < 1 {
-		return nil, fmt.Errorf("Error validation: ID can't be empty")
-	}
-
-	if len(s.ID) != 12 {
-		return nil, fmt.Errorf(fmt.Sprintf("ID : %s is wrong", s.ID))
-	}
-
-	id, err := strconv.ParseInt(s.ID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("Error validation: ID must be numeric")
-	}
-
-	// Name validation
-	if len(s.Name) < 1 {
-		return nil, fmt.Errorf("Error validation: name cant't be empty")
-	}
-	if len(s.Name) > 50 {
-		return nil, fmt.Errorf("Error validation: name cant't to long")
-	}
-
-	v, err := regexp.MatchString(`[A-z]+$`, html.EscapeString(s.Name))
-	if !v || err != nil {
-		return nil, fmt.Errorf("Error validation: name contains alphabet only")
-	}
-	// Result
-	args := &signUpArgs{
-		ID:       id,
-		Name:     s.Name,
-		Email:    email,
-		Password: s.Password,
-	}
-	return args, nil
 }
 
 func (s signInParams) Validate() (*signInArgs, error) {

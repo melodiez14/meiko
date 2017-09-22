@@ -8,4 +8,7 @@ const (
 	UserGenderUndefined = 0
 	UserGenderMale      = 1
 	UserGenderFemale    = 2
+
+	UserNameLengthMax     = 50
+	UserPasswordLengthMin = 6
 )

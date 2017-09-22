@@ -8,22 +8,22 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetUserByID(id int64) (*User, error) {
-	user := &User{}
+func GetUserByID(id int64) (User, error) {
+	var user User
 	query := fmt.Sprintf(getUserByIDQuery, id)
-	err := conn.DB.Get(user, query)
+	err := conn.DB.Get(&user, query)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 	return user, nil
 }
 
-func GetUserByEmail(email string) (*User, error) {
-	user := &User{}
+func GetUserByEmail(email string) (User, error) {
+	var user User
 	query := fmt.Sprintf(getUserEmailQuery, email)
-	err := conn.DB.Get(user, query)
+	err := conn.DB.Get(&user, query)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 	return user, nil
 
@@ -38,9 +38,9 @@ func SetChangePassword(password string, id int64) {
 	_ = conn.DB.MustExec(query)
 }
 
-func GenerateVerification(id int64) (*Verification, error) {
+func GenerateVerification(id int64) (Verification, error) {
 
-	v := &Verification{
+	v := Verification{
 		Code:           uint16(rand.Intn(8999) + 1000),
 		ExpireDuration: "30 Minutes",
 		ExpireDate:     time.Now().Add(30 * time.Minute),
@@ -51,7 +51,7 @@ func GenerateVerification(id int64) (*Verification, error) {
 	result := conn.DB.MustExec(query)
 	count, _ := result.RowsAffected()
 	if count < 1 {
-		return nil, fmt.Errorf("Error executing query")
+		return v, fmt.Errorf("Error executing query")
 	}
 
 	return v, nil
@@ -88,12 +88,12 @@ func SetStatus(email string, status int8) {
 	_ = conn.DB.MustExec(query)
 }
 
-func GetUserLogin(email, password string) (*User, error) {
-	user := &User{}
+func GetUserLogin(email, password string) (User, error) {
+	var user User
 	query := fmt.Sprintf(getUserLoginQuery, email, password)
-	err := conn.DB.Get(user, query)
+	err := conn.DB.Get(&user, query)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 
 	return user, nil
@@ -115,12 +115,12 @@ func GetByStatus(status int8) ([]User, error) {
 	return users, nil
 }
 
-func GetByIDStatus(id int64, status int8) (*User, error) {
-	user := &User{}
+func GetByIDStatus(id int64, status int8) (User, error) {
+	var user User
 	query := fmt.Sprintf(getUserByIDStatusQuery, id, status)
-	err := conn.DB.Get(user, query)
+	err := conn.DB.Get(&user, query)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 
 	return user, nil
