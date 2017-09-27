@@ -1,12 +1,10 @@
-package user
+package information
 
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 )
@@ -16,15 +14,12 @@ func Get(column ...string) QueryGet {
 	if len(column) < 1 {
 		c = []string{
 			ColID,
-			ColName,
-			ColEmail,
-			ColGender,
-			ColCollege,
-			ColNote,
-			ColStatus,
-			ColLineID,
-			ColPhone,
-			ColRoleGroupsID,
+			ColTitle,
+			ColDescription,
+			ColType,
+			ColCourseID,
+			ColCreatedAt,
+			ColUpdatedAt,
 		}
 	} else {
 		for _, v := range column {
@@ -68,14 +63,14 @@ func (q QueryGet) OrWhere(column, operator string, value interface{}) QueryGet {
 	}
 }
 
-func (q QueryGet) Exec() (User, error) {
-	var user User
+func (q QueryGet) Exec() (Information, error) {
+	var information Information
 	query := fmt.Sprintf("%s LIMIT 1", q.string)
-	err := conn.DB.Get(&user, query)
+	err := conn.DB.Get(&information, query)
 	if err != nil {
-		return user, err
+		return information, err
 	}
-	return user, nil
+	return information, nil
 }
 
 func Select(column ...string) QuerySelect {
@@ -83,15 +78,12 @@ func Select(column ...string) QuerySelect {
 	if len(column) < 1 {
 		c = []string{
 			ColID,
-			ColName,
-			ColEmail,
-			ColGender,
-			ColCollege,
-			ColNote,
-			ColStatus,
-			ColLineID,
-			ColPhone,
-			ColRoleGroupsID,
+			ColTitle,
+			ColDescription,
+			ColType,
+			ColCourseID,
+			ColCreatedAt,
+			ColUpdatedAt,
 		}
 	} else {
 		for _, v := range column {
@@ -108,6 +100,14 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -119,6 +119,14 @@ func (q QuerySelect) AndWhere(column, operator string, value interface{}) QueryS
 		return QuerySelect{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s AND %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -130,9 +138,26 @@ func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySe
 		return QuerySelect{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s OR %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
+}
+
+func (q QuerySelect) OrderBy(column, order string) QuerySelect {
+
+	if order != OrderAsc && order != OrderDesc {
+		return q
+	}
+
+	return QuerySelect{fmt.Sprintf("%s ORDER BY %s %s", q.string, column, order)}
 }
 
 func (q QuerySelect) Limit(value uint16) QuerySelect {
@@ -143,13 +168,14 @@ func (q QuerySelect) Offset(value uint16) QuerySelect {
 	return QuerySelect{fmt.Sprintf("%s OFFSET %d", q.string, value)}
 }
 
-func (q QuerySelect) Exec() ([]User, error) {
-	var user []User
-	err := conn.DB.Select(&user, q.string)
+func (q QuerySelect) Exec() ([]Information, error) {
+	fmt.Println(q.string)
+	var informations []Information
+	err := conn.DB.Select(&informations, q.string)
 	if err != nil {
-		return user, err
+		return informations, err
 	}
-	return user, nil
+	return informations, nil
 }
 
 func Insert(column map[string]interface{}) QueryInsert {
@@ -164,6 +190,14 @@ func Insert(column map[string]interface{}) QueryInsert {
 		case string:
 			c = append(c, i)
 			v = append(v, fmt.Sprintf("('%s')", val))
+		case sql.NullString:
+			str := reflect.ValueOf(val).Interface().(sql.NullString)
+			c = append(c, i)
+			if str.Valid {
+				v = append(v, fmt.Sprintf("('%s')", str.String))
+			} else {
+				v = append(v, fmt.Sprintf("(NULL)"))
+			}
 		}
 	}
 	columnQuery := strings.Join(c, ", ")
@@ -247,49 +281,4 @@ func (q QueryUpdate) Exec() error {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
-}
-
-func GenerateVerification(id int64) (Verification, error) {
-
-	v := Verification{
-		Code:           uint16(rand.Intn(8999) + 1000),
-		ExpireDuration: "30 Minutes",
-		ExpireDate:     time.Now().Add(30 * time.Minute),
-		Attempt:        0,
-	}
-
-	query := fmt.Sprintf(generateVerificationQuery, v.Code, id)
-	result := conn.DB.MustExec(query)
-	count, _ := result.RowsAffected()
-	if count < 1 {
-		return v, fmt.Errorf("Error executing query")
-	}
-
-	return v, nil
-}
-
-func IsValidConfirmationCode(email string, code uint16) bool {
-	var c Confirmation
-	query := fmt.Sprintf(getConfirmationQuery, email)
-	err := conn.DB.Get(&c, query)
-	if err != nil {
-		return false
-	}
-
-	if !c.Attempt.Valid || c.Attempt.Int64 >= 3 {
-		return false
-	}
-
-	if !c.Code.Valid || c.Code.Int64 != int64(code) {
-		query = fmt.Sprintf(attemptIncrementQuery, c.ID)
-		_ = conn.DB.MustExec(query)
-		return false
-	}
-
-	return true
-}
-
-func UpdateNewPassword(email, password string) {
-	query := fmt.Sprintf(updateNewPasswordQuery, password, email)
-	_ = conn.DB.MustExec(query)
 }

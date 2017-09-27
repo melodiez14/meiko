@@ -7,7 +7,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetByPage(page, offset uint16) ([]Module, error) {
+func SelectByPage(page, offset uint16) ([]Module, error) {
 	modules := []Module{}
 	query := fmt.Sprintf(getQuery, page, offset)
 	err := conn.DB.Select(&modules, query)

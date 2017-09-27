@@ -25,6 +25,13 @@ const (
 	OperatorLess    = "<"
 )
 
+type (
+	QueryGet    struct{ string }
+	QuerySelect struct{ string }
+	QueryInsert struct{ string }
+	QueryUpdate struct{ string }
+)
+
 type User struct {
 	ID           int64          `db:"id"`
 	Name         string         `db:"name"`

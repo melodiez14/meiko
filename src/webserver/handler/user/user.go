@@ -20,12 +20,12 @@ import (
 // SignUpHandler handles the http request for first registration process
 /*
 	@params:
-		user_id	= required, numeric, characters=12
+		npm		= required, numeric, characters=12
 		name	= required, alphaspace, 0<characters<50
 		email	= required, email format, 0<characters<45
 		password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 	@example:
-		id=140810140016
+		npm=140810140016
 		name=Risal Falah
 		email=risal.falah@gmail.com
 		password=Qwerty1
@@ -42,7 +42,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := signUpParams{
-		ID:       r.FormValue("user_id"),
+		ID:       r.FormValue("npm"),
 		Name:     r.FormValue("name"),
 		Email:    r.FormValue("email"),
 		Password: r.FormValue("password"),
@@ -269,10 +269,10 @@ func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 // ActivationHandler handles the http request for changing user status to activated or verified. Accessing this handler needs XUPDATE ability
 /*
 	@params:
-		user_id	= required, numeric, characters=12
+		npm		= required, numeric, characters=12
 		status	= required, string
 	@example:
-		user_id = 140810140016
+		npm		= 140810140016
 		status	= active or inactive
 	@return
 */
@@ -288,7 +288,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	params := activationParams{
-		ID:     r.FormValue("user_id"),
+		ID:     r.FormValue("npm"),
 		Status: r.FormValue("status"),
 	}
 
@@ -332,16 +332,15 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 
 		s := auth.User{
-			ID:      u.ID,
-			Name:    u.Name,
-			Email:   u.Email,
-			Gender:  u.Gender,
-			College: u.College,
-			Note:    u.Note,
-			Status:  u.Status,
-			LineID:  u.LineID.String,
-			Phone:   u.Phone.String,
-			Roles:   roles,
+			ID:     u.ID,
+			Name:   u.Name,
+			Email:  u.Email,
+			Gender: u.Gender,
+			Note:   u.Note,
+			Status: u.Status,
+			LineID: u.LineID.String,
+			Phone:  u.Phone.String,
+			Roles:  roles,
 		}
 
 		s.UpdateSession(w)
@@ -424,16 +423,15 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	s := auth.User{
-		ID:      u.ID,
-		Name:    u.Name,
-		Email:   u.Email,
-		Gender:  u.Gender,
-		College: u.College,
-		Note:    u.Note,
-		Status:  u.Status,
-		LineID:  u.LineID.String,
-		Phone:   u.Phone.String,
-		Roles:   roles,
+		ID:     u.ID,
+		Name:   u.Name,
+		Email:  u.Email,
+		Gender: u.Gender,
+		Note:   u.Note,
+		Status: u.Status,
+		LineID: u.LineID.String,
+		Phone:  u.Phone.String,
+		Roles:  roles,
 	}
 
 	err = s.SetSession(w)
@@ -553,6 +551,21 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// GetProfileHandler handles the http request for listing all profile information
+/*
+	@params:
+	@example:
+	@return
+		npm			= 140810140016
+		name 		= Risal Falah
+		email		= risal.falah@gmail.com
+		gender 		= male or female
+		phone 		= 085860141146
+		line_id 	= risalfa
+		about_me	= hello my name is risal falah, you can call me ical
+		img			= /api/v1/img/pl
+		img_t		= /api/v1/img/pl_t
+*/
 func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -574,12 +587,15 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	res := getProfileResponse{
-		Name:    u.Name,
-		Gender:  gender,
-		Phone:   u.Phone.String,
-		LineID:  u.LineID.String,
-		College: u.College,
-		Note:    u.Note,
+		ID:                    u.ID,
+		Name:                  u.Name,
+		Email:                 u.Email,
+		Gender:                gender,
+		Phone:                 u.Phone.String,
+		LineID:                u.LineID.String,
+		Note:                  u.Note,
+		ImageProfile:          alias.URLProfile,
+		ImageProfileThumbnail: alias.URLProfileThumbnail,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -596,14 +612,12 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		gender	= optional, male or female
 		phone	= optional, numeric, 10<=characters<=12
 		line_id	= optional, 0<characters<=45
-		college	= optional, 0<characters<=45, alphaspace
 		note	= optional, 0<characters<=100
 	@example:
 		name=Risal Falah
 		gender=male
 		phone=085860141146
 		line_id=risalfa
-		college=Universitas Padjadjaran
 		note=Hello my name is risal
 	@return
 */
@@ -611,12 +625,13 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	sess := r.Context().Value("User").(*auth.User)
 	params := updateProfileParams{
-		Name:    r.FormValue("name"),
-		Gender:  r.FormValue("gender"),
-		Phone:   r.FormValue("phone"),
-		LineID:  r.FormValue("line_id"),
-		College: r.FormValue("college"),
-		Note:    r.FormValue("note"),
+		ID:     r.FormValue("npm"),
+		Name:   r.FormValue("name"),
+		Email:  r.FormValue("email"),
+		Gender: r.FormValue("gender"),
+		Phone:  r.FormValue("phone"),
+		LineID: r.FormValue("line_id"),
+		Note:   r.FormValue("about_me"),
 	}
 
 	args, err := params.Validate()
@@ -624,6 +639,13 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError(err.Error()))
+		return
+	}
+
+	if args.ID != sess.ID || args.Email != sess.Email {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
 		return
 	}
 
@@ -654,12 +676,11 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	err = user.Update(map[string]interface{}{
-		user.ColName:    args.Name,
-		user.ColPhone:   args.Phone,
-		user.ColLineID:  args.LineID,
-		user.ColCollege: args.College,
-		user.ColNote:    args.Note,
-		user.ColGender:  args.Gender,
+		user.ColName:   args.Name,
+		user.ColPhone:  args.Phone,
+		user.ColLineID: args.LineID,
+		user.ColNote:   args.Note,
+		user.ColGender: args.Gender,
 	}).Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -703,10 +724,14 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 // ChangePasswordHandler handles the http request for updating user password
 /*
 	@params:
+		npm						= required, numeric, characters=12
+		email					= required, email format, 0<characters<45
 		old_password			= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 		password				= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 		password_confirmation	= required, should be same as password
 	@example:
+		npm=140810140016
+		email=risal.falah@gmail.com
 		old_password			= Qwerty123
 		password				= Qwerty321
 		password_confirmation	= Qwerty321
@@ -717,6 +742,8 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	sess := r.Context().Value("User").(*auth.User)
 
 	params := changePasswordParams{
+		ID:              r.FormValue("npm"),
+		Email:           r.FormValue("email"),
 		OldPassword:     r.FormValue("old_password"),
 		Password:        r.FormValue("password"),
 		ConfirmPassword: r.FormValue("password_confirmation"),
@@ -727,6 +754,13 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError(err.Error()))
+		return
+	}
+
+	if args.ID != sess.ID || args.Email != sess.Email {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
 		return
 	}
 

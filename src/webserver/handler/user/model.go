@@ -66,51 +66,60 @@ type getVerifiedParams struct {
 }
 
 type getVerifiedArgs struct {
-	Page  int64
-	Total int64
+	Page  uint16
+	Total uint16
 }
 
 type getVerifiedResponse struct {
-	ID     int64  `json:"user_id"`
+	ID     int64  `json:"npm"`
 	Name   string `json:"name"`
 	Email  string `json:"email"`
 	Status string `json:"status"`
 }
 
 type updateProfileParams struct {
-	Name    string
-	Gender  string
-	Phone   string
-	LineID  string
-	College string
-	Note    string
+	ID     string
+	Name   string
+	Email  string
+	Gender string
+	Phone  string
+	LineID string
+	Note   string
 }
 
 type updateProfileArgs struct {
-	Name    string
-	Gender  int8
-	Phone   sql.NullString
-	LineID  sql.NullString
-	College string
-	Note    string
+	ID     int64
+	Name   string
+	Email  string
+	Gender int8
+	Phone  sql.NullString
+	LineID sql.NullString
+	Note   string
 }
 
 type getProfileResponse struct {
-	Name    string `json:"name"`
-	Gender  string `json:"gender"`
-	Phone   string `json:"phone"`
-	LineID  string `json:"line_id"`
-	College string `json:"college"`
-	Note    string `json:"note"`
+	ID                    int64  `json:"npm"`
+	Name                  string `json:"name"`
+	Email                 string `json:"email"`
+	Gender                string `json:"gender"`
+	Phone                 string `json:"phone"`
+	LineID                string `json:"line_id"`
+	Note                  string `json:"note"`
+	ImageProfile          string `json:"img"`
+	ImageProfileThumbnail string `json:"img_t"`
 }
 
 type changePasswordParams struct {
+	ID              string
+	Email           string
 	OldPassword     string
 	Password        string
 	ConfirmPassword string
 }
 
 type changePasswordArgs struct {
+	ID          int64
+	Email       string
 	OldPassword string
 	Password    string
 }

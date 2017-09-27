@@ -64,6 +64,26 @@ func IsEmpty(text string) bool {
 	return false
 }
 
+func IsImageMime(mime string) bool {
+	imageMime := []string{"image/jpeg", "image/png"}
+	for _, v := range imageMime {
+		if v == mime {
+			return true
+		}
+	}
+	return false
+}
+
+func IsImageExtension(extension string) bool {
+	imageExtension := []string{"jpeg", "jpg", "png"}
+	for _, val := range imageExtension {
+		if val == extension {
+			return true
+		}
+	}
+	return false
+}
+
 func Normalize(text string, format func(string) bool) (string, error) {
 
 	if !format(text) {
@@ -77,14 +97,14 @@ func Normalize(text string, format func(string) bool) (string, error) {
 func NormalizeUserID(id string) (int64, error) {
 	var userID int64
 	if len(id) < 1 {
-		return userID, fmt.Errorf("user id can't be empty")
+		return userID, fmt.Errorf("npm can't be empty")
 	}
 	if len(id) != 12 {
-		return userID, fmt.Errorf("invalid user id")
+		return userID, fmt.Errorf("invalid npm")
 	}
 	userID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return userID, fmt.Errorf("user id must be numeric")
+		return userID, fmt.Errorf("npm must be numeric")
 	}
 	return userID, nil
 }

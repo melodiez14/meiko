@@ -122,8 +122,8 @@ func (params getVerifiedParams) Validate() (getVerifiedArgs, error) {
 	}
 
 	args = getVerifiedArgs{
-		Page:  page,
-		Total: total,
+		Page:  uint16(page),
+		Total: uint16(total),
 	}
 	return args, nil
 }
@@ -195,12 +195,25 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 
 	var args updateProfileArgs
 	params = updateProfileParams{
-		Name:    params.Name,
-		Note:    html.EscapeString(params.Note),
-		Gender:  params.Gender,
-		College: params.College,
-		Phone:   params.Phone,
-		LineID:  html.EscapeString(params.LineID),
+		ID:     params.ID,
+		Email:  params.Email,
+		Name:   params.Name,
+		Note:   html.EscapeString(params.Note),
+		Gender: params.Gender,
+		Phone:  params.Phone,
+		LineID: html.EscapeString(params.LineID),
+	}
+
+	// ID validation
+	id, err := helper.NormalizeUserID(params.ID)
+	if err != nil {
+		return args, fmt.Errorf("Bad Request")
+	}
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Bad Request")
 	}
 
 	// Name validation
@@ -229,15 +242,6 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 		}
 	}
 
-	// College validation (need more validation)
-	var college string
-	if !helper.IsEmpty(params.College) {
-		college, err = helper.NormalizeCollege(params.College)
-		if err != nil {
-			return args, fmt.Errorf("Error validation: Not valid college")
-		}
-	}
-
 	// Phone validation (can be empty)
 	var phone sql.NullString
 	if !helper.IsEmpty(params.Phone) {
@@ -257,12 +261,13 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 	}
 
 	args = updateProfileArgs{
-		Name:    name,
-		Gender:  gender,
-		Phone:   phone,
-		LineID:  lineID,
-		College: college,
-		Note:    params.Note,
+		ID:     id,
+		Name:   name,
+		Email:  email,
+		Gender: gender,
+		Phone:  phone,
+		LineID: lineID,
+		Note:   params.Note,
 	}
 
 	return args, nil
@@ -272,9 +277,23 @@ func (params changePasswordParams) Validate() (changePasswordArgs, error) {
 
 	var args changePasswordArgs
 	params = changePasswordParams{
+		ID:              params.ID,
+		Email:           params.Email,
 		OldPassword:     html.EscapeString(params.OldPassword),
 		Password:        html.EscapeString(params.Password),
 		ConfirmPassword: html.EscapeString(params.ConfirmPassword),
+	}
+
+	// ID validation
+	id, err := helper.NormalizeUserID(params.ID)
+	if err != nil {
+		return args, fmt.Errorf("Bad request")
+	}
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Bad request")
 	}
 
 	// Old password validation
@@ -304,6 +323,8 @@ func (params changePasswordParams) Validate() (changePasswordArgs, error) {
 	}
 
 	args = changePasswordArgs{
+		ID:          id,
+		Email:       email,
 		OldPassword: helper.StringToMD5(params.OldPassword),
 		Password:    helper.StringToMD5(params.Password),
 	}

@@ -1,6 +1,8 @@
 package helper
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestInt64InSlice(t *testing.T) {
 	type args struct {
@@ -46,7 +48,7 @@ func TestInt64InSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Int64InSlice(tt.args.val, tt.args.arr); got != tt.want {
-				t.Errorf("Int64InSlice() = %v, want %v", got, tt.want)
+				t.Errorf("Error in %s, Int64InSlice() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}
