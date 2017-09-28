@@ -28,7 +28,7 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/v1/user/changepassword", auth.MustAuthorize(user.ChangePasswordHandler))
 
 	// File Handler
-	r.POST("/api/v1/image", auth.MustAuthorize(file.UploadImage))
+	r.POST("/api/v1/image", auth.MustAuthorize(file.UploadImageHandler))
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfile))
 
 	// Course Handler

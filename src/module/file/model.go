@@ -6,7 +6,6 @@ const (
 	ColPath      = "path"
 	ColMime      = "mime"
 	ColExtension = "extension"
-	ColSize      = "size"
 	ColUserID    = "users_id"
 	ColType      = "type"
 	ColTableName = "table_name"
@@ -32,7 +31,6 @@ type File struct {
 	Path      string `db:"path"`
 	Mime      string `db:"mime"`
 	Extension string `db:"extension"`
-	Size      int64  `db:"size"`
 	UserID    int64  `db:"users_id"`
 	Type      string `db:"type"`
 	TableName string `db:"table_name"`

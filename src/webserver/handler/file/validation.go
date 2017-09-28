@@ -13,10 +13,16 @@ func (params uploadImageParams) Validate() (uploadImageArgs, error) {
 
 	var args uploadImageArgs
 	params = uploadImageParams{
+		Height:    params.Height,
+		Width:     params.Width,
 		Payload:   html.EscapeString(params.Payload),
 		FileName:  html.EscapeString(params.FileName),
 		Extension: params.Extension,
 		Mime:      params.Mime,
+	}
+
+	if params.Height < 300 || params.Width < 300 {
+		return args, fmt.Errorf("Height and Width should be 300px minimum")
 	}
 
 	if helper.IsEmpty(params.FileName) {

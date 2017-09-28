@@ -3,12 +3,11 @@ package file
 import (
 	"database/sql"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 
+	"github.com/disintegration/imaging"
 	"github.com/julienschmidt/httprouter"
 	flmodule "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
@@ -18,7 +17,7 @@ import (
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
-func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func UploadImageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
@@ -41,7 +40,19 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	// decode file
+	img, err := imaging.Decode(file)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Not valid image"))
+		return
+	}
+
+	bound := img.Bounds()
 	params := uploadImageParams{
+		Height:    bound.Dx(),
+		Width:     bound.Dy(),
 		Payload:   r.FormValue("payload"),
 		FileName:  fn,
 		Extension: ext,
@@ -57,28 +68,27 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	// map the image to specific table
-	var (
-		multipleFile bool
-		path         string
-		pathThumb    string
-		mainType     sql.NullString
-		thumbType    sql.NullString
-		tableID      int64
-		tableName    string
-	)
+	// resize image
+	mImg := imaging.Resize(img, 300, 0, imaging.NearestNeighbor)
+	tImg := imaging.Thumbnail(img, 128, 128, imaging.NearestNeighbor)
+
+	// declare mapper
+	var mapper uploadImageMapper
 
 	switch args.Payload {
 	case "profile":
-		multipleFile = false
-		path = filepath.Join("private/profile", fmt.Sprintf("%d", sess.ID))
-		pathThumb = filepath.Join("private/profile", fmt.Sprintf("t_%d", sess.ID))
-		mainType.Valid = true
-		mainType.String = alias.TypeProfile
-		thumbType.Valid = true
-		thumbType.String = alias.TypeProfileThumbnail
-		tableID = sess.ID
-		tableName = rg.ModuleUser
+		mapper = uploadImageMapper{
+			fn:        fn,
+			multiple:  false,
+			mImg:      mImg,
+			tImg:      tImg,
+			mPath:     filepath.Join("private/profile", fmt.Sprintf("%d.jpg", sess.ID)),
+			tPath:     filepath.Join("private/profile", fmt.Sprintf("t_%d.jpg", sess.ID)),
+			mType:     alias.TypeProfile,
+			tType:     alias.TypeProfileThumbnail,
+			tableID:   sess.ID,
+			tableName: rg.ModuleUser,
+		}
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -86,145 +96,17 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	if !multipleFile {
-		fexist, err := flmodule.Get(flmodule.ColID).
-			Where(flmodule.ColType, flmodule.OperatorEquals, mainType).
-			Exec()
-		if err != nil && err != sql.ErrNoRows {
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError).
-				AddError("Cannot create a file"))
-			return
-		}
-
-		if err != sql.ErrNoRows {
-
-			// remove main image
-			err = os.Remove(path)
-			if err != nil {
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError).
-					AddError("Cannot remove image"))
-				return
-			}
-
-			// remove thumbnail image
-			err = os.Remove(pathThumb)
-			if err != nil {
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError).
-					AddError("Cannot remove image thumbnail"))
-				return
-			}
-
-			// create new main image
-			output, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError).
-					AddError("Cannot create a file"))
-				return
-			}
-			defer output.Close()
-			io.Copy(output, file)
-
-			// create new thumbnail image
-			thumbnail, err := os.OpenFile(pathThumb, os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError).
-					AddError("Cannot create a file"))
-				return
-			}
-			defer thumbnail.Close()
-			file.Seek(0, 0)
-			io.Copy(thumbnail, file)
-
-			// update main image metadata
-			flmodule.Update(map[string]interface{}{
-				flmodule.ColName:      args.FileName,
-				flmodule.ColPath:      path,
-				flmodule.ColMime:      args.Mime,
-				flmodule.ColExtension: args.Extension,
-				flmodule.ColUserID:    sess.ID,
-				flmodule.ColType:      alias.TypeProfile,
-				flmodule.ColTableName: tableName,
-				flmodule.ColTableID:   tableID,
-			}).Where(flmodule.ColID, flmodule.OperatorEquals, fexist.ID).
-				AndWhere(flmodule.ColType, flmodule.OperatorEquals, mainType).
-				Exec()
-
-			// update thumbnail image metadata
-			flmodule.Update(map[string]interface{}{
-				flmodule.ColName:      args.FileName,
-				flmodule.ColPath:      pathThumb,
-				flmodule.ColMime:      args.Mime,
-				flmodule.ColExtension: args.Extension,
-				flmodule.ColUserID:    sess.ID,
-				flmodule.ColType:      thumbType,
-				flmodule.ColTableName: tableName,
-				flmodule.ColTableID:   tableID,
-			}).Where(flmodule.ColID, flmodule.OperatorEquals, fexist.ID).
-				AndWhere(flmodule.ColType, flmodule.OperatorEquals, thumbType).
-				Exec()
-
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusOK).
-				SetMessage("Image has been changed"))
-			return
-		}
-	}
-
-	// create main image
-	output, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
+	err = mapper.save(sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
-			AddError("Cannot create a file"))
+			AddError("Internal server error"))
 		return
 	}
-	defer output.Close()
-	io.Copy(output, file)
-
-	// create thumbnail image
-	thumbnail, err := os.OpenFile(pathThumb, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError("Cannot create a file"))
-		return
-	}
-	defer thumbnail.Close()
-	file.Seek(0, 0)
-	io.Copy(thumbnail, file)
-
-	// insert main image metadata
-	flmodule.Insert(map[string]interface{}{
-		flmodule.ColName:      args.FileName,
-		flmodule.ColPath:      path,
-		flmodule.ColMime:      args.Mime,
-		flmodule.ColExtension: args.Extension,
-		flmodule.ColUserID:    sess.ID,
-		flmodule.ColType:      mainType,
-		flmodule.ColTableName: tableName,
-		flmodule.ColTableID:   tableID,
-	}).Exec()
-
-	// insert thumbnail image metadata
-	flmodule.Insert(map[string]interface{}{
-		flmodule.ColName:      args.FileName,
-		flmodule.ColPath:      pathThumb,
-		flmodule.ColMime:      args.Mime,
-		flmodule.ColExtension: args.Extension,
-		flmodule.ColUserID:    sess.ID,
-		flmodule.ColType:      thumbType,
-		flmodule.ColTableName: tableName,
-		flmodule.ColTableID:   tableID,
-	}).Exec()
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Image has been uploaded"))
+		SetMessage("File Uploaded"))
 	return
 }
 
@@ -267,4 +149,97 @@ func GetProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", f.Mime)
 	w.Write(file)
 	return
+}
+
+func (mapper uploadImageMapper) save(userID int64) error {
+
+	// save file
+	err := imaging.Save(mapper.mImg, mapper.mPath)
+	if err != nil {
+		return fmt.Errorf("failed to save main photo")
+	}
+
+	err = imaging.Save(mapper.tImg, mapper.tPath)
+	if err != nil {
+		return fmt.Errorf("failed to save thumbnail photo")
+	}
+
+	if !mapper.multiple {
+		_, err := flmodule.Get(flmodule.ColID).
+			Where(flmodule.ColType, flmodule.OperatorEquals, mapper.mType).
+			OrWhere(flmodule.ColType, flmodule.OperatorEquals, mapper.tType).
+			Exec()
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("error checking old metadata")
+		}
+
+		// if record exists in database
+		if err == nil {
+			// update main image metadata
+			err = flmodule.Update(map[string]interface{}{
+				flmodule.ColName:      mapper.fn,
+				flmodule.ColPath:      mapper.mPath,
+				flmodule.ColMime:      MimeJPEG,
+				flmodule.ColExtension: ExtJPEG,
+				flmodule.ColUserID:    userID,
+				flmodule.ColType:      mapper.mType,
+				flmodule.ColTableName: mapper.tableName,
+				flmodule.ColTableID:   mapper.tableID,
+			}).Where(flmodule.ColType, flmodule.OperatorEquals, mapper.mType).
+				Exec()
+			if err != nil {
+				return fmt.Errorf("error updating main metadata")
+			}
+
+			// update thumbnail image metadata
+			flmodule.Update(map[string]interface{}{
+				flmodule.ColName:      mapper.fn,
+				flmodule.ColPath:      mapper.tPath,
+				flmodule.ColMime:      MimeJPEG,
+				flmodule.ColExtension: ExtJPEG,
+				flmodule.ColUserID:    userID,
+				flmodule.ColType:      mapper.tType,
+				flmodule.ColTableName: mapper.tableName,
+				flmodule.ColTableID:   mapper.tableID,
+			}).Where(flmodule.ColType, flmodule.OperatorEquals, mapper.tType).
+				Exec()
+			if err != nil {
+				return fmt.Errorf("error updating thumbnail metadata")
+			}
+
+			return nil
+		}
+	}
+
+	// insert main image metadata
+	err = flmodule.Insert(map[string]interface{}{
+		flmodule.ColName:      mapper.fn,
+		flmodule.ColPath:      mapper.mPath,
+		flmodule.ColMime:      MimeJPEG,
+		flmodule.ColExtension: ExtJPEG,
+		flmodule.ColUserID:    userID,
+		flmodule.ColType:      mapper.mType,
+		flmodule.ColTableName: mapper.tableName,
+		flmodule.ColTableID:   mapper.tableID,
+	}).Exec()
+	if err != nil {
+		return fmt.Errorf("error inserting main metadata")
+	}
+
+	// insert thumbnail image metadata
+	flmodule.Insert(map[string]interface{}{
+		flmodule.ColName:      mapper.fn,
+		flmodule.ColPath:      mapper.tPath,
+		flmodule.ColMime:      MimeJPEG,
+		flmodule.ColExtension: ExtJPEG,
+		flmodule.ColUserID:    userID,
+		flmodule.ColType:      mapper.tType,
+		flmodule.ColTableName: mapper.tableName,
+		flmodule.ColTableID:   mapper.tableID,
+	}).Exec()
+	if err != nil {
+		return fmt.Errorf("error inserting thumbnail metadata")
+	}
+
+	return nil
 }
