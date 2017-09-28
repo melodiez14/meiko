@@ -205,10 +205,10 @@ func (u User) IsHasRoles(module string, roles ...string) bool {
 	}
 
 	for _, val := range roles {
-		if !helper.IsStringInSlice(val, u.Roles[module]) {
-			return false
+		if helper.IsStringInSlice(val, u.Roles[module]) {
+			return true
 		}
 	}
 
-	return true
+	return false
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/email"
-	"github.com/melodiez14/meiko/src/module/module"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
@@ -20,12 +20,12 @@ import (
 // SignUpHandler handles the http request for first registration process
 /*
 	@params:
-		npm		= required, numeric, characters=12
+		identity= required, numeric, characters=12
 		name	= required, alphaspace, 0<characters<50
 		email	= required, email format, 0<characters<45
 		password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 	@example:
-		npm=140810140016
+		identity=140810140016
 		name=Risal Falah
 		email=risal.falah@gmail.com
 		password=Qwerty1
@@ -42,10 +42,10 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := signUpParams{
-		ID:       r.FormValue("npm"),
-		Name:     r.FormValue("name"),
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
+		IdentityCode: r.FormValue("id"),
+		Name:         r.FormValue("name"),
+		Email:        r.FormValue("email"),
+		Password:     r.FormValue("password"),
 	}
 
 	args, err := params.Validate()
@@ -68,22 +68,22 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// check is id registered
-	_, err = user.Get(user.ColID).
-		Where(user.ColID, user.OperatorEquals, args.ID).
+	_, err = user.Get(user.ColIdentityCode).
+		Where(user.ColIdentityCode, user.OperatorEquals, args.IdentityCode).
 		Exec()
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%d has been registered!", args.ID)))
+			AddError(fmt.Sprintf("%d has been registered!", args.IdentityCode)))
 		return
 	}
 
 	// insert new user
 	err = user.Insert(map[string]interface{}{
-		user.ColID:       args.ID,
-		user.ColName:     args.Name,
-		user.ColEmail:    args.Email,
-		user.ColPassword: args.Password,
+		user.ColIdentityCode: args.IdentityCode,
+		user.ColName:         args.Name,
+		user.ColEmail:        args.Email,
+		user.ColPassword:     args.Password,
 	}).Exec()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -93,7 +93,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// send code activation to email
-	verification, err := user.GenerateVerification(args.ID)
+	verification, err := user.GenerateVerification(args.IdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -149,7 +149,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	u, err := user.Get(user.ColID).
+	u, err := user.Get(user.ColIdentityCode).
 		Where(user.ColEmail, user.OperatorEquals, args.Email).
 		AndWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusUnverified).
 		Exec()
@@ -162,7 +162,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 	if args.IsResendCode {
 		// generate verification code
-		verification, err := user.GenerateVerification(u.ID)
+		verification, err := user.GenerateVerification(u.IdentityCode)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError).
@@ -200,7 +200,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	return
 }
 
-// ReadUserHandler handles the http request for listing all verified and activated users. Accessing this handler needs XREAD ability
+// ReadUserHandler handles the http request for listing all verified and activated users. Accessing this handler needs READ or XREAD ability
 /*
 	@params:
 		pg	= required, positive numeric
@@ -209,13 +209,13 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		pg=1
 		ttl=10
 	@return
-		[]{name, email, status, user_id}
+		[]{name, email, status, identity}
 */
 func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXRead) {
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleRead, rg.RoleXRead) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("You don't have privilege"))
@@ -237,9 +237,10 @@ func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 
 	// get verified user by page
 	offset := (args.Page - 1) * args.Total
-	u, _ := user.Select(user.ColID, user.ColName, user.ColEmail, user.ColStatus).
+	u, _ := user.Select(user.ColIdentityCode, user.ColName, user.ColEmail, user.ColStatus).
 		Where(user.ColStatus, user.OperatorEquals, alias.UserStatusVerified).
 		OrWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusActivated).
+		AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
 		Limit(args.Total).
 		Offset(offset).
 		Exec()
@@ -253,10 +254,10 @@ func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			status = "inactive"
 		}
 		res = append(res, getVerifiedResponse{
-			Name:   val.Name,
-			Email:  val.Email,
-			ID:     val.ID,
-			Status: status,
+			Name:         val.Name,
+			Email:        val.Email,
+			IdentityCode: val.IdentityCode,
+			Status:       status,
 		})
 	}
 
@@ -266,21 +267,21 @@ func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	return
 }
 
-// ActivationHandler handles the http request for changing user status to activated or verified. Accessing this handler needs XUPDATE ability
+// ActivationHandler handles the http request for changing user status to activated or verified. Accessing this handler needs UPDATE or XUPDATE ability
 /*
 	@params:
-		npm		= required, numeric, characters=12
-		status	= required, string
+		identity	= required, numeric, characters=12
+		status		= required, string
 	@example:
-		npm		= 140810140016
-		status	= active or inactive
+		identity	= 140810140016
+		status		= active or inactive
 	@return
 */
 func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	if !sess.IsHasRoles(alias.ModuleUser, alias.RoleXUpdate) {
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleUpdate, rg.RoleXUpdate) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("You don't have privilege"))
@@ -288,8 +289,8 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	params := activationParams{
-		ID:     r.FormValue("npm"),
-		Status: r.FormValue("status"),
+		IdentityCode: r.FormValue("id"),
+		Status:       r.FormValue("status"),
 	}
 
 	args, err := params.Validate()
@@ -309,8 +310,9 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	u, err := user.Get().
-		Where(user.ColID, user.OperatorEquals, args.ID).
+		Where(user.ColIdentityCode, user.OperatorEquals, args.IdentityCode).
 		AndWhere(user.ColStatus, user.OperatorEquals, oldStatus).
+		AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
 		Exec()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -328,19 +330,20 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
-			roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+			roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 		}
 
 		s := auth.User{
-			ID:     u.ID,
-			Name:   u.Name,
-			Email:  u.Email,
-			Gender: u.Gender,
-			Note:   u.Note,
-			Status: u.Status,
-			LineID: u.LineID.String,
-			Phone:  u.Phone.String,
-			Roles:  roles,
+			ID:           u.ID,
+			Name:         u.Name,
+			Email:        u.Email,
+			Gender:       u.Gender,
+			Note:         u.Note,
+			Status:       u.Status,
+			IdentityCode: u.IdentityCode,
+			LineID:       u.LineID.String,
+			Phone:        u.Phone.String,
+			Roles:        roles,
 		}
 
 		s.UpdateSession(w)
@@ -390,6 +393,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		AndWhere(user.ColPassword, user.OperatorEquals, args.Password).
 		Exec()
 	if err != nil {
+		fmt.Println(err.Error())
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("Invalid email or password"))
@@ -419,19 +423,20 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 	}
 
 	s := auth.User{
-		ID:     u.ID,
-		Name:   u.Name,
-		Email:  u.Email,
-		Gender: u.Gender,
-		Note:   u.Note,
-		Status: u.Status,
-		LineID: u.LineID.String,
-		Phone:  u.Phone.String,
-		Roles:  roles,
+		ID:           u.ID,
+		Name:         u.Name,
+		Email:        u.Email,
+		Gender:       u.Gender,
+		Note:         u.Note,
+		Status:       u.Status,
+		IdentityCode: u.IdentityCode,
+		LineID:       u.LineID.String,
+		Phone:        u.Phone.String,
+		Roles:        roles,
 	}
 
 	err = s.SetSession(w)
@@ -492,7 +497,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// if send code to email then return
 	if args.IsSendCode {
-		u, err := user.Get(user.ColID).
+		u, err := user.Get(user.ColIdentityCode).
 			Where(user.ColEmail, user.OperatorEquals, args.Email).
 			Exec()
 		if err != nil {
@@ -503,7 +508,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		}
 
 		// generate verification code
-		verification, err := user.GenerateVerification(u.ID)
+		verification, err := user.GenerateVerification(u.IdentityCode)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError).
@@ -587,11 +592,11 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	res := getProfileResponse{
-		ID:                    u.ID,
 		Name:                  u.Name,
 		Email:                 u.Email,
 		Gender:                gender,
 		Phone:                 u.Phone.String,
+		IdentityCode:          u.IdentityCode,
 		LineID:                u.LineID.String,
 		Note:                  u.Note,
 		ImageProfile:          alias.URLProfile,
@@ -608,7 +613,9 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 // UpdateProfileHandler handles the http request for updating the user profile
 /*
 	@params:
-		name	= required, alphaspace, 0<characters<50
+		id		= required, numeric, 10<=characters<=18
+		name	= required, alphaspace, 0<characters<=50
+		email	= required, email format
 		gender	= optional, male or female
 		phone	= optional, numeric, 10<=characters<=12
 		line_id	= optional, 0<characters<=45
@@ -625,13 +632,13 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	sess := r.Context().Value("User").(*auth.User)
 	params := updateProfileParams{
-		ID:     r.FormValue("npm"),
-		Name:   r.FormValue("name"),
-		Email:  r.FormValue("email"),
-		Gender: r.FormValue("gender"),
-		Phone:  r.FormValue("phone"),
-		LineID: r.FormValue("line_id"),
-		Note:   r.FormValue("about_me"),
+		IdentityCode: r.FormValue("id"),
+		Name:         r.FormValue("name"),
+		Email:        r.FormValue("email"),
+		Gender:       r.FormValue("gender"),
+		Phone:        r.FormValue("phone"),
+		LineID:       r.FormValue("line_id"),
+		Note:         r.FormValue("about_me"),
 	}
 
 	args, err := params.Validate()
@@ -642,7 +649,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	if args.ID != sess.ID || args.Email != sess.Email {
+	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Bad Request"))
@@ -699,18 +706,20 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = module.GetPriviegeByRoleGroupID(u.RoleGroupsID.Int64)
+		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 	}
 
 	s := auth.User{
-		ID:      u.ID,
-		Name:    u.Name,
-		Email:   u.Email,
-		Gender:  u.Gender,
-		College: u.College,
-		Note:    u.Note,
-		Status:  u.Status,
-		Roles:   roles,
+		ID:           u.ID,
+		Name:         u.Name,
+		Email:        u.Email,
+		Gender:       u.Gender,
+		Note:         u.Note,
+		Status:       u.Status,
+		IdentityCode: u.IdentityCode,
+		LineID:       u.LineID.String,
+		Phone:        u.Phone.String,
+		Roles:        roles,
 	}
 
 	s.UpdateSession(w)
@@ -724,7 +733,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 // ChangePasswordHandler handles the http request for updating user password
 /*
 	@params:
-		npm						= required, numeric, characters=12
+		id						= required, numeric, characters=12
 		email					= required, email format, 0<characters<45
 		old_password			= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 		password				= required, minimum 1 uppercase, lowercase, numeric, characters>=6
@@ -742,7 +751,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	sess := r.Context().Value("User").(*auth.User)
 
 	params := changePasswordParams{
-		ID:              r.FormValue("npm"),
+		IdentityCode:    r.FormValue("id"),
 		Email:           r.FormValue("email"),
 		OldPassword:     r.FormValue("old_password"),
 		Password:        r.FormValue("password"),
@@ -757,7 +766,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	if args.ID != sess.ID || args.Email != sess.Email {
+	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Bad Request"))

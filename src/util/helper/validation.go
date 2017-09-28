@@ -94,19 +94,34 @@ func Normalize(text string, format func(string) bool) (string, error) {
 	return strings.Join(splitted, " "), nil
 }
 
-func NormalizeUserID(id string) (int64, error) {
-	var userID int64
-	if len(id) < 1 {
-		return userID, fmt.Errorf("npm can't be empty")
+func NormalizeNPM(str string) (int64, error) {
+	var npm int64
+	if len(str) < 1 {
+		return npm, fmt.Errorf("npm can't be empty")
 	}
-	if len(id) != 12 {
-		return userID, fmt.Errorf("invalid npm")
+	if len(str) != 12 {
+		return npm, fmt.Errorf("invalid npm")
 	}
-	userID, err := strconv.ParseInt(id, 10, 64)
+	npm, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return userID, fmt.Errorf("npm must be numeric")
+		return npm, fmt.Errorf("npm must be numeric")
 	}
-	return userID, nil
+	return npm, nil
+}
+
+func NormalizeIdentity(str string) (int64, error) {
+	var identity int64
+	if len(str) < 1 {
+		return identity, fmt.Errorf("identity can't be empty")
+	}
+	if len(str) < 10 || len(str) > 18 {
+		return identity, fmt.Errorf("invalid npm, nidn, nip, ktp, or sim number")
+	}
+	identity, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return identity, fmt.Errorf("identity must be numeric")
+	}
+	return identity, nil
 }
 
 func NormalizeName(name string) (string, error) {

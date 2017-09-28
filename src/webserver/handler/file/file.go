@@ -11,6 +11,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	flmodule "github.com/melodiez14/meiko/src/module/file"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -77,7 +78,7 @@ func UploadImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		thumbType.Valid = true
 		thumbType.String = alias.TypeProfileThumbnail
 		tableID = sess.ID
-		tableName = alias.ModuleUser
+		tableName = rg.ModuleUser
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -244,7 +245,7 @@ func GetProfile(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	f, err := flmodule.Get().
-		Where(flmodule.ColTableName, flmodule.OperatorEquals, alias.ModuleUser).
+		Where(flmodule.ColTableName, flmodule.OperatorEquals, rg.ModuleUser).
 		AndWhere(flmodule.ColTableID, flmodule.OperatorEquals, sess.ID).
 		AndWhere(flmodule.ColType, flmodule.OperatorEquals, args.Payload).
 		Exec()
