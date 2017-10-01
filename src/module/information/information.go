@@ -169,7 +169,6 @@ func (q QuerySelect) Offset(value uint16) QuerySelect {
 }
 
 func (q QuerySelect) Exec() ([]Information, error) {
-	fmt.Println(q.string)
 	var informations []Information
 	err := conn.DB.Select(&informations, q.string)
 	if err != nil {

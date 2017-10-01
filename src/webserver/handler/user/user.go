@@ -200,7 +200,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	return
 }
 
-// ReadUserHandler handles the http request for listing all verified and activated users. Accessing this handler needs READ or XREAD ability
+// ReadHandler handles the http request for listing all verified and activated users. Accessing this handler needs READ or XREAD ability
 /*
 	@params:
 		pg	= required, positive numeric
@@ -211,7 +211,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	@return
 		[]{name, email, status, identity}
 */
-func ReadUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
@@ -393,7 +393,6 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		AndWhere(user.ColPassword, user.OperatorEquals, args.Password).
 		Exec()
 	if err != nil {
-		fmt.Println(err.Error())
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("Invalid email or password"))
