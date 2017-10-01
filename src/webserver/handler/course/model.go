@@ -53,6 +53,35 @@ type summaryResponse struct {
 	Course []courseResponse `json:"courses"`
 }
 
+type getParams struct {
+	Payload string
+}
+
+type getArgs struct {
+	Payload string
+}
+
+type getResponse struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type getAssistantParams struct {
+	ID string
+}
+
+type getAssistantArgs struct {
+	ID int64
+}
+
+type getAssistantResponse struct {
+	Name  string `json:"name"`
+	Roles string `json:"role"`
+	Phone string `json:"phone_number"`
+	Email string `json:"email"`
+}
+
 type courseResponse struct {
 	ID       int64  `json:"id"`
 	Name     string `json:"name"`

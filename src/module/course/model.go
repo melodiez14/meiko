@@ -29,6 +29,9 @@ const (
 	StatusActive   = 1
 	StatusDeleted  = 2
 
+	PStatusStudent   = 0
+	PStatusAssistant = 1
+
 	OperatorEquals  = "="
 	OperatorUnquals = "!="
 	OperatorIn      = "IN"

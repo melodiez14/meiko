@@ -14,7 +14,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Query: r.FormValue("qry"),
 	}
 
-	args, err := params.Validation()
+	args, err := params.Validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).

@@ -12,6 +12,7 @@ import (
 	cs "github.com/melodiez14/meiko/src/module/course"
 	pl "github.com/melodiez14/meiko/src/module/place"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	"github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/template"
@@ -61,7 +62,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		PlaceID:     r.FormValue("place"),
 	}
 
-	args, err := params.Validation()
+	args, err := params.Validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -155,7 +156,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		Total: r.FormValue("ttl"),
 	}
 
-	args, err := params.Validation()
+	args, err := params.Validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -203,6 +204,87 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return
 }
 
+// GetHandler handles the http request return course list
+/*
+	@params:
+		payload	= required
+	@example:
+		pg	= last or current or all
+		ttl = 10
+	@return
+		[]{id, name, description}
+*/
+func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := getParams{
+		Payload: r.FormValue("payload"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	var csID []int64
+	var csStatus int8
+	switch args.Payload {
+	case "last":
+		csStatus = cs.StatusInactive
+		csID, err = cs.SelectIDByUserID(sess.ID, cs.PStatusStudent)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	case "current":
+		csStatus = cs.StatusActive
+		csID, err = cs.SelectIDByUserID(sess.ID, cs.PStatusStudent)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	case "all":
+		csStatus = cs.StatusInactive
+	default:
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	var courses []cs.Course
+	if len(csID) > 0 || args.Payload == "all" {
+		courses, err = cs.Select(cs.ColID, cs.ColName, cs.ColDescription).
+			Where(cs.ColStatus, cs.OperatorEquals, csStatus).
+			AndWhere(cs.ColID, cs.OperatorIn, csID).
+			Exec()
+	}
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	res := []getResponse{}
+	for _, val := range courses {
+		res = append(res, getResponse{
+			ID:          val.ID,
+			Name:        val.Name,
+			Description: val.Description.String,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+}
+
 func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	u := r.Context().Value("User").(*auth.User)
@@ -246,5 +328,78 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(sres))
+	return
+}
+
+// GetAssistantHandler handles the http request return course assistant list
+/*
+	@params:
+		payload	= required
+	@example:
+		pg	= last or current or all
+		ttl = 10
+	@return
+		[]{id, name, description}
+*/
+func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := getAssistantParams{
+		ID: r.FormValue("id"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	if !cs.IsEnrolled(sess.ID, args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	uIDs, err := cs.SelectAssistantID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var users []user.User
+	if len(uIDs) > 0 {
+		users, err = user.Select(user.ColEmail, user.ColPhone, user.ColName).
+			Where(user.ColID, user.OperatorIn, uIDs).
+			Exec()
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	res := []getAssistantResponse{}
+	for _, val := range users {
+		phone := "-"
+		if val.Phone.Valid {
+			phone = val.Phone.String
+		}
+
+		res = append(res, getAssistantResponse{
+			Name:  val.Name,
+			Email: val.Email,
+			Phone: phone,
+			Roles: "Assistant",
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
 	return
 }

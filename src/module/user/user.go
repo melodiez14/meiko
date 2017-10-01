@@ -107,6 +107,14 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}

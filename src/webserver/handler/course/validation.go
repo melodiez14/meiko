@@ -10,7 +10,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
-func (params readParams) Validation() (readArgs, error) {
+func (params readParams) Validate() (readArgs, error) {
 
 	var args readArgs
 	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
@@ -39,7 +39,7 @@ func (params readParams) Validation() (readArgs, error) {
 	return args, nil
 }
 
-func (params createParams) Validation() (createArgs, error) {
+func (params createParams) Validate() (createArgs, error) {
 
 	var args createArgs
 	params = createParams{
@@ -150,4 +150,32 @@ func (params createParams) Validation() (createArgs, error) {
 		Day:         day,
 		PlaceID:     params.PlaceID,
 	}, nil
+}
+
+func (params getParams) Validate() (getArgs, error) {
+
+	var args getArgs
+	if params.Payload != "last" && params.Payload != "current" && params.Payload != "all" {
+		return args, fmt.Errorf("Invalid payload")
+	}
+
+	args = getArgs{
+		Payload: params.Payload,
+	}
+
+	return args, nil
+}
+
+func (params getAssistantParams) Validate() (getAssistantArgs, error) {
+
+	var args getAssistantArgs
+	id, err := strconv.ParseInt(params.ID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Bad request")
+	}
+
+	args = getAssistantArgs{
+		ID: id,
+	}
+	return args, nil
 }

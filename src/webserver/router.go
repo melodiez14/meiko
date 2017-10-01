@@ -33,8 +33,10 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfile))
 
 	// Course Handler
-	r.POST("/api/v1/course", auth.MustAuthorize(course.CreateHandler))
-	r.GET("/api/v1/course", auth.MustAuthorize(course.ReadHandler))
+	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
+	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
+	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
+	r.GET("/api/v1/course/assistant", auth.MustAuthorize(course.GetAssistantHandler))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
 
 	// Assignment Handler

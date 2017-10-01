@@ -34,4 +34,5 @@ const queryGetIDByUserID = `
 		p_users_courses
 	WHERE
 		users_id = (%d)
+		(%s)
 `

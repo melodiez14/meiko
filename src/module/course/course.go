@@ -43,6 +43,17 @@ func (q QueryGet) Where(column, operator string, value interface{}) QueryGet {
 		return QueryGet{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QueryGet{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		if len(rv) < 1 {
+			return q
+		}
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QueryGet{fmt.Sprintf("%s OR %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -111,6 +122,14 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s OR %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -122,6 +141,17 @@ func (q QuerySelect) AndWhere(column, operator string, value interface{}) QueryS
 		return QuerySelect{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		if len(rv) < 1 {
+			return q
+		}
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s AND %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -275,12 +305,41 @@ func GetByUserID(userID int64) ([]Course, error) {
 	return courses, nil
 }
 
-func SelectIDByUserID(userID int64) ([]int64, error) {
+func SelectIDByUserID(userID int64, status ...int8) ([]int64, error) {
+
+	var st string
+	if len(status) == 1 {
+		st = fmt.Sprintf("AND status = (%d)", status[0])
+	}
+
 	courseIDs := []int64{}
-	query := fmt.Sprintf(queryGetIDByUserID, userID)
+	query := fmt.Sprintf(`SELECT courses_id FROM p_users_courses WHERE users_id = (%d) %s`, userID, st)
 	err := conn.DB.Select(&courseIDs, query)
 	if err != nil && err != sql.ErrNoRows {
 		return courseIDs, err
 	}
+
 	return courseIDs, nil
+}
+
+func IsEnrolled(userID, courseID int64) bool {
+	var v int64
+	query := fmt.Sprintf("SELECT users_id FROM p_users_courses WHERE users_id = (%d) AND courses_id = (%d) LIMIT 1", userID, courseID)
+	err := conn.DB.Get(&v, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func SelectAssistantID(courseID int64) ([]int64, error) {
+
+	userIDs := []int64{}
+	query := fmt.Sprintf(`SELECT users_id FROM p_users_courses WHERE courses_id = (%d) AND status = (%d)`, courseID, PStatusAssistant)
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return userIDs, err
+	}
+
+	return userIDs, nil
 }
