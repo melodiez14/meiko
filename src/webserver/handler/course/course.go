@@ -20,7 +20,23 @@ import (
 // CreateHandler handles the http request for creating the course. Accessing this handler needs CREATE or XCREATE ability
 /*
 	@params:
+		name		= required, alphabet and space only
+		description	= optional
+		ucu			= required, positive numeric
+		semester	= required, positive numeric
+		start_time	= required, positive numeric, minutes
+		end_time	= required, positive numeric, minutes
+		class		= required, character=1
+		place		= required
 	@example:
+		name		= Sistem Informasi Multimedia
+		description	= Praktikum ini membahas mengenai Sistem Informasi Multimedia
+		ucu			= 3
+		semester	= 1
+		start_time	= 600
+		end_time	= 800
+		class		= A
+		place		= UDJT-102
 	@return
 */
 func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

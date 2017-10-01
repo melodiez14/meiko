@@ -74,7 +74,7 @@ func (params createParams) Validation() (createArgs, error) {
 	if err != nil {
 		return args, fmt.Errorf("UCU must be numeric")
 	}
-	if ucu < 0 || ucu > 5 {
+	if ucu < 1 || ucu > 5 {
 		return args, fmt.Errorf("Invalid UCU")
 	}
 
@@ -86,7 +86,7 @@ func (params createParams) Validation() (createArgs, error) {
 	if err != nil {
 		return args, fmt.Errorf("Semester must be numeric")
 	}
-	if semester < 0 || semester > 7 {
+	if semester < 1 || semester > 7 {
 		return args, fmt.Errorf("Invalid semester")
 	}
 

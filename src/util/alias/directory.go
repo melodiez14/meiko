@@ -14,6 +14,7 @@ type DirectoryConfig struct {
 // Dir is the list of directory
 var Dir DirectoryConfig
 
+// InitDirectory is used for initialize all of file directory
 func InitDirectory(cfg DirectoryConfig) {
 	log.Println("Initializing directory")
 

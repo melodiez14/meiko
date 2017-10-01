@@ -9,6 +9,14 @@ import (
 	"github.com/melodiez14/meiko/src/util/alias"
 )
 
+func IsAlpha(text string) bool {
+	valid, err := regexp.MatchString(`^[a-zA-Z ]+$`, text)
+	if err != nil {
+		return false
+	}
+	return valid
+}
+
 func IsAlphaSpace(text string) bool {
 	valid, err := regexp.MatchString(`^[a-zA-Z ]+$`, text)
 	if err != nil {
