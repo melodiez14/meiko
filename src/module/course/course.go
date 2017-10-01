@@ -129,7 +129,7 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 			vals = append(vals, fmt.Sprintf("%d", v))
 		}
 		str := strings.Join(vals, ", ")
-		return QuerySelect{fmt.Sprintf("%s OR %s %s (%s)", q.string, column, operator, str)}
+		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -233,7 +233,7 @@ func Update(column map[string]interface{}) QueryUpdate {
 	c := []string{"updated_at = NOW()"}
 	for i, val := range column {
 		switch val.(type) {
-		case int, int8, int64:
+		case int, int16, int8, int64:
 			c = append(c, fmt.Sprintf("%s = (%d)", i, val))
 		case string:
 			c = append(c, fmt.Sprintf("%s = ('%s')", i, val))
@@ -283,7 +283,19 @@ func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUp
 	}
 }
 
-func (q QueryUpdate) Exec() error {
+func (q QueryUpdate) Exec(txs ...*sqlx.Tx) error {
+	// if exist tx
+	if len(txs) == 1 {
+		result, err := txs[0].Exec(q.string)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if rows == 0 {
+			return fmt.Errorf("No rows affected")
+		}
+		return nil
+	}
 	result, err := conn.DB.Exec(q.string)
 	if err != nil {
 		return err

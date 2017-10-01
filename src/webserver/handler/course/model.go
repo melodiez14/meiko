@@ -48,6 +48,32 @@ type createArgs struct {
 	PlaceID     string
 }
 
+type updateParams struct {
+	ID          string
+	Name        string
+	Description string
+	UCU         string
+	Semester    string
+	StartTime   string
+	EndTime     string
+	Class       string
+	Day         string
+	PlaceID     string
+}
+
+type updateArgs struct {
+	ID          int64
+	Name        string
+	Description sql.NullString
+	UCU         int8
+	Semester    int8
+	StartTime   int16
+	EndTime     int16
+	Class       string
+	Day         int8
+	PlaceID     string
+}
+
 type summaryResponse struct {
 	Status string           `json:"status"`
 	Course []courseResponse `json:"courses"`

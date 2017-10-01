@@ -83,9 +83,10 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	exist := pl.IsExistID(args.PlaceID)
 	tx := conn.DB.MustBegin()
 	// validate place, create place if not exist
-	if !pl.IsExistID(args.PlaceID) {
+	if !exist {
 		err = pl.Place{
 			ID: args.PlaceID,
 		}.Insert(tx)
@@ -201,6 +202,104 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))
+	return
+}
+
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleCourse, rg.RoleUpdate, rg.RoleXUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := updateParams{
+		ID:          ps.ByName("id"),
+		Name:        r.FormValue("name"),
+		Description: r.FormValue("description"),
+		UCU:         r.FormValue("ucu"),
+		Semester:    r.FormValue("semester"),
+		StartTime:   r.FormValue("start_time"),
+		EndTime:     r.FormValue("end_time"),
+		Class:       r.FormValue("class"),
+		Day:         r.FormValue("day"),
+		PlaceID:     r.FormValue("place"),
+	}
+
+	args, err := params.Validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
+		return
+	}
+
+	var course cs.Course
+	if sess.IsHasRoles(rg.ModuleUser, rg.RoleXUpdate) {
+		course, err = cs.Get(cs.ColID).
+			Where(cs.ColID, cs.OperatorEquals, args.ID).
+			Exec()
+	} else {
+		course, err = cs.Get(cs.ColID).
+			Where(cs.ColID, cs.OperatorEquals, args.ID).
+			AndWhere(cs.ColCreatedBy, cs.OperatorEquals, sess.ID).
+			Exec()
+	}
+
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
+		return
+	}
+
+	exist := pl.IsExistID(args.PlaceID)
+	tx := conn.DB.MustBegin()
+	// validate place, create place if not exist
+	if !exist {
+		err = pl.Place{
+			ID: args.PlaceID,
+		}.Insert(tx)
+		if err != nil {
+			_ = tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	err = cs.Update(map[string]interface{}{
+		cs.ColName:        args.Name,
+		cs.ColDescription: args.Description,
+		cs.ColUCU:         args.UCU,
+		cs.ColSemester:    args.Semester,
+		cs.ColStartTime:   args.StartTime,
+		cs.ColEndTime:     args.EndTime,
+		cs.ColStatus:      cs.StatusActive,
+		cs.ColClass:       args.Class,
+		cs.ColDay:         args.Day,
+		cs.ColPlaceID:     args.PlaceID,
+	}).Where(cs.ColID, cs.OperatorEquals, course.ID).
+		Exec(tx)
+	if err != nil {
+		_ = tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
 	return
 }
 

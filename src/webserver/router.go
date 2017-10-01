@@ -35,6 +35,7 @@ func loadRouter(r *httprouter.Router) {
 	// Course Handler
 	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
+	r.PATCH("/api/admin/v1/course/:id", auth.MustAuthorize(course.UpdateHandler))
 	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
 	r.GET("/api/v1/course/assistant", auth.MustAuthorize(course.GetAssistantHandler))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
