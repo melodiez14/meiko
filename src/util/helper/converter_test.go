@@ -19,7 +19,7 @@ func TestStringToMD5(t *testing.T) {
 		MD5_want3 string = "7dd67fd22bd7bddc9e0fcb836466d047"
 	)
 
-	fmt.Println("String To MD5 Case 1 : %s", target1)
+	fmt.Println("String To MD5 Case  1 : %s", target1)
 	t.Logf("MD5 : %s", StringToMD5(target1))
 
 	if strings.Compare(MD5_want1, StringToMD5(target1)) != 0 {
