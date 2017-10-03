@@ -31,6 +31,7 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	informations, err := inf.Select(inf.ColTitle, inf.ColCreatedAt).
 		Where(inf.ColType, inf.OperatorEquals, alias.InformationStatusGeneral).
 		OrWhere(inf.ColCourseID, inf.OperatorIn, courseIDs).
+		OrderBy(inf.ColCreatedAt, inf.OrderDesc).
 		Exec()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).

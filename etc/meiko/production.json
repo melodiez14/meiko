@@ -21,5 +21,9 @@
 	},
 	"auth": {
 		"sessionkey": "_SID_Meiko_"
+	},
+	"directory": {
+		"public": "./",
+		"profile": "private/profile"
 	}
 }

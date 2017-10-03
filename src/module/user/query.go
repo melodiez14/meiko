@@ -15,7 +15,7 @@ const (
 			email_verification_attempt = 0,
 			updated_at = NOW()
 		WHERE
-			id = (%d)
+			identity_code = (%d)
 	`
 
 	getConfirmationQuery = `

@@ -10,9 +10,9 @@ const (
 	ColName         = "name"
 	ColEmail        = "email"
 	ColGender       = "gender"
-	ColCollege      = "college"
 	ColNote         = "note"
 	ColStatus       = "status"
+	ColIdentityCode = "identity_code"
 	ColLineID       = "line_id"
 	ColPhone        = "phone"
 	ColRoleGroupsID = "rolegroups_id"
@@ -37,9 +37,9 @@ type User struct {
 	Name         string         `db:"name"`
 	Email        string         `db:"email"`
 	Gender       int8           `db:"gender"`
-	College      string         `db:"college"`
 	Note         string         `db:"note"`
 	Status       int8           `db:"status"`
+	IdentityCode int64          `db:"identity_code"`
 	LineID       sql.NullString `db:"line_id"`
 	Phone        sql.NullString `db:"phone"`
 	RoleGroupsID sql.NullInt64  `db:"rolegroups_id"`

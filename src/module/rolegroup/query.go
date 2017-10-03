@@ -33,4 +33,14 @@ const (
 		WHERE
 			id = (%d)
 	`
+
+	queryGetModuleAccess = `
+		SELECT
+			modules,
+			ability
+		FROM
+			rolegroups_modules
+		WHERE
+			rolegroups_id = (%d)
+	`
 )

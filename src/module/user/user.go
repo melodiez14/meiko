@@ -19,9 +19,9 @@ func Get(column ...string) QueryGet {
 			ColName,
 			ColEmail,
 			ColGender,
-			ColCollege,
 			ColNote,
 			ColStatus,
+			ColIdentityCode,
 			ColLineID,
 			ColPhone,
 			ColRoleGroupsID,
@@ -86,7 +86,6 @@ func Select(column ...string) QuerySelect {
 			ColName,
 			ColEmail,
 			ColGender,
-			ColCollege,
 			ColNote,
 			ColStatus,
 			ColLineID,
@@ -108,6 +107,14 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
 	case string:
 		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
+	case []int64:
+		var vals []string
+		rv := reflect.ValueOf(value).Interface().([]int64)
+		for _, v := range rv {
+			vals = append(vals, fmt.Sprintf("%d", v))
+		}
+		str := strings.Join(vals, ", ")
+		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%s)", q.string, column, operator, str)}
 	default:
 		return q
 	}
@@ -249,7 +256,7 @@ func (q QueryUpdate) Exec() error {
 	return nil
 }
 
-func GenerateVerification(id int64) (Verification, error) {
+func GenerateVerification(identity int64) (Verification, error) {
 
 	v := Verification{
 		Code:           uint16(rand.Intn(8999) + 1000),
@@ -258,7 +265,7 @@ func GenerateVerification(id int64) (Verification, error) {
 		Attempt:        0,
 	}
 
-	query := fmt.Sprintf(generateVerificationQuery, v.Code, id)
+	query := fmt.Sprintf(generateVerificationQuery, v.Code, identity)
 	result := conn.DB.MustExec(query)
 	count, _ := result.RowsAffected()
 	if count < 1 {

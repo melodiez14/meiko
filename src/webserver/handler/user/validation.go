@@ -15,14 +15,14 @@ func (params signUpParams) Validate() (signUpArgs, error) {
 
 	var args signUpArgs
 	params = signUpParams{
-		ID:       params.ID,
-		Name:     params.Name,
-		Email:    params.Email,
-		Password: html.EscapeString(params.Password),
+		IdentityCode: params.IdentityCode,
+		Name:         params.Name,
+		Email:        params.Email,
+		Password:     html.EscapeString(params.Password),
 	}
 
 	// ID validation
-	id, err := helper.NormalizeUserID(params.ID)
+	id, err := helper.NormalizeNPM(params.IdentityCode)
 	if err != nil {
 		return args, fmt.Errorf("Error validation: %s", err.Error())
 	}
@@ -51,10 +51,10 @@ func (params signUpParams) Validate() (signUpArgs, error) {
 	}
 
 	args = signUpArgs{
-		ID:       id,
-		Name:     name,
-		Email:    email,
-		Password: helper.StringToMD5(params.Password),
+		IdentityCode: id,
+		Name:         name,
+		Email:        email,
+		Password:     helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }
@@ -132,11 +132,11 @@ func (params activationParams) Validate() (activationArgs, error) {
 
 	var args activationArgs
 	// Check is params empty
-	if helper.IsEmpty(params.ID) || helper.IsEmpty(params.Status) {
+	if helper.IsEmpty(params.IdentityCode) || helper.IsEmpty(params.Status) {
 		return args, fmt.Errorf("Bad Request")
 	}
 
-	id, err := strconv.ParseInt(params.ID, 10, 64)
+	identityCode, err := strconv.ParseInt(params.IdentityCode, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Error validation: ID should be numeric")
 	}
@@ -152,8 +152,8 @@ func (params activationParams) Validate() (activationArgs, error) {
 	}
 
 	args = activationArgs{
-		ID:     id,
-		Status: status,
+		IdentityCode: identityCode,
+		Status:       status,
 	}
 
 	return args, nil
@@ -195,17 +195,17 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 
 	var args updateProfileArgs
 	params = updateProfileParams{
-		ID:     params.ID,
-		Email:  params.Email,
-		Name:   params.Name,
-		Note:   html.EscapeString(params.Note),
-		Gender: params.Gender,
-		Phone:  params.Phone,
-		LineID: html.EscapeString(params.LineID),
+		IdentityCode: params.IdentityCode,
+		Email:        params.Email,
+		Name:         params.Name,
+		Note:         html.EscapeString(params.Note),
+		Gender:       params.Gender,
+		Phone:        params.Phone,
+		LineID:       html.EscapeString(params.LineID),
 	}
 
-	// ID validation
-	id, err := helper.NormalizeUserID(params.ID)
+	// Identity code validation
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
 		return args, fmt.Errorf("Bad Request")
 	}
@@ -261,13 +261,13 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 	}
 
 	args = updateProfileArgs{
-		ID:     id,
-		Name:   name,
-		Email:  email,
-		Gender: gender,
-		Phone:  phone,
-		LineID: lineID,
-		Note:   params.Note,
+		IdentityCode: identityCode,
+		Name:         name,
+		Email:        email,
+		Gender:       gender,
+		Phone:        phone,
+		LineID:       lineID,
+		Note:         params.Note,
 	}
 
 	return args, nil
@@ -277,15 +277,15 @@ func (params changePasswordParams) Validate() (changePasswordArgs, error) {
 
 	var args changePasswordArgs
 	params = changePasswordParams{
-		ID:              params.ID,
+		IdentityCode:    params.IdentityCode,
 		Email:           params.Email,
 		OldPassword:     html.EscapeString(params.OldPassword),
 		Password:        html.EscapeString(params.Password),
 		ConfirmPassword: html.EscapeString(params.ConfirmPassword),
 	}
 
-	// ID validation
-	id, err := helper.NormalizeUserID(params.ID)
+	// Identity Code validation
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
 		return args, fmt.Errorf("Bad request")
 	}
@@ -323,10 +323,10 @@ func (params changePasswordParams) Validate() (changePasswordArgs, error) {
 	}
 
 	args = changePasswordArgs{
-		ID:          id,
-		Email:       email,
-		OldPassword: helper.StringToMD5(params.OldPassword),
-		Password:    helper.StringToMD5(params.Password),
+		IdentityCode: identityCode,
+		Email:        email,
+		OldPassword:  helper.StringToMD5(params.OldPassword),
+		Password:     helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }

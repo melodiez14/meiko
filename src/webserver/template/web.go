@@ -9,11 +9,10 @@ import (
 )
 
 type Response struct {
-	Message     string      `json:"message,omitempty"`
-	Error       []string    `json:"error,omitempty"`
-	Code        int         `json:"code"`
-	Data        interface{} `json:"data, omitempty"`
-	RequestData string      `json:"request_data, omitempty"`
+	Message string      `json:"message,omitempty"`
+	Error   []string    `json:"error,omitempty"`
+	Code    int         `json:"code"`
+	Data    interface{} `json:"data, omitempty"`
 }
 
 func (r *Response) SetMessage(msg string) *Response {

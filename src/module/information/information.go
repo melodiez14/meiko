@@ -103,6 +103,9 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 	case []int64:
 		var vals []string
 		rv := reflect.ValueOf(value).Interface().([]int64)
+		if len(rv) < 1 {
+			return q
+		}
 		for _, v := range rv {
 			vals = append(vals, fmt.Sprintf("%d", v))
 		}
@@ -122,6 +125,9 @@ func (q QuerySelect) AndWhere(column, operator string, value interface{}) QueryS
 	case []int64:
 		var vals []string
 		rv := reflect.ValueOf(value).Interface().([]int64)
+		if len(rv) < 1 {
+			return q
+		}
 		for _, v := range rv {
 			vals = append(vals, fmt.Sprintf("%d", v))
 		}
@@ -141,6 +147,9 @@ func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySe
 	case []int64:
 		var vals []string
 		rv := reflect.ValueOf(value).Interface().([]int64)
+		if len(rv) < 1 {
+			return q
+		}
 		for _, v := range rv {
 			vals = append(vals, fmt.Sprintf("%d", v))
 		}
@@ -169,7 +178,6 @@ func (q QuerySelect) Offset(value uint16) QuerySelect {
 }
 
 func (q QuerySelect) Exec() ([]Information, error) {
-	fmt.Println(q.string)
 	var informations []Information
 	err := conn.DB.Select(&informations, q.string)
 	if err != nil {

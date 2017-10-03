@@ -5,17 +5,17 @@ import (
 )
 
 type signUpParams struct {
-	ID       string
-	Name     string
-	Email    string
-	Password string
+	IdentityCode string
+	Name         string
+	Email        string
+	Password     string
 }
 
 type signUpArgs struct {
-	ID       int64
-	Name     string
-	Email    string
-	Password string
+	IdentityCode int64
+	Name         string
+	Email        string
+	Password     string
 }
 
 type emailVerificationParams struct {
@@ -71,38 +71,38 @@ type getVerifiedArgs struct {
 }
 
 type getVerifiedResponse struct {
-	ID     int64  `json:"npm"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Status string `json:"status"`
+	IdentityCode int64  `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Status       string `json:"status"`
 }
 
 type updateProfileParams struct {
-	ID     string
-	Name   string
-	Email  string
-	Gender string
-	Phone  string
-	LineID string
-	Note   string
+	IdentityCode string
+	Name         string
+	Email        string
+	Gender       string
+	Phone        string
+	LineID       string
+	Note         string
 }
 
 type updateProfileArgs struct {
-	ID     int64
-	Name   string
-	Email  string
-	Gender int8
-	Phone  sql.NullString
-	LineID sql.NullString
-	Note   string
+	IdentityCode int64
+	Name         string
+	Email        string
+	Gender       int8
+	Phone        sql.NullString
+	LineID       sql.NullString
+	Note         string
 }
 
 type getProfileResponse struct {
-	ID                    int64  `json:"npm"`
 	Name                  string `json:"name"`
 	Email                 string `json:"email"`
 	Gender                string `json:"gender"`
 	Phone                 string `json:"phone"`
+	IdentityCode          int64  `json:"identity"`
 	LineID                string `json:"line_id"`
 	Note                  string `json:"note"`
 	ImageProfile          string `json:"img"`
@@ -110,7 +110,7 @@ type getProfileResponse struct {
 }
 
 type changePasswordParams struct {
-	ID              string
+	IdentityCode    string
 	Email           string
 	OldPassword     string
 	Password        string
@@ -118,18 +118,18 @@ type changePasswordParams struct {
 }
 
 type changePasswordArgs struct {
-	ID          int64
-	Email       string
-	OldPassword string
-	Password    string
+	IdentityCode int64
+	Email        string
+	OldPassword  string
+	Password     string
 }
 
 type activationParams struct {
-	ID     string
-	Status string
+	IdentityCode string
+	Status       string
 }
 
 type activationArgs struct {
-	ID     int64
-	Status int8
+	IdentityCode int64
+	Status       int8
 }
