@@ -237,39 +237,39 @@ func TestNormalize(t *testing.T) {
 	}
 }
 
-func TestNormalizeUserID(t *testing.T) {
+func TestNormalizeIdentity(t *testing.T) {
 	var (
-		NormalizeUserID1      string = "140810140060"
-		NormalizeUserID1_want int64  = 140810140060
-		NormalizeUserID2      string = "1408101400"
-		NormalizeUserID3      string = ""
-		NormalizeUserID4      string = "14081014006O"
+		NormalizeIdentity1      string = "140810140060"
+		NormalizeIdentity1_want int64  = 140810140060
+		NormalizeIdentity2      string = "1408101400"
+		NormalizeIdentity3      string = ""
+		NormalizeIdentity4      string = "14081014006O"
 	)
 
-	fmt.Println("Normalize User ID Case 1 : %s", NormalizeUserID1)
+	fmt.Println("Normalize Identity Case 1 : %s", NormalizeIdentity1)
 
-	var userID1, stat1 = NormalizeUserID(NormalizeUserID1)
-	if (userID1 != NormalizeUserID1_want) && (stat1 != nil) {
-		t.Errorf("%d is Wrong! must be %d", userID1, NormalizeUserID1)
+	var userIdentity1, stat1 = NormalizeIdentity(NormalizeIdentity1)
+	if (userIdentity1 != NormalizeIdentity1_want) && (stat1 != nil) {
+		t.Errorf("%d is Wrong! must be %d", userIdentity1, NormalizeIdentity1)
 	}
 
-	fmt.Println("Normalize User ID Case 2 : %s", NormalizeUserID2)
+	fmt.Println("Normalize User ID Case 2 : %s", NormalizeIdentity2)
 
-	var _, stat2 = NormalizeUserID(NormalizeUserID2)
+	var _, stat2 = NormalizeIdentity(NormalizeIdentity2)
 	if stat2 == nil {
 		t.Errorf("%v is Wrong! Error must be not nil", stat2)
 	}
 
-	fmt.Println("Normalize User ID Case 3 : %s", NormalizeUserID3)
+	fmt.Println("Normalize Identity Case 3 : %s", NormalizeIdentity3)
 
-	var _, stat3 = NormalizeUserID(NormalizeUserID3)
+	var _, stat3 = NormalizeIdentity(NormalizeIdentity3)
 	if stat3 == nil {
 		t.Errorf("%v is Wrong! Error must be not nil", stat3)
 	}
 
-	fmt.Println("Normalize User ID Case 4 : %s", NormalizeUserID4)
+	fmt.Println("Normalize Identity Case 4 : %s", NormalizeIdentity4)
 
-	var _, stat4 = NormalizeUserID(NormalizeUserID4)
+	var _, stat4 = NormalizeIdentity(NormalizeIdentity4)
 	if stat4 == nil {
 		t.Errorf("%v is Wrong! Error must be not nil", stat4)
 	}
