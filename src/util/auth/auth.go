@@ -136,7 +136,7 @@ func (u User) DestroySession(r *http.Request, w http.ResponseWriter) error {
 	return nil
 }
 
-// Update Session
+// UpdateSession will updates the cookies and listsession
 func (u User) UpdateSession(w http.ResponseWriter) {
 	listSession := fmt.Sprintf("%s%d", listPrefixSession, u.ID)
 	data, err := json.Marshal(u)
@@ -161,6 +161,7 @@ func (u User) UpdateSession(w http.ResponseWriter) {
 func (u User) SetSession(w http.ResponseWriter) error {
 
 	var cookie string
+	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < 32; i++ {
 		cookie = cookie + string(character[rand.Intn(charMaxIndex)])
 	}

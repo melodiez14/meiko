@@ -258,6 +258,7 @@ func (q QueryUpdate) Exec() error {
 
 func GenerateVerification(identity int64) (Verification, error) {
 
+	rand.Seed(time.Now().UTC().UnixNano())
 	v := Verification{
 		Code:           uint16(rand.Intn(8999) + 1000),
 		ExpireDuration: "30 Minutes",
