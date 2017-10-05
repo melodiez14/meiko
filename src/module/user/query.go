@@ -48,12 +48,16 @@ const (
 				name,
 				email,
 				password,
-				identity_code
+				identity_code,
+				created_at,
+				updated_at
 			) VALUES (
 				('%s'),
 				('%s'),
 				('%s'),
-				(%d)
+				(%d),
+				NOW(),
+				NOW()
 			);
 	`
 	queryUpdateToVerified = `
@@ -72,11 +76,12 @@ const (
 		UPDATE
 			users
 		SET
-			status = (%d)
+			status = (%d),
+			updated_at = NOW()
 		WHERE
 			identity_code = (%d);
 	`
-	queryReadDashboard = `
+	querySelectDashboard = `
 		SELECT
 			identity_code,
 			name,
@@ -89,7 +94,6 @@ const (
 			id != (%d)
 		LIMIT (%d)
 		OFFSET (%d);
-
 	`
 
 	generateVerificationQuery = `
@@ -98,15 +102,14 @@ const (
 		SET
 			email_verification_code = (%d),
 			email_verification_expire_date = (DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
-			email_verification_attempt = 0,
+			email_verification_attempt = NULL,
 			updated_at = NOW()
 		WHERE
-			identity_code = (%d)
+			identity_code = (%d);
 	`
 
 	getConfirmationQuery = `
 		SELECT
-			id,
 			email_verification_attempt,
 			email_verification_code
 		FROM
@@ -114,6 +117,7 @@ const (
 		WHERE
 			email = ('%s') AND
 			NOW() < email_verification_expire_date
+		LIMIT 1;
 	`
 
 	attemptIncrementQuery = `
@@ -136,6 +140,6 @@ const (
 			email_verification_attempt = NULL,
 			updated_at = NOW()
 		WHERE
-			email = ('%s')
+			email = ('%s');
 	`
 )

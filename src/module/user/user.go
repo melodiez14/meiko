@@ -71,7 +71,7 @@ func GetByIdentityCode(identityCode int64, column ...string) (User, error) {
 	return user, nil
 }
 
-func SignIn(email, password string, column ...string) (User, error) {
+func SignIn(email, password string) (User, error) {
 	var user User
 	query := fmt.Sprintf(querySignIn, email, password)
 	err := conn.DB.Get(&user, query)
@@ -156,9 +156,10 @@ func UpdateProfile(identityCode int64, name, note string, phone, lineID sql.Null
 			phone = %s,
 			line_id = %s,
 			note = ('%s'),
-			gender = (%d)
+			gender = (%d),
+			updated_at = NOW()
 		WHERE
-			identity_code = (%d)
+			identity_code = (%d);
 		`, name, queryPhone, queryLineID, note, gender, identityCode)
 	result, err := conn.DB.Exec(query)
 	if err != nil {
@@ -485,7 +486,7 @@ func UpdateStatus(identityCode int64, status int8) error {
 
 func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
 	var user []User
-	query := fmt.Sprintf(queryReadDashboard, StatusVerified, StatusActivated, id, limit, offset)
+	query := fmt.Sprintf(querySelectDashboard, StatusVerified, StatusActivated, id, limit, offset)
 	err := conn.DB.Select(&user, query)
 	if err != nil {
 		return user, err
@@ -501,7 +502,7 @@ func ChangePassword(identityCode int64, password, oldPassword string) error {
 			password = ('%s')
 		WHERE
 			identity_code = (%d) AND
-			oldPassword = ('%s');
+			password = ('%s');
 		`, password, identityCode, oldPassword)
 	result, err := conn.DB.Exec(query)
 	if err != nil {
