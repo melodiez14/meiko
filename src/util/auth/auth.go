@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/helper"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -23,8 +25,9 @@ type (
 )
 
 const (
-	sessionPrefix = "session:"
-	character     = "!QAZ@WSX#EDC$RFV%TGB^YHN&UJM*IK<(OL>)P:?_{+}|1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p-[=]"
+	sessionPrefix     = "session:"
+	character         = "!QAZ@WSX#EDC$RFV%TGB^YHN&UJM*IK<(OL>)P:?_{+}|1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik,9ol.0p-[=]"
+	listPrefixSession = "session:list:"
 )
 
 var (
@@ -104,9 +107,61 @@ func getUserInfo(session string) (*User, error) {
 	return res, nil
 }
 
+// DestroySession bla
+func (u User) DestroySession(r *http.Request, w http.ResponseWriter) error {
+	cookie, _ := r.Cookie(c.SessionKey)
+	session := strings.Trim(cookie.Value, " ")
+	client := conn.Redis.Get()
+	defer client.Close()
+
+	key := sessionPrefix + session
+	keyList := fmt.Sprintf("%s%d", listPrefixSession, u.ID)
+
+	_, err := redis.Bool(client.Do("DEL", key))
+	if err != nil && err != redis.ErrNil {
+		return err
+	}
+
+	_, err = redis.Bool(client.Do("SREM", keyList, key))
+	if err != nil && err != redis.ErrNil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    c.SessionKey,
+		Expires: time.Now(),
+		Value:   "unuse",
+		Path:    "/",
+	})
+	return nil
+}
+
+// UpdateSession will updates the cookies and listsession
+func (u User) UpdateSession(w http.ResponseWriter) {
+	listSession := fmt.Sprintf("%s%d", listPrefixSession, u.ID)
+	data, err := json.Marshal(u)
+
+	client := conn.Redis.Get()
+	defer client.Close()
+
+	keys, err := redis.Strings(client.Do("SMEMBERS", listSession))
+	if err != nil {
+		fmt.Printf("Error func UpdateSession: %s", err.Error())
+	}
+
+	for _, key := range keys {
+		_, err = redis.String(client.Do("SET", key, data))
+	}
+
+	if err != nil {
+		fmt.Printf("Error func UpdateSession: %s", err.Error())
+	}
+
+}
 func (u User) SetSession(w http.ResponseWriter) error {
 
 	var cookie string
+	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < 32; i++ {
 		cookie = cookie + string(character[rand.Intn(charMaxIndex)])
 	}
@@ -118,9 +173,20 @@ func (u User) SetSession(w http.ResponseWriter) error {
 	}
 
 	client := conn.Redis.Get()
+	defer client.Close()
+
+	// Session cookie
 	_, err = redis.String(client.Do("SET", key, data))
 	if err != nil {
 		return fmt.Errorf("Failed to set session to Redis")
+	}
+
+	val := key
+	key = fmt.Sprintf("%s%d", listPrefixSession, u.ID)
+	// Sesion List Informations
+	_, err = redis.Bool(client.Do("SADD", key, val))
+	if err != nil {
+		return fmt.Errorf("Failed to add list session to Redis")
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -131,4 +197,19 @@ func (u User) SetSession(w http.ResponseWriter) error {
 	})
 
 	return nil
+}
+
+func (u User) IsHasRoles(module string, roles ...string) bool {
+
+	if len(roles) < 1 || len(u.Roles[module]) < 1 {
+		return false
+	}
+
+	for _, val := range roles {
+		if helper.IsStringInSlice(val, u.Roles[module]) {
+			return true
+		}
+	}
+
+	return false
 }

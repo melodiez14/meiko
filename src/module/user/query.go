@@ -1,67 +1,10 @@
 package user
 
 const (
-	insertNewUserQuery = `
-		INSERT INTO
-			users(
-				id,
-				name,
-				email,
-				password,
-				created_at,
-				updated_at
-			)
-		VALUES (
-			(%d),
-			('%s'),
-			('%s'),
-			(md5('%s')),
-			NOW(),
-			NOW()
-		)
-	`
-	getUserByIDQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status
-		FROM
-			users
-		WHERE
-			id = (%d)
-	`
-
-	getUserEmailQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college
-		FROM
-			users
-		WHERE
-			email = ('%s')
-	`
-
-	getUserLoginQuery = `
-		SELECT
-			id,
-			name,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status
-		FROM
-			users
-		WHERE
-			email = ('%s') AND
-			password = (md5('%s'))
-	`
+	queryGet    = "SELECT %s FROM users"
+	querySelect = "SELECT %s FROM users"
+	queryInsert = "INSERT INTO users (%s) VALUES (%s)"
+	queryUpdate = "UPDATE users SET %s"
 
 	generateVerificationQuery = `
 		UPDATE
@@ -72,7 +15,7 @@ const (
 			email_verification_attempt = 0,
 			updated_at = NOW()
 		WHERE
-			id = (%d)
+			identity_code = (%d)
 	`
 
 	getConfirmationQuery = `
@@ -97,7 +40,7 @@ const (
 			id = (%d)
 	`
 
-	setNewPasswordQuery = `
+	updateNewPasswordQuery = `
 		UPDATE
 			users
 		SET

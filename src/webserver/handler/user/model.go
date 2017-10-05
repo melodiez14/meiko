@@ -1,17 +1,33 @@
 package user
 
+import (
+	"database/sql"
+)
+
 type signUpParams struct {
-	ID       string
-	Name     string
-	Email    string
-	Password string
+	IdentityCode string
+	Name         string
+	Email        string
+	Password     string
 }
 
 type signUpArgs struct {
-	ID       int64
-	Name     string
-	Email    string
-	Password string
+	IdentityCode int64
+	Name         string
+	Email        string
+	Password     string
+}
+
+type emailVerificationParams struct {
+	Email        string
+	IsResendCode string
+	Code         string
+}
+
+type emailVerificationArgs struct {
+	Email        string
+	IsResendCode bool
+	Code         uint16
 }
 
 type signInParams struct {
@@ -24,28 +40,96 @@ type signInArgs struct {
 	Password string
 }
 
-type forgotRequestParams struct {
-	Email string
+type forgotResponse struct {
+	Email          string `json:"email"`
+	ExpireDuration string `json:"expire_duration"`
+	MaxAttempt     uint8  `json:"max_attempt"`
 }
 
-type forgotRequestArgs struct {
-	Email string
+type forgotParams struct {
+	Email      string
+	IsSendCode string
+	Password   string
+	Code       string
 }
 
-type forgotRequestResponse struct {
-	Email          string
-	ExpireDuration string
-	MaxAttempt     uint8
+type forgotArgs struct {
+	Email      string
+	IsSendCode bool
+	Password   string
+	Code       uint16
 }
 
-type forgotConfirmationParams struct {
-	Email    string
-	Password string
-	Code     string
+type getVerifiedParams struct {
+	Page  string
+	Total string
 }
 
-type forgotConfirmationArgs struct {
-	Email    string
-	Password string
-	Code     uint16
+type getVerifiedArgs struct {
+	Page  uint16
+	Total uint16
+}
+
+type getVerifiedResponse struct {
+	IdentityCode int64  `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Status       string `json:"status"`
+}
+
+type updateProfileParams struct {
+	IdentityCode string
+	Name         string
+	Email        string
+	Gender       string
+	Phone        string
+	LineID       string
+	Note         string
+}
+
+type updateProfileArgs struct {
+	IdentityCode int64
+	Name         string
+	Email        string
+	Gender       int8
+	Phone        sql.NullString
+	LineID       sql.NullString
+	Note         string
+}
+
+type getProfileResponse struct {
+	Name                  string `json:"name"`
+	Email                 string `json:"email"`
+	Gender                string `json:"gender"`
+	Phone                 string `json:"phone"`
+	IdentityCode          int64  `json:"identity"`
+	LineID                string `json:"line_id"`
+	Note                  string `json:"note"`
+	ImageProfile          string `json:"img"`
+	ImageProfileThumbnail string `json:"img_t"`
+}
+
+type changePasswordParams struct {
+	IdentityCode    string
+	Email           string
+	OldPassword     string
+	Password        string
+	ConfirmPassword string
+}
+
+type changePasswordArgs struct {
+	IdentityCode int64
+	Email        string
+	OldPassword  string
+	Password     string
+}
+
+type activationParams struct {
+	IdentityCode string
+	Status       string
+}
+
+type activationArgs struct {
+	IdentityCode int64
+	Status       int8
 }
