@@ -11,6 +11,166 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
+func GetByEmail(email string, column ...string) (User, error) {
+	var user User
+	var c []string
+	if len(column) < 1 {
+		c = []string{
+			ColID,
+			ColName,
+			ColEmail,
+			ColGender,
+			ColNote,
+			ColStatus,
+			ColIdentityCode,
+			ColLineID,
+			ColPhone,
+			ColRoleGroupsID,
+		}
+	} else {
+		for _, val := range column {
+			c = append(c, val)
+		}
+	}
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(queryGetByEmail, cols, email)
+	err := conn.DB.Get(&user, query)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func GetByIdentityCode(identityCode int64, column ...string) (User, error) {
+	var user User
+	var c []string
+	if len(column) < 1 {
+		c = []string{
+			ColID,
+			ColName,
+			ColEmail,
+			ColGender,
+			ColNote,
+			ColStatus,
+			ColIdentityCode,
+			ColLineID,
+			ColPhone,
+			ColRoleGroupsID,
+		}
+	} else {
+		for _, val := range column {
+			c = append(c, val)
+		}
+	}
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(queryGetByIdentityCode, cols, identityCode)
+	err := conn.DB.Get(&user, query)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func SignIn(email, password string, column ...string) (User, error) {
+	var user User
+	query := fmt.Sprintf(querySignIn, email, password)
+	err := conn.DB.Get(&user, query)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func SignUp(identityCode int64, name, email, password string) error {
+	query := fmt.Sprintf(querySignUp, name, email, password, identityCode)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func IsPhoneExist(identityCode int64, phone string) bool {
+	var user User
+	query := fmt.Sprintf(`
+			SELECT
+				phone
+			FROM
+				 users
+			WHERE
+				phone = ('%s') AND
+				identity_code != (%d)
+			LIMIT 1
+		`, phone, identityCode)
+	err := conn.DB.Get(&user, query)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}
+
+func IsLineIDExist(identityCode int64, lineID string) bool {
+	var user User
+	query := fmt.Sprintf(`
+			SELECT
+				line_id
+			FROM
+				 users
+			WHERE
+				line_id = ('%s') AND
+				identity_code != (%d)
+			LIMIT 1
+		`, lineID, identityCode)
+	err := conn.DB.Get(&user, query)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}
+
+func UpdateProfile(identityCode int64, name, note string, phone, lineID sql.NullString, gender int8) error {
+
+	if gender != GenderMale && gender != GenderFemale {
+		gender = GenderUndefined
+	}
+
+	queryLineID := fmt.Sprintf("NULL")
+	if lineID.Valid {
+		queryLineID = fmt.Sprintf("('%s')", lineID.String)
+	}
+
+	queryPhone := fmt.Sprintf("NULL")
+	if phone.Valid {
+		queryPhone = fmt.Sprintf("('%s')", phone.String)
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE
+			users
+		SET
+			name = ('%s'),
+			phone = %s,
+			line_id = %s,
+			note = ('%s'),
+			gender = (%d)
+		WHERE
+			identity_code = (%d)
+		`, name, queryPhone, queryLineID, note, gender, identityCode)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
 func Get(column ...string) QueryGet {
 	var c []string
 	if len(column) < 1 {
@@ -297,7 +457,72 @@ func IsValidConfirmationCode(email string, code uint16) bool {
 	return true
 }
 
-func UpdateNewPassword(email, password string) {
-	query := fmt.Sprintf(updateNewPasswordQuery, password, email)
-	_ = conn.DB.MustExec(query)
+func UpdateToVerified(identityCode int64) error {
+	query := fmt.Sprintf(queryUpdateToVerified, StatusVerified, identityCode)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func UpdateStatus(identityCode int64, status int8) error {
+	query := fmt.Sprintf(queryUpdateStatus, status, identityCode)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
+	var user []User
+	query := fmt.Sprintf(queryReadDashboard, StatusVerified, StatusActivated, id, limit, offset)
+	err := conn.DB.Select(&user, query)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func ChangePassword(identityCode int64, password, oldPassword string) error {
+	query := fmt.Sprintf(`
+		UPDATE
+			users
+		SET
+			password = ('%s')
+		WHERE
+			identity_code = (%d) AND
+			oldPassword = ('%s');
+		`, password, identityCode, oldPassword)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func ForgotNewPassword(email, password string) error {
+	query := fmt.Sprintf(queryForgotNewPassword, password, email)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
 }
