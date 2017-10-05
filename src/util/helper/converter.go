@@ -17,14 +17,24 @@ func ExtractExtension(fileName string) (string, string, error) {
 
 	splitted := strings.Split(fileName, ".")
 	length := len(splitted)
+	lastChar := string(fileName[len(fileName)-1])
 
-	if length < 2 {
+	if length < 2 || lastChar == "." {
 		return "", "", fmt.Errorf("Doesn't have extension")
+	}
+	if strings.Replace(splitted[length-1], " ", "", -1) == "" {
+		return "", "", fmt.Errorf("Doesn't have extension")
+	} else {
+		splitted[length-1] = strings.Replace(splitted[length-1], " ", "", -1)
 	}
 
 	lastIndex := length - 1
 	fn := strings.Join(splitted[:lastIndex], ".")
 	ext := splitted[lastIndex]
+
+	if !IsAlpha(ext) {
+		return "", "", fmt.Errorf("Doesn't have extension")
+	}
 
 	return fn, ext, nil
 }
@@ -46,7 +56,7 @@ func DateToString(t1, t2 time.Time) string {
 	} else if days < 4 {
 		return fmt.Sprintf("%d days ago", days)
 	} else {
-		return t1.Format("Monday, 1 January 2006")
+		return t2.Format("Monday, 1 January 2006")
 	}
 
 }
