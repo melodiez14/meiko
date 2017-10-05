@@ -5,6 +5,14 @@ const (
 	querySelect     = "SELECT %s FROM users"
 	queryInsert     = "INSERT INTO users (%s) VALUES (%s)"
 	queryUpdate     = "UPDATE users SET %s"
+	querySelectByID = `
+		SELECT
+			%s
+		FROM
+			users
+		WHERE
+			id IN (%s);
+	`
 	queryGetByEmail = `
 		SELECT
 			%s

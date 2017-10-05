@@ -472,9 +472,7 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 	var users []user.User
 	if len(uIDs) > 0 {
-		users, err = user.Select(user.ColEmail, user.ColPhone, user.ColName).
-			Where(user.ColID, user.OperatorIn, uIDs).
-			Exec()
+		users, err = user.SelectByID(uIDs, user.ColEmail, user.ColPhone, user.ColName)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))

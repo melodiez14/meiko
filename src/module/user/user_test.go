@@ -37,7 +37,7 @@ func TestGetByEmail(t *testing.T) {
 				column: []string{},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: []driver.Value{"1", "Risal Falah", "risal@live.com", "1", "", "2", "140810140016", nil, nil, nil},
 				err:    nil,
@@ -63,7 +63,7 @@ func TestGetByEmail(t *testing.T) {
 				column: []string{ColID, ColName, ColEmail},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "email"},
 				result: []driver.Value{"1", "Risal Falah", "risal@live.com"},
 				err:    nil,
@@ -82,7 +82,7 @@ func TestGetByEmail(t *testing.T) {
 				column: []string{ColID, ColName, "xxx"},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "xxx"},
 				result: []driver.Value{},
 				err:    fmt.Errorf("Invalid column"),
@@ -140,7 +140,7 @@ func TestGetByIdentityCode(t *testing.T) {
 				column:       []string{},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: []driver.Value{"1", "Risal Falah", "risal@live.com", "1", "", "2", "140810140016", nil, nil, nil},
 				err:    nil,
@@ -166,7 +166,7 @@ func TestGetByIdentityCode(t *testing.T) {
 				column:       []string{ColID, ColName, ColEmail},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "email"},
 				result: []driver.Value{"1", "Risal Falah", "risal@live.com"},
 				err:    nil,
@@ -185,7 +185,7 @@ func TestGetByIdentityCode(t *testing.T) {
 				column:       []string{ColID, ColName, "xxx"},
 			},
 			mock: mock{
-				query:  `SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)(.+)(\s*)FROM(\s*)users(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"id", "name", "xxx"},
 				result: []driver.Value{},
 				err:    fmt.Errorf("Invalid column"),
@@ -242,7 +242,7 @@ func TestSignIn(t *testing.T) {
 				password: "2af9b1ba42dc5eb01743e6b3759b6e4b",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)id,(\s*)name,(\s*)email,(\s*)gender,(\s*)note,(\s*)status,(\s*)identity_code,(\s*)line_id,(\s*)phone,(\s*)rolegroups_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)password(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1;$`,
+				query:  `^\s*SELECT(\s*)id,(\s*)name,(\s*)email,(\s*)gender,(\s*)note,(\s*)status,(\s*)identity_code,(\s*)line_id,(\s*)phone,(\s*)rolegroups_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)password(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1;$`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: []driver.Value{"1", "Risal Falah", "risal@live.com", "1", "", "2", "140810140016", nil, nil, "1"},
 				err:    nil,
@@ -268,7 +268,7 @@ func TestSignIn(t *testing.T) {
 				password: "2af9b1ba42dc5eb01743e6b3759b6e4b",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)id,(\s*)name,(\s*)email,(\s*)gender,(\s*)note,(\s*)status,(\s*)identity_code,(\s*)line_id,(\s*)phone,(\s*)rolegroups_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)password(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1;$`,
+				query:  `^\s*SELECT(\s*)id,(\s*)name,(\s*)email,(\s*)gender,(\s*)note,(\s*)status,(\s*)identity_code,(\s*)line_id,(\s*)phone,(\s*)rolegroups_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)password(\s*)=(\s*)(.+)(\s*)LIMIT(\s*)1;$`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: []driver.Value{},
 				err:    sql.ErrNoRows,
@@ -325,7 +325,7 @@ func TestIsPhoneExist(t *testing.T) {
 				phone:        "085860141146",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)phone(\s*)FROM(\s*)users(\s*)WHERE(\s*)phone(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)phone(\s*)FROM(\s*)users(\s*)WHERE(\s*)phone(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"phone"},
 				result: []driver.Value{"085860141146"},
 				err:    nil,
@@ -339,7 +339,7 @@ func TestIsPhoneExist(t *testing.T) {
 				phone:        "081231231234",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)phone(\s*)FROM(\s*)users(\s*)WHERE(\s*)phone(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)phone(\s*)FROM(\s*)users(\s*)WHERE(\s*)phone(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"phone"},
 				result: []driver.Value{},
 				err:    sql.ErrNoRows,
@@ -389,7 +389,7 @@ func TestIsLineIDExist(t *testing.T) {
 				lineID:       "risalfa",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"line_id"},
 				result: []driver.Value{"085860141146"},
 				err:    nil,
@@ -403,7 +403,7 @@ func TestIsLineIDExist(t *testing.T) {
 				lineID:       "viavallen",
 			},
 			mock: mock{
-				query:  `SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"line_id"},
 				result: []driver.Value{},
 				err:    sql.ErrNoRows,
@@ -460,7 +460,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"0", "1234"},
 				err:    nil,
@@ -474,7 +474,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"4", "1234"},
 				err:    nil,
@@ -488,7 +488,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"1", "3213"},
 				err:    nil,
@@ -502,7 +502,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{},
 				result: []driver.Value{},
 				err:    fmt.Errorf("Error connection"),
@@ -516,7 +516,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"1", "4321"},
 				err:    nil,
@@ -583,7 +583,7 @@ func TestSelectDashboard(t *testing.T) {
 				offset: 10,
 			},
 			mock: mock{
-				query:  `SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
+				query:  `^\s*SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
 				column: []string{"identity_code", "name", "email", "status"},
 				result: [][]driver.Value{
 					[]driver.Value{
@@ -628,7 +628,7 @@ func TestSelectDashboard(t *testing.T) {
 				offset: 10,
 			},
 			mock: mock{
-				query:  `SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
+				query:  `^\s*SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
 				column: []string{"identity_code", "name", "email", "status"},
 				result: [][]driver.Value{},
 				err:    fmt.Errorf("Error connection"),
@@ -686,7 +686,7 @@ func TestUpdateStatus(t *testing.T) {
 				status:       1,
 			},
 			mock: mock{
-				query:        `\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
 				lastInsertID: 1,
 				rowsAffected: 1,
 				err:          nil,
@@ -700,7 +700,7 @@ func TestUpdateStatus(t *testing.T) {
 				status:       1,
 			},
 			mock: mock{
-				query:        `\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          fmt.Errorf("Error connection"),
@@ -714,7 +714,7 @@ func TestUpdateStatus(t *testing.T) {
 				status:       1,
 			},
 			mock: mock{
-				query:        `\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*status\s*=\s*\(\d\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          nil,
@@ -761,7 +761,7 @@ func TestUpdateToVerified(t *testing.T) {
 				identityCode: 140810140016,
 			},
 			mock: mock{
-				query:        `UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
+				query:        `^\s*UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
 				lastInsertID: 1,
 				rowsAffected: 1,
 				err:          nil,
@@ -774,7 +774,7 @@ func TestUpdateToVerified(t *testing.T) {
 				identityCode: 140810140016,
 			},
 			mock: mock{
-				query:        `UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
+				query:        `^\s*UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          nil,
@@ -787,7 +787,7 @@ func TestUpdateToVerified(t *testing.T) {
 				identityCode: 140810140016,
 			},
 			mock: mock{
-				query:        `UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
+				query:        `^\s*UPDATE(\s*)users(\s*)SET(\s*)status(\s*)=(\s*)(.+)(\s*)email_verification_code(\s*)=(\s*)NULL,(\s*)email_verification_expire_date(\s*)=(\s*)NULL,(\s*)email_verification_attempt(\s*)=(\s*)NULL,(\s*)updated_at(\s*)=(\s*)NOW\(\)(\s*)WHERE(\s*)identity_code(\s*)=(\s*)(.+)`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          fmt.Errorf("Error connection"),
@@ -1241,6 +1241,140 @@ func TestSignUp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := SignUp(tt.args.identityCode, tt.args.name, tt.args.email, tt.args.password); (err != nil) != tt.wantErr {
 				t.Errorf("SignUp() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSelectByID(t *testing.T) {
+	type args struct {
+		id     []int64
+		column []string
+	}
+	type mock struct {
+		query  string
+		column []string
+		result [][]driver.Value
+		err    error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mock    mock
+		want    []User
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				id:     []int64{1, 2, 3},
+				column: []string{ColID, ColName, ColEmail, ColPhone},
+			},
+			mock: mock{
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				column: []string{"id", "name", "email", "phone"},
+				result: [][]driver.Value{
+					[]driver.Value{
+						"1", "Risal Falah", "risal@live.com", "085860141146",
+					},
+					[]driver.Value{
+						"2", "Rifki Muhammad", "rifkirifkigue@gmail.com", "085860141146",
+					},
+					[]driver.Value{
+						"3", "Asep Nur Muhammad Iskandar Yusuf", "asepasepgue@gmail.com", "085860141146",
+					},
+				},
+				err: nil,
+			},
+			want: []User{
+				User{
+					ID:    1,
+					Name:  "Risal Falah",
+					Email: "risal@live.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+				User{
+					ID:    2,
+					Name:  "Rifki Muhammad",
+					Email: "rifkirifkigue@gmail.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+				User{
+					ID:    3,
+					Name:  "Asep Nur Muhammad Iskandar Yusuf",
+					Email: "asepasepgue@gmail.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				id:     []int64{1, 2},
+				column: []string{},
+			},
+			mock: mock{
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
+				result: [][]driver.Value{
+					[]driver.Value{"1", "Risal Falah", "risal@live.com", "1", "", "2", "140810140016", nil, nil, nil},
+				},
+				err: nil,
+			},
+			want: []User{
+				User{
+					ID:           1,
+					Name:         "Risal Falah",
+					Email:        "risal@live.com",
+					Gender:       1,
+					Note:         "",
+					Status:       2,
+					IdentityCode: 140810140016,
+					LineID:       sql.NullString{},
+					Phone:        sql.NullString{},
+					RoleGroupsID: sql.NullInt64{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				id:     []int64{1, 2},
+				column: []string{},
+			},
+			mock: mock{
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
+				result: nil,
+				err:    fmt.Errorf("Error connection"),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		db, _ := conn.InitDBMock()
+		q := db.ExpectQuery(tt.mock.query)
+		if tt.mock.err == nil {
+			rows := sqlmock.NewRows(tt.mock.column)
+			for _, val := range tt.mock.result {
+				rows.AddRow(val...)
+			}
+			q.WillReturnRows(rows)
+		} else {
+			q.WillReturnError(tt.mock.err)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := SelectByID(tt.args.id, tt.args.column...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SelectByID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SelectByID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
