@@ -10,47 +10,32 @@ import (
 )
 
 func IsAlpha(text string) bool {
-	valid, err := regexp.MatchString(`^[a-zA-Z ]+$`, text)
-	if err != nil {
-		return false
-	}
+	valid, _ := regexp.MatchString(`^[a-zA-Z]+$`, text)
 	return valid
 }
 
 func IsAlphaSpace(text string) bool {
-	valid, err := regexp.MatchString(`^[a-zA-Z ]+$`, text)
-	if err != nil {
-		return false
-	}
+	valid, _ := regexp.MatchString(`^[a-zA-Z ]+$`, text)
 	return valid
 }
 
 func IsAlphaNumericSpace(text string) bool {
-	valid, err := regexp.MatchString(`^[a-zA-Z\d ]+$`, text)
-	if err != nil {
-		return false
-	}
+	valid, _ := regexp.MatchString(`^[a-zA-Z\d ]+$`, text)
 	return valid
 }
 
 func IsPhone(phone string) bool {
 
-	if len(phone) < 10 || len(phone) > 12 {
+	if len(phone) < 9 || len(phone) > 11 {
 		return false
 	}
 
-	valid, err := regexp.MatchString(`^\d+$`, phone)
-	if err != nil {
-		return false
-	}
+	valid, _ := regexp.MatchString(`^\d+$`, phone)
 	return valid
 }
 
 func IsEmail(email string) bool {
-	valid, err := regexp.MatchString("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$", email)
-	if err != nil {
-		return false
-	}
+	valid, _ := regexp.MatchString("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$", email)
 	return valid
 }
 
@@ -133,6 +118,10 @@ func NormalizeIdentity(str string) (int64, error) {
 }
 
 func NormalizeName(name string) (string, error) {
+
+	splitted := strings.Fields(name)
+	name = strings.Join(splitted, " ")
+
 	if IsEmpty(name) {
 		return "", fmt.Errorf("name cant't be empty")
 	}
@@ -143,13 +132,19 @@ func NormalizeName(name string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("name should be alphabet and space only")
 	}
-	return Normalize(name, IsAlphaSpace)
+
+	return name, nil
 }
 
 func NormalizeCollege(college string) (string, error) {
+	splitted := strings.Fields(college)
+	college = strings.Join(splitted, " ")
 
 	if len(college) > alias.UserCollegeLengthMax {
 		return "", fmt.Errorf("College is too long")
+	}
+	if IsEmpty(college) {
+		return "", nil
 	}
 
 	return Normalize(college, IsAlphaSpace)

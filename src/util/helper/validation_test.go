@@ -1,371 +1,1224 @@
 package helper
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 )
 
+func TestIsAlpha(t *testing.T) {
+	type args struct {
+		text string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				text: "abcdefgh",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				text: "ABCDefgh",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				text: "abcd EFGH",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text: "1234abcd",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				text: "abcd!@#$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				text: "1234!@#$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				text: " ",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsAlpha(tt.args.text); got != tt.want {
+				t.Errorf("IsAlpha() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestIsAlphaSpace(t *testing.T) {
-	var (
-		IsAlphaSpace1 string = "khaazas"
-		IsAlphaSpace2 string = "kha azas"
-		IsAlphaSpace3 string = "khaa zas!@"
-	)
-
-	fmt.Println("Is Alpha Space Case 1 : %s", IsAlphaSpace1)
-	if IsAlphaSpace(IsAlphaSpace1) != true {
-		t.Errorf("%v is Wrong! must be true", IsAlphaSpace(IsAlphaSpace1))
+	type args struct {
+		text string
 	}
-
-	fmt.Println("Is Alpha Space Case 2 : %s", IsAlphaSpace2)
-	if IsAlphaSpace(IsAlphaSpace2) != true {
-		t.Errorf("%v is Wrong! must be true ", IsAlphaSpace(IsAlphaSpace2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				text: "abcdefgh",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				text: "abcdEFGH",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				text: "abcd EFGH",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text: "1234abcd",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				text: "abcd 1234",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				text: "!@#$abcd",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				text: "!@#$ abcd",
+			},
+			want: false,
+		},
 	}
-
-	fmt.Println("Is Alpha Space Case 3 : %s", IsAlphaSpace3)
-	if IsAlphaSpace(IsAlphaSpace3) != false {
-		t.Errorf("%v is Wrong! must be false", IsAlphaSpace(IsAlphaSpace3))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsAlphaSpace(tt.args.text); got != tt.want {
+				t.Errorf("IsAlphaSpace() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsAlphaNumericSpace(t *testing.T) {
-	var (
-		IsAlphaNumSpace1 string = "khairil14001"
-		IsAlphaNumSpace2 string = "khairil 14001"
-		IsAlphaNumSpace3 string = "khairil 14001!"
-	)
-
-	fmt.Println("Is Alpha Num Space Case 1 : %s", IsAlphaNumSpace1)
-	if IsAlphaNumericSpace(IsAlphaNumSpace1) != true {
-		t.Errorf("%v is Wrong! must be true", IsAlphaNumericSpace(IsAlphaNumSpace1))
+	type args struct {
+		text string
 	}
-
-	fmt.Println("Is Alpha Num Space Case 2 : %s", IsAlphaNumSpace2)
-	if IsAlphaNumericSpace(IsAlphaNumSpace2) != true {
-		t.Errorf("%v is Wrong! must be true", IsAlphaNumericSpace(IsAlphaNumSpace2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				text: "abcdefgh",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				text: "abcdEFGH",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				text: "abcd EFGH",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text: "abcd 1234",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				text: "abcd!@#$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				text: "abcd !@@##",
+			},
+			want: false,
+		},
 	}
-
-	fmt.Println("Is Alpha Num Space Case 3 : %s", IsAlphaNumSpace3)
-	if IsAlphaNumericSpace(IsAlphaNumSpace3) != false {
-		t.Errorf("%v is Wrong! must be false", IsAlphaNumericSpace(IsAlphaNumSpace3))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsAlphaNumericSpace(tt.args.text); got != tt.want {
+				t.Errorf("IsAlphaNumericSpace() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsPhone(t *testing.T) {
-	var (
-		IsPhone1 string = "082214467300"
-		IsPhone2 string = "082214467"
-		IsPhone3 string = "0822144673000"
-		IsPhone4 string = "08221446730O"
-	)
-
-	fmt.Println("Is Phone Number Case 1 : %s", IsPhone1)
-	if IsPhone(IsPhone1) != true {
-		t.Errorf("%v is Wrong! must be true", IsPhone(IsPhone1))
+	type args struct {
+		phone string
 	}
-
-	fmt.Println("Is Phone Number Case 2 : %s", IsPhone2)
-	if IsPhone(IsPhone2) != false {
-		t.Errorf("%v is Wrong! must be false", IsPhone(IsPhone2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				phone: "81220058838",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				phone: "081220058838",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				phone: "+6281220058838",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				phone: "6281220058838",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				phone: "abcdefgh",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				phone: "812200588",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				phone: "81220058",
+			},
+			want: false,
+		},
 	}
-
-	fmt.Println("Is Phone Number Case 3 : %s", IsPhone3)
-	if IsPhone(IsPhone3) != false {
-		t.Errorf("%v is Wrong! must be false", IsPhone(IsPhone3))
-	}
-
-	fmt.Println("Is Phone Number Case 4 : %s", IsPhone4)
-	if IsPhone(IsPhone4) != false {
-		t.Errorf("%v is Wrong! must be false", IsPhone(IsPhone4))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsPhone(tt.args.phone); got != tt.want {
+				t.Errorf("IsPhone() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsEmail(t *testing.T) {
-	var (
-		IsEmail1 string = "khairil14001@mail.unpad.ac.id"
-		IsEmail2 string = "khairil 14001@mail.unpad.ac.id"
-		IsEmail3 string = "khairil14001@mail"
-		IsEmail4 string = "khairil14001!!!@mail.unpad.ac.id"
-	)
-
-	fmt.Println("Is Email Case 1 : %s", IsEmail1)
-	if IsEmail(IsEmail1) != true {
-		t.Errorf("%v is Wrong! must be true", IsEmail(IsEmail1))
+	type args struct {
+		email string
 	}
-
-	fmt.Println("Is Email Case 2 : %s", IsEmail2)
-	if IsEmail(IsEmail2) != false {
-		t.Errorf("%v is Wrong! must be false", IsEmail(IsEmail2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				email: "khairil@gmail.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				email: "khairil@mail.unpad.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				email: "khairil@yahoo.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				email: "khairil@.mail.unpad.com.com",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				email: "kh@iril@gmail.com",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				email: " ",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				email: "",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				email: "Khairil_Azmi@gmail.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				email: "Khairil.Azmi@gmail.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 9",
+			args: args{
+				email: "Khairil*Azmi@gmail.com",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 10",
+			args: args{
+				email: "Khairil@Azmi@gmail.com",
+			},
+			want: false,
+		},
 	}
-
-	fmt.Println("Is Email Case 3 : %s", IsEmail3)
-	if IsEmail(IsEmail3) != false {
-		t.Errorf("%v is Wrong! must be false", IsEmail(IsEmail3))
-	}
-
-	fmt.Println("Is Email Case 4 : %s", IsEmail4)
-	if IsEmail(IsEmail4) != false {
-		t.Errorf("%v is Wrong! must be false", IsEmail(IsEmail4))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsEmail(tt.args.email); got != tt.want {
+				t.Errorf("IsEmail() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsPassword(t *testing.T) {
-	var (
-		IsPassword1 string = "sokolaRimba"
-		IsPassword2 string = "sokolaRimba14"
-		IsPassword3 string = "sokola Rimba"
-		IsPassword4 string = "sokolaRimba@"
-	)
-
-	fmt.Println("Is Password Case 1 : %s", IsPassword1)
-	if IsPassword(IsPassword1) != false {
-		t.Errorf("%v is Wrong! must be true", IsPassword(IsPassword1))
+	type args struct {
+		password string
 	}
-
-	fmt.Println("Is Password Case 2 : %s", IsPassword2)
-	if IsPassword(IsPassword2) != true {
-		t.Errorf("%v is Wrong! must be true", IsPassword(IsPassword2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				password: "abcdefgh",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				password: "12345678",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				password: "!@#$%^&*",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				password: "abcd1234",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				password: "abcd!@#$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				password: "1234!@#$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				password: "1234abcdDEFG",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				password: "`@)()+_+?><::;`",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				password: "<HTML>asep12</html>",
+			},
+			want: true,
+		},
 	}
-
-	fmt.Println("Is Password Case 3 : %s", IsPassword3)
-	if IsPassword(IsPassword3) != false {
-		t.Errorf("%v is Wrong! must be false", IsPassword(IsPassword3))
-	}
-
-	fmt.Println("Is Password Case 4 : %s", IsPassword4)
-	if IsPassword(IsPassword4) != false {
-		t.Errorf("%v is Wrong! must be false", IsPassword(IsPassword4))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsPassword(tt.args.password); got != tt.want {
+				t.Errorf("IsPassword() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsEmpty(t *testing.T) {
-	var (
-		IsEmpty1 string = " "
-		IsEmpty2 string = ""
-		IsEmpty3 string = "x"
-	)
-
-	fmt.Println("Is Empty Case 1 : %s", IsEmpty1)
-	if IsEmpty(IsEmpty1) != true {
-		t.Errorf("%v is Wrong! must be true", IsEmpty(IsEmpty1))
+	type args struct {
+		text string
 	}
-
-	fmt.Println("Is Empty Case 2 : %s", IsEmpty2)
-	if IsEmpty(IsEmpty2) != true {
-		t.Errorf("%v is Wrong! must be true", IsEmpty(IsEmpty2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				text: "abc",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				text: "abcAb def",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text: "abc821 def3422",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text: "sdkala. 21ok la la  ",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				text: " ",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				text: "",
+			},
+			want: true,
+		},
 	}
-
-	fmt.Println("Is Empty Case 3 : %s", IsEmpty3)
-	if IsEmpty(IsEmpty3) != false {
-		t.Errorf("%v is Wrong! must be false", IsEmpty(IsEmpty3))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsEmpty(tt.args.text); got != tt.want {
+				t.Errorf("IsEmpty() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsImageMime(t *testing.T) {
-	var (
-		IsImageMime1 string = "image/jpeg"
-		IsImageMime2 string = "image/png"
-		IsImageMime3 string = "image/pdf"
-		IsImageMime4 string = "image.png"
-	)
-
-	fmt.Println("Is Image Mime Case 1 : %s", IsImageMime1)
-	if IsImageMime(IsImageMime1) != true {
-		t.Errorf("%v is Wrong! must be true", IsImageMime(IsImageMime1))
+	type args struct {
+		mime string
 	}
-
-	fmt.Println("Is Image Mime Case 2 : %s", IsImageMime2)
-	if IsImageMime(IsImageMime2) != true {
-		t.Errorf("%v is Wrong! must be true", IsImageMime(IsImageMime2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				mime: "",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				mime: " ",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				mime: ".",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				mime: "abc",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				mime: "image/jpg",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				mime: "image/png",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				mime: "image/jpeg",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				mime: "image/pdf",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 9",
+			args: args{
+				mime: "image/bmp",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				mime: "jpg/image",
+			},
+			want: false,
+		},
 	}
-
-	fmt.Println("Is Image Mime Case 3 : %s", IsImageMime3)
-	if IsImageMime(IsImageMime3) != false {
-		t.Errorf("%v is Wrong! must be false", IsImageMime(IsImageMime3))
-	}
-
-	fmt.Println("Is Image Mime Case 4 : %s", IsImageMime4)
-	if IsImageMime(IsImageMime4) != false {
-		t.Errorf("%v is Wrong! must be false", IsImageMime(IsImageMime4))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsImageMime(tt.args.mime); got != tt.want {
+				t.Errorf("IsImageMime() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestIsImageExtension(t *testing.T) {
-	var (
-		IsImageExtension1 string = "jpeg"
-		IsImageExtension2 string = "jpg"
-		IsImageExtension3 string = "pdf"
-	)
-
-	fmt.Println("Is Image Extension Case 1 : %s", IsImageExtension1)
-	if IsImageExtension(IsImageExtension1) != true {
-		t.Errorf("%v is Wrong! must be true", IsImageExtension(IsImageExtension1))
+	type args struct {
+		extension string
 	}
-
-	fmt.Println("Is Image Extension Case 2 : %s", IsImageExtension2)
-	if IsImageExtension(IsImageExtension2) != true {
-		t.Errorf("%v is Wrong! must be true", IsImageExtension(IsImageExtension2))
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				extension: "",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				extension: " ",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				extension: ".",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				extension: "abc",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				extension: "jpg",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				extension: "image.png",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				extension: "image.jpeg",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				extension: "image.pdf",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 9",
+			args: args{
+				extension: "image.jpg.pdf",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 10",
+			args: args{
+				extension: ".jpg.image",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 11",
+			args: args{
+				extension: ".jpgimage",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 12",
+			args: args{
+				extension: "image.pdf.png",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 12",
+			args: args{
+				extension: "!@$$",
+			},
+			want: false,
+		},
+		{
+			name: "Test Case 13",
+			args: args{
+				extension: "jpeg",
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 14",
+			args: args{
+				extension: "png",
+			},
+			want: true,
+		},
 	}
-
-	fmt.Println("Is Image Extension Case 3 : %s", IsImageExtension3)
-	if IsImageExtension(IsImageExtension3) != false {
-		t.Errorf("%v is Wrong! must be false", IsImageExtension(IsImageExtension3))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsImageExtension(tt.args.extension); got != tt.want {
+				t.Errorf("IsImageExtension() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNormalize(t *testing.T) {
-	var (
-		Normalize1      string = "Khairil  Azmi  Ashari"
-		Normalize1_want string = "Khairil Azmi Ashari"
-		Normalize2      string = "Khairil  Azmi  Ashari  "
-		Normalize2_want string = "Khairil Azmi Ashari"
-	)
-
-	fmt.Println("Normalize Case 1 : %s", Normalize1)
-	var Normal1, stat1 = Normalize(Normalize1, IsAlphaSpace)
-	t.Logf("Text Normalize: %s", Normal1)
-	if strings.Compare(Normalize1_want, Normal1) != 0 || stat1 != nil {
-		t.Errorf("Wrong! must be Normalize : %s, error : %v", Normal1, nil)
+	type args struct {
+		text   string
+		format func(string) bool
 	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				text:   "khairil    azmi",
+				format: IsAlphaSpace,
+			},
+			want:    "khairil azmi",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				text:   "khairil    azmi    ",
+				format: IsAlphaSpace,
+			},
+			want:    "khairil azmi",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				text:   "    khairil    azmi",
+				format: IsAlphaSpace,
+			},
+			want:    "khairil azmi",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				text:   "    khairil    azmi    ",
+				format: IsAlphaSpace,
+			},
+			want:    "khairil azmi",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				text:   "khairilazmi",
+				format: IsAlphaSpace,
+			},
+			want:    "khairilazmi",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				text:   "khairil14001",
+				format: IsAlphaSpace,
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				text:   "khairil 14001    !  @ ",
+				format: IsAlphaSpace,
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Normalize(tt.args.text, tt.args.format)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Normalize() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Normalize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
-	fmt.Println("Normalize Case 2 : %s", Normalize2)
-	var Normal2, stat2 = Normalize(Normalize2, IsAlphaSpace)
-	t.Logf("Text Normalize: %s", Normal2)
-	if strings.Compare(Normalize2_want, Normal2) != 0 || stat2 != nil {
-		t.Errorf("Wrong! must be Normalize : %s, error : %v", Normal1, nil)
+func TestNormalizeNPM(t *testing.T) {
+	type args struct {
+		str string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				str: "",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				str: "14081014006",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				str: "a408101400600",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				str: "140810140060",
+			},
+			want:    140810140060,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				str: "            ",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeNPM(tt.args.str)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizeNPM() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizeNPM() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNormalizeIdentity(t *testing.T) {
-	var (
-		NormalizeIdentity1      string = "140810140060"
-		NormalizeIdentity1_want int64  = 140810140060
-		NormalizeIdentity2      string = "1408101400"
-		NormalizeIdentity3      string = ""
-		NormalizeIdentity4      string = "14081014006O"
-	)
-
-	fmt.Println("Normalize Identity Case 1 : %s", NormalizeIdentity1)
-
-	var userIdentity1, stat1 = NormalizeIdentity(NormalizeIdentity1)
-	if (userIdentity1 != NormalizeIdentity1_want) && (stat1 != nil) {
-		t.Errorf("%d is Wrong! must be %d", userIdentity1, NormalizeIdentity1)
+	type args struct {
+		str string
 	}
-
-	fmt.Println("Normalize User ID Case 2 : %s", NormalizeIdentity2)
-
-	var _, stat2 = NormalizeIdentity(NormalizeIdentity2)
-	if stat2 == nil {
-		t.Errorf("%v is Wrong! Error must be not nil", stat2)
+	tests := []struct {
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				str: "",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				str: "140810140060",
+			},
+			want:    140810140060,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				str: " ",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				str: "140810140060",
+			},
+			want:    140810140060,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				str: "1207261801970005",
+			},
+			want:    1207261801970005,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				str: "1207261801970005aw",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				str: "12072618 01970005",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				str: "120726180197000512",
+			},
+			want:    120726180197000512,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 9",
+			args: args{
+				str: "1207261801970005121",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "Test Case 10",
+			args: args{
+				str: "1207261801",
+			},
+			want:    1207261801,
+			wantErr: false,
+		},
+		{
+			name: "Test Case 11",
+			args: args{
+				str: "120726180",
+			},
+			want:    0,
+			wantErr: true,
+		},
 	}
-
-	fmt.Println("Normalize Identity Case 3 : %s", NormalizeIdentity3)
-
-	var _, stat3 = NormalizeIdentity(NormalizeIdentity3)
-	if stat3 == nil {
-		t.Errorf("%v is Wrong! Error must be not nil", stat3)
-	}
-
-	fmt.Println("Normalize Identity Case 4 : %s", NormalizeIdentity4)
-
-	var _, stat4 = NormalizeIdentity(NormalizeIdentity4)
-	if stat4 == nil {
-		t.Errorf("%v is Wrong! Error must be not nil", stat4)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeIdentity(tt.args.str)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizeIdentity() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizeIdentity() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNormalizeName(t *testing.T) {
-	var (
-		NormalizeName1 string = "khairil azmi"
-		NormalizeName2 string = "khazasX1234"
-		NormalizeName3 string = ""
-	)
-
-	fmt.Println("Normalize Name Case 1 : %s", NormalizeName1)
-
-	var _, stat1 = NormalizeName(NormalizeName1)
-	if stat1 != nil {
-		t.Errorf("%v is Wrong! must be nil", stat1)
+	type args struct {
+		name string
 	}
-
-	fmt.Println("Normalize Name Case 2 : %s", NormalizeName2)
-
-	var _, stat2 = NormalizeName(NormalizeName2)
-	if stat2 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat2)
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				name: "",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				name: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				name: "1&*I(!$khairil azmi",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				name: "abcd efgh",
+			},
+			want:    "abcd efgh",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				name: "abcdefgh",
+			},
+			want:    "abcdefgh",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				name: "  ",
+			},
+			want:    "",
+			wantErr: true,
+		},
 	}
-
-	fmt.Println("Normalize Name Case 3 : %s", NormalizeName3)
-
-	var _, stat3 = NormalizeName(NormalizeName3)
-	if stat3 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat3)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeName(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizeName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizeName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNormalizeCollege(t *testing.T) {
-	var (
-		NormalizeCollege1 string = "Universitas Padjadjaran"
-		NormalizeCollege2 string = " "
-		NormalizeCollege3 string = ""
-	)
-
-	fmt.Println("Normalize Collage Case 1 : %s", NormalizeCollege1)
-
-	var _, stat1 = NormalizeCollege(NormalizeCollege1)
-	if stat1 != nil {
-		t.Errorf("%v is Wrong! must be nil", stat1)
+	type args struct {
+		college string
 	}
-
-	fmt.Println("Normalize Collage Case 2 : %s", NormalizeCollege2)
-
-	var _, stat2 = NormalizeCollege(NormalizeCollege2)
-	if stat2 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat2)
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				college: "",
+			},
+			want:    "",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				college: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				college: "1&*I(!$khairil azmi",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				college: "abcd efgh",
+			},
+			want:    "abcd efgh",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				college: "abcdefgh",
+			},
+			want:    "abcdefgh",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				college: "  ",
+			},
+			want:    "",
+			wantErr: false,
+		},
 	}
-
-	fmt.Println("Normalize Collage Case 3 : %s", NormalizeCollege3)
-
-	var _, stat3 = NormalizeCollege(NormalizeCollege3)
-	if stat3 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat3)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeCollege(tt.args.college)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizeCollege() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizeCollege() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNormalizeEmail(t *testing.T) {
-	var (
-		NormalizeEmail1 string = ""
-		NormalizeEmail2 string = " "
-		NormalizeEmail3 string = "khairil@gmail.com"
-		NormalizeEmail4 string = "khairil@yahoo.com"
-	)
-
-	fmt.Println("Normalize Email Case 1 : %s", NormalizeEmail1)
-
-	var _, stat1 = NormalizeEmail(NormalizeEmail1)
-	if stat1 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat1)
+	type args struct {
+		email string
 	}
-
-	fmt.Println("Normalize Email Case 2 : %s", NormalizeEmail2)
-
-	var _, stat2 = NormalizeEmail(NormalizeEmail2)
-	if stat2 == nil {
-		t.Errorf("%v is Wrong! must be not nil", stat1)
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				email: "",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				email: " ",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				email: "a@gmail.com",
+			},
+			want:    "a@gmail.com",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				email: "a@gmail.com.com",
+			},
+			want:    "a@gmail.com.com",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 5",
+			args: args{
+				email: "a@mail.unpad.ac.id",
+			},
+			want:    "a@mail.unpad.ac.id",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 6",
+			args: args{
+				email: "abcdefgh",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Test Case 7",
+			args: args{
+				email: "a14@mail.unpad.ac.id",
+			},
+			want:    "a14@mail.unpad.ac.id",
+			wantErr: false,
+		},
+		{
+			name: "Test Case 8",
+			args: args{
+				email: "ssfdsdfghijklmnabcdefghijklmn@mail.unpad.ac.id",
+			},
+			want:    "",
+			wantErr: true,
+		},
 	}
-
-	fmt.Println("Normalize Email Case 3 : %s", NormalizeEmail3)
-
-	var _, stat3 = NormalizeEmail(NormalizeEmail3)
-	if stat3 != nil {
-		t.Errorf("%v is Wrong! must be nil", stat3)
-	}
-
-	fmt.Println("Normalize Email Case 4 : %s", NormalizeEmail4)
-
-	var _, stat4 = NormalizeEmail(NormalizeEmail4)
-	if stat4 != nil {
-		t.Errorf("%v is Wrong! must be nil", stat4)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeEmail(tt.args.email)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NormalizeEmail() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("NormalizeEmail() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
