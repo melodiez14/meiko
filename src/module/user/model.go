@@ -18,6 +18,14 @@ const (
 	ColRoleGroupsID = "rolegroups_id"
 	ColPassword     = "password"
 
+	StatusUnverified = 0
+	StatusVerified   = 1
+	StatusActivated  = 2
+
+	GenderUndefined = 0
+	GenderMale      = 1
+	GenderFemale    = 2
+
 	OperatorEquals  = "="
 	OperatorUnquals = "!="
 	OperatorIn      = "IN"

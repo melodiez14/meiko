@@ -392,7 +392,7 @@ func (params forgotParams) Validate() (forgotArgs, error) {
 		Email:      email,
 		IsSendCode: false,
 		Code:       uint16(code),
-		Password:   params.Password,
+		Password:   helper.StringToMD5(params.Password),
 	}
 	return args, nil
 }

@@ -40,7 +40,7 @@ func InitDB(cfg DatabaseConfig) {
 }
 
 // InitDBMock used for initialize database connection mocking
-func InitDBMock() (*sqlmock.Sqlmock, error) {
+func InitDBMock() (sqlmock.Sqlmock, error) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		return nil, err
@@ -48,5 +48,5 @@ func InitDBMock() (*sqlmock.Sqlmock, error) {
 
 	DB = sqlx.NewDb(db, "sqlmock")
 
-	return &mock, nil
+	return mock, nil
 }

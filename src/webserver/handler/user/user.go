@@ -57,9 +57,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// check is email registered
-	_, err = user.Get(user.ColEmail).
-		Where(user.ColEmail, user.OperatorEquals, args.Email).
-		Exec()
+	_, err = user.GetByEmail(args.Email, user.ColEmail)
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -68,9 +66,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// check is id registered
-	_, err = user.Get(user.ColIdentityCode).
-		Where(user.ColIdentityCode, user.OperatorEquals, args.IdentityCode).
-		Exec()
+	_, err = user.GetByIdentityCode(args.IdentityCode, user.ColIdentityCode)
 	if err == nil || (err != nil && err != sql.ErrNoRows) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -79,12 +75,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// insert new user
-	err = user.Insert(map[string]interface{}{
-		user.ColIdentityCode: args.IdentityCode,
-		user.ColName:         args.Name,
-		user.ColEmail:        args.Email,
-		user.ColPassword:     args.Password,
-	}).Exec()
+	err = user.SignUp(args.IdentityCode, args.Name, args.Email, args.Password)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -149,10 +140,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	u, err := user.Get(user.ColIdentityCode).
-		Where(user.ColEmail, user.OperatorEquals, args.Email).
-		AndWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusUnverified).
-		Exec()
+	u, err := user.GetByEmail(args.Email, user.ColIdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -190,9 +178,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	go user.Update(map[string]interface{}{
-		user.ColStatus: alias.UserStatusVerified,
-	}).Where(user.ColEmail, user.OperatorEquals, args.Email).Exec()
+	go user.UpdateToVerified(u.IdentityCode)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage(fmt.Sprintf("Your account %s is being activated by admin", args.Email)).
@@ -237,13 +223,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// get verified user by page
 	offset := (args.Page - 1) * args.Total
-	u, _ := user.Select(user.ColIdentityCode, user.ColName, user.ColEmail, user.ColStatus).
-		Where(user.ColStatus, user.OperatorEquals, alias.UserStatusVerified).
-		OrWhere(user.ColStatus, user.OperatorEquals, alias.UserStatusActivated).
-		AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
-		Limit(args.Total).
-		Offset(offset).
-		Exec()
+	u, _ := user.SelectDashboard(sess.ID, args.Total, offset)
 
 	var status string
 	res := []getVerifiedResponse{}
@@ -309,12 +289,14 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		oldStatus = alias.UserStatusVerified
 	}
 
-	u, err := user.Get().
-		Where(user.ColIdentityCode, user.OperatorEquals, args.IdentityCode).
-		AndWhere(user.ColStatus, user.OperatorEquals, oldStatus).
-		AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
-		Exec()
+	u, err := user.GetByIdentityCode(sess.IdentityCode)
 	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if u.Status != oldStatus || u.ID == sess.ID {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Bad Request"))
@@ -324,9 +306,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	go func() {
 		// change if args.Status == activated update redis
 		// if args.Status == Verified delete redis
-		_ = user.Update(map[string]interface{}{
-			user.ColStatus: args.Status,
-		}).Where(user.ColEmail, user.OperatorEquals, u.Email).Exec()
+		_ = user.UpdateStatus(u.IdentityCode, args.Status)
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
@@ -388,10 +368,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	u, err := user.Get().
-		Where(user.ColEmail, user.OperatorEquals, args.Email).
-		AndWhere(user.ColPassword, user.OperatorEquals, args.Password).
-		Exec()
+	u, err := user.SignIn(args.Email, args.Password)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -496,9 +473,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// if send code to email then return
 	if args.IsSendCode {
-		u, err := user.Get(user.ColIdentityCode).
-			Where(user.ColEmail, user.OperatorEquals, args.Email).
-			Exec()
+		u, err := user.GetByEmail(args.Email, user.ColIdentityCode)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusBadRequest).
@@ -547,7 +522,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	go user.UpdateNewPassword(args.Email, args.Password)
+	go user.ForgotNewPassword(args.Email, args.Password)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage("New password has been updated").
@@ -574,7 +549,7 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	u, err := user.Get().Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	u, err := user.GetByIdentityCode(sess.IdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -656,11 +631,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	if args.Phone.Valid {
-		_, err := user.Get(user.ColPhone).
-			Where(user.ColPhone, user.OperatorEquals, args.Phone.String).
-			AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
-			Exec()
-		if err == nil || (err != nil && err != sql.ErrNoRows) {
+		if user.IsPhoneExist(sess.IdentityCode, args.Phone.String) {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusForbidden).
 				AddError(fmt.Sprintf("phone %s has been registered!", args.Phone.String)))
@@ -669,25 +640,14 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	if args.LineID.Valid {
-		_, err := user.Get(user.ColLineID).
-			Where(user.ColLineID, user.OperatorEquals, args.LineID.String).
-			AndWhere(user.ColID, user.OperatorUnquals, sess.ID).
-			Exec()
-		if err == nil || (err != nil && err != sql.ErrNoRows) {
+		if user.IsLineIDExist(sess.IdentityCode, args.LineID.String) {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusForbidden).
 				AddError(fmt.Sprintf("line id %s has been registered!", args.LineID.String)))
 			return
 		}
 	}
-
-	err = user.Update(map[string]interface{}{
-		user.ColName:   args.Name,
-		user.ColPhone:  args.Phone,
-		user.ColLineID: args.LineID,
-		user.ColNote:   args.Note,
-		user.ColGender: args.Gender,
-	}).Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	err = user.UpdateProfile(args.IdentityCode, args.Name, args.Note, args.Phone, args.LineID, args.Gender)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -695,7 +655,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	u, err := user.Get().Where(user.ColID, user.OperatorEquals, sess.ID).Exec()
+	u, err := user.GetByIdentityCode(sess.IdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -773,10 +733,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	// Update new password
-	err = user.Update(map[string]interface{}{user.ColPassword: args.Password}).
-		Where(user.ColID, user.OperatorEquals, sess.ID).
-		AndWhere(user.ColPassword, user.OperatorEquals, args.OldPassword).
-		Exec()
+	err = user.ChangePassword(args.IdentityCode, args.Password, args.OldPassword)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
