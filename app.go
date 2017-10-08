@@ -36,7 +36,7 @@ func main() {
 	// load configuration
 	cfgenv := env.Get()
 	config := &configuration{}
-	isLoaded := jsonconfig.Load(&config, "/etc/meiko", cfgenv) || jsonconfig.Load(&config, "./etc/meiko", cfgenv)
+	isLoaded := jsonconfig.Load(&config, "/etc/meiko", cfgenv) || jsonconfig.Load(&config, "./files/etc/meiko", cfgenv)
 	if !isLoaded {
 		log.Fatal("Failed to load configuration")
 	}

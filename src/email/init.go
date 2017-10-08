@@ -2,8 +2,11 @@ package email
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"html/template"
+	"image"
+	"image/png"
 	"io"
 	"log"
 	"net/smtp"
@@ -106,6 +109,7 @@ func (r *Request) SetTemplate(templatePath string, data interface{}) *Request {
 		log.Println("Error parsing template to buffer")
 		return r
 	}
+
 	r.HTML().Set(buf.String())
 	return r
 }
@@ -131,11 +135,37 @@ func (r *Request) SetAttachment(attachment []Attachment) *Request {
 	return r
 }
 
+// SetAttachmentInline used to add an attachment such as image to be load at html of email by using map[string]string. Example map["My Photo"]"/etc/myphoto.png"
+func (r *Request) SetAttachmentInline(attachment []Attachment) *Request {
+	for _, v := range attachment {
+		r.Attach(v.Title, v.Data)
+	}
+	return r
+}
+
 // Deliver action to send an email
 func (r *Request) Deliver() {
-	go func() {
-		if err := r.Send(); err != nil {
-			log.Println(err)
-		}
-	}()
+	// go func() {
+	if err := r.Send(); err != nil {
+		log.Println(err)
+	}
+	// }()
+}
+
+func encodeImage(path string) (string, error) {
+	var str string
+	fl, err := os.OpenFile(path, os.O_RDONLY, 0666)
+	if err != nil {
+		return str, err
+	}
+	defer fl.Close()
+
+	img, _, _ := image.Decode(fl)
+	buffer := new(bytes.Buffer)
+	if err := png.Encode(buffer, img); err != nil {
+		return str, err
+	}
+
+	str = base64.StdEncoding.EncodeToString(buffer.Bytes())
+	return str, nil
 }

@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Email Activation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        
+        * {
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+        }
+        
+        img {
+            max-width: 100%;
+        }
+        
+        body {
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: none;
+            width: 100%!important;
+            height: 100%;
+        }
+        
+        a {
+            color: #fff;
+        }
+        
+        .container {
+            display: block!important;
+            max-width: 600px!important;
+            margin: 0 auto!important;
+            clear: both!important;
+        }
+        
+        .content {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .content table {
+            width: 100%;
+        }
+        
+        table.head-wrap {
+            width: 100%;
+            background: url("data:image/jpeg;base64,{{.background}}");
+            background-size: cover;
+            color: white;
+        }
+        
+        table.head-wrap .content img {
+            width: 45px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            border-bottom: 2px solid white;
+            padding-bottom: 5px;
+        }
+        
+        table.head-wrap .content p {
+            font-size: 1em;
+            font-weight: 500;
+            line-height: 20px;
+        }
+        
+        table.head-wrap .content {
+            padding: 25px 15px;
+        }
+        
+        table.body-wrap {
+            width: 100%;
+        }
+        
+        table.footer-wrap {
+            width: 100%;
+            clear: both!important;
+            background-color: #164c85;
+        }
+        
+        .footer-wrap .container td.content p {
+            border-top: 1px solid rgb(215, 215, 215);
+            padding-top: 15px;
+        }
+        
+        .footer-wrap .container td.content p {
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        h1,
+        h2 {
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+            line-height: 1.1;
+            margin-bottom: 15px;
+            color: #000;
+        }
+        
+        h1 small,
+        h2 small {
+            font-size: 60%;
+            color: #6f6f6f;
+            line-height: 0;
+            text-transform: none;
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+        }
+        
+        h1 {
+            font-weight: 200;
+            font-size: 44px;
+        }
+        
+        h2 {
+            font-weight: 200;
+            font-size: 37px;
+        }
+        
+        p,
+        ul {
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+            margin-bottom: 10px;
+            font-weight: normal;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        p.lead {
+            font-size: 17px;
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+        }
+        
+        p.last {
+            margin-bottom: 0px;
+            font-family: "PT Sans", "Helvetica Neue", sans-serif;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            a[class="btn"] {
+                display: block!important;
+                margin-bottom: 10px!important;
+                background-image: none!important;
+                margin-right: 0!important;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <table class="head-wrap">
+        <tr>
+            <td></td>
+            <td class="header container">
+                <div class="content">
+                    <table>
+                        <tr>
+                            <td><img src="data:image/png;base64,{{.logo}}" />
+                                <p align="center" style="color: white">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+    <br/>
+    <br/>
+    <table class="body-wrap">
+        <tr>
+            <td></td>
+            <td class="container" bgcolor="#FFFFFF">
+                <div class="content">
+                    <table>
+                        <tr>
+                            <td>
+                                <h2 align="center">Lorem Ipsum</h2>
+                                <p class="lead" align="center">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla commodo est nulla, non imperdiet risus lobortis vel. Praesent vel justo dui. Cras bibendum libero neque, ut pharetra enim convallis vitae. Etiam sollicitudin
+                                </p>
+                                <h1 style="color: #2BA6CB; font-weight: bold; letter-spacing:10px;" align="center">{{.code}}</h1>
+                                <p>
+                                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt.
+                                </p>
+                                <br/>
+                                <br/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+    <table class="footer-wrap">
+        <tr>
+            <td></td>
+            <td class="container">
+                <div class="content">
+                    <table>
+                        <tr>
+                            <td align="center">
+                                <p>
+                                    <a href="#">Terms OWL</a>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+</body>
+
+</html>

@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/tokopedia/grace"
 )
 
 // Config is used for the setting of web server
@@ -30,7 +29,7 @@ func Start(cfg Config) {
 	r := httprouter.New()
 	loadRouter(r)
 
-	grace.Serve(port, requestLogger{Handle: r, Logger: l})
+	http.ListenAndServe(port, requestLogger{Handle: r, Logger: l})
 }
 
 func (rl requestLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
