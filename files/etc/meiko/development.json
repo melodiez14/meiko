@@ -23,7 +23,7 @@
         "sessionkey": "_SID_Meiko_"
     },
     "directory": {
-        "public": "public",
+        "public": "./",
         "profile": "private/profile"
     }
 }
