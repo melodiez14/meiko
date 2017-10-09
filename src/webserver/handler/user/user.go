@@ -93,10 +93,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// change to email template
-	email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
-
-	// for debugging purpose
-	fmt.Println(verification.Code)
+	go email.SendEmailValidation(args.Name, args.Email, verification.Code)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
@@ -140,7 +137,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	u, err := user.GetByEmail(args.Email, user.ColIdentityCode)
+	u, err := user.GetByEmail(args.Email, user.ColName, user.ColIdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -158,8 +155,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			return
 		}
 
-		// change to email template
-		email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
+		go email.SendEmailValidation(u.Name, args.Email, verification.Code)
 
 		// for debugging purpose
 		fmt.Println(verification.Code)
@@ -473,7 +469,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// if send code to email then return
 	if args.IsSendCode {
-		u, err := user.GetByEmail(args.Email, user.ColIdentityCode)
+		u, err := user.GetByEmail(args.Email, user.ColIdentityCode, user.ColName)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusBadRequest).
@@ -491,10 +487,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		}
 
 		// change to email template
-		email.NewRequest(args.Email, fmt.Sprintf("Reset Password %d", verification.Code)).Deliver()
-
-		// for debugging purpose
-		fmt.Println(verification.Code)
+		go email.SendForgotPassword(u.Name, args.Email, verification.Code)
 
 		res := forgotResponse{
 			Email:          args.Email,

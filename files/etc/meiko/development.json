@@ -1,0 +1,29 @@
+{
+    "webserver": {
+        "port": "9000"
+    },
+    "database": {
+        "host": "localhost",
+        "port": "3306",
+        "username": "meiko",
+        "password": "meiko",
+        "driver": "mysql",
+        "database": "meiko"
+    },
+    "redis": {
+        "address": "localhost:6379"
+    },
+    "email": {
+        "username": "meikodevelopment@gmail.com",
+        "password": "sandiaman01",
+        "address": "smtp.gmail.com",
+        "port": 587
+    },
+    "auth": {
+        "sessionkey": "_SID_Meiko_"
+    },
+    "directory": {
+        "public": "./",
+        "profile": "private/profile"
+    }
+}

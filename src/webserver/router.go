@@ -1,8 +1,11 @@
 package webserver
 
 import (
+	"net/http"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/webserver/handler"
 	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
 	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
@@ -15,6 +18,9 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
+
+	// Home Handler
+	r.GET("/", handler.HelloHandler)
 
 	// User Handler
 	r.POST("/api/v1/user/register", auth.OptionalAuthorize(user.SignUpHandler))
@@ -53,4 +59,8 @@ func loadRouter(r *httprouter.Router) {
 
 	// Place Handler
 	r.GET("/api/v1/place/search", place.SearchHandler)
+
+	// Catch
+	r.NotFound = http.RedirectHandler("/", http.StatusPermanentRedirect)
+	r.MethodNotAllowed = http.RedirectHandler("/", http.StatusPermanentRedirect)
 }
