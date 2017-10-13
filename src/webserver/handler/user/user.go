@@ -137,11 +137,17 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	u, err := user.GetByEmail(args.Email, user.ColName, user.ColIdentityCode)
-	if err != nil {
+	u, err := user.GetByEmail(args.Email, user.ColName, user.ColIdentityCode, user.ColStatus)
+	if err != nil && err != sql.ErrNoRows {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if u.Status != user.StatusUnverified {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Invalid email or has been verified"))
+			AddError("Email has been activated"))
 		return
 	}
 
