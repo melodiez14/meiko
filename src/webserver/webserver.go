@@ -34,6 +34,11 @@ func Start(cfg Config) {
 
 func (rl requestLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+	// === for development only ===
+	origin := r.Header.Get("Origin")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	// === end for development only ===
 	rl.Handle.ServeHTTP(w, r)
 	log.Printf("[meiko] %s %s in %v", r.Method, r.URL.Path, time.Since(start))
 }

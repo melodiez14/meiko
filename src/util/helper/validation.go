@@ -151,7 +151,6 @@ func NormalizeCollege(college string) (string, error) {
 }
 
 func NormalizeEmail(email string) (string, error) {
-
 	if IsEmpty(email) {
 		return "", fmt.Errorf("Email can't be empty")
 	}
@@ -160,15 +159,19 @@ func NormalizeEmail(email string) (string, error) {
 		return "", fmt.Errorf("Email is too long")
 	}
 
+	email = strings.ToLower(email)
 	if !IsEmail(email) {
 		return "", fmt.Errorf("Not valid email format")
 	}
 
 	parts := strings.Split(email, "@")
-	parts[0] = strings.ToLower(parts[0])
-	parts[1] = strings.ToLower(parts[1])
 	if parts[1] == "gmail.com" || parts[1] == "googlemail.com" {
 		parts[1] = "gmail.com"
 	}
 	return strings.Join(parts, "@"), nil
+}
+
+func Trim(str string) string {
+	splitted := strings.Fields(str)
+	return strings.Join(splitted, " ")
 }
