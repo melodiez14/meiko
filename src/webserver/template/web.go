@@ -41,8 +41,6 @@ func (r *Response) SetData(data interface{}) *Response {
 func RenderJSONResponse(w http.ResponseWriter, data interface{}, errs ...string) {
 	var g interface{}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	statuscode := 200
 
 	x, _ := json.Marshal(data)

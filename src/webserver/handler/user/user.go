@@ -48,7 +48,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Password:     r.FormValue("password"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -129,7 +129,7 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		Code:         r.FormValue("code"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -209,7 +209,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		Total: r.FormValue("ttl"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
@@ -269,7 +269,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		Status:       r.FormValue("status"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -356,7 +356,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Password: r.FormValue("password"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -459,7 +459,7 @@ func ForgotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Password:   r.FormValue("password"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusFound).
@@ -608,7 +608,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		Note:         r.FormValue("about_me"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -710,7 +710,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		ConfirmPassword: r.FormValue("password_confirmation"),
 	}
 
-	args, err := params.Validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -725,13 +725,15 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	// Update new password
-	err = user.ChangePassword(args.IdentityCode, args.Password, args.OldPassword)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Incorect old password!"))
-		return
+	if args.OldPassword != args.Password {
+		// Update new password
+		err = user.ChangePassword(args.IdentityCode, args.Password, args.OldPassword)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Incorect old password!"))
+			return
+		}
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

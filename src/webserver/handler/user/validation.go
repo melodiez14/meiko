@@ -6,18 +6,19 @@ import (
 	"html"
 	"strconv"
 
-	"github.com/melodiez14/meiko/src/util/alias"
+	"github.com/melodiez14/meiko/src/module/user"
 
+	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
-func (params signUpParams) Validate() (signUpArgs, error) {
+func (params signUpParams) validate() (signUpArgs, error) {
 
 	var args signUpArgs
 	params = signUpParams{
-		IdentityCode: params.IdentityCode,
-		Name:         params.Name,
-		Email:        params.Email,
+		IdentityCode: helper.Trim(params.IdentityCode),
+		Name:         helper.Trim(params.Name),
+		Email:        helper.Trim(params.Email),
 		Password:     html.EscapeString(params.Password),
 	}
 
@@ -59,9 +60,14 @@ func (params signUpParams) Validate() (signUpArgs, error) {
 	return args, nil
 }
 
-func (params emailVerificationParams) Validate() (emailVerificationArgs, error) {
+func (params emailVerificationParams) validate() (emailVerificationArgs, error) {
 
 	var args emailVerificationArgs
+	params = emailVerificationParams{
+		Code:         params.Code,
+		Email:        helper.Trim(params.Email),
+		IsResendCode: params.IsResendCode,
+	}
 
 	// Email validation
 	email, err := helper.NormalizeEmail(params.Email)
@@ -99,7 +105,7 @@ func (params emailVerificationParams) Validate() (emailVerificationArgs, error) 
 	return args, nil
 }
 
-func (params getVerifiedParams) Validate() (getVerifiedArgs, error) {
+func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 
 	var args getVerifiedArgs
 	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
@@ -128,7 +134,7 @@ func (params getVerifiedParams) Validate() (getVerifiedArgs, error) {
 	return args, nil
 }
 
-func (params activationParams) Validate() (activationArgs, error) {
+func (params activationParams) validate() (activationArgs, error) {
 
 	var args activationArgs
 	// Check is params empty
@@ -144,9 +150,9 @@ func (params activationParams) Validate() (activationArgs, error) {
 	var status int8
 	switch params.Status {
 	case "active":
-		status = alias.UserStatusActivated
+		status = user.StatusActivated
 	case "inactive":
-		status = alias.UserStatusVerified
+		status = user.StatusVerified
 	default:
 		return args, fmt.Errorf("Error validation: wrong status")
 	}
@@ -159,11 +165,11 @@ func (params activationParams) Validate() (activationArgs, error) {
 	return args, nil
 }
 
-func (params signInParams) Validate() (signInArgs, error) {
+func (params signInParams) validate() (signInArgs, error) {
 
 	var args signInArgs
 	params = signInParams{
-		Email:    params.Email,
+		Email:    helper.Trim(params.Email),
 		Password: html.EscapeString(params.Password),
 	}
 
@@ -191,16 +197,16 @@ func (params signInParams) Validate() (signInArgs, error) {
 	return args, nil
 }
 
-func (params updateProfileParams) Validate() (updateProfileArgs, error) {
+func (params updateProfileParams) validate() (updateProfileArgs, error) {
 
 	var args updateProfileArgs
 	params = updateProfileParams{
 		IdentityCode: params.IdentityCode,
 		Email:        params.Email,
-		Name:         params.Name,
-		Note:         html.EscapeString(params.Note),
+		Name:         helper.Trim(params.Name),
+		Note:         helper.Trim(html.EscapeString(params.Note)),
 		Gender:       params.Gender,
-		Phone:        params.Phone,
+		Phone:        helper.Trim(params.Phone),
 		LineID:       html.EscapeString(params.LineID),
 	}
 
@@ -230,7 +236,7 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 	}
 
 	// Gender validation
-	var gender int8 = alias.UserGenderUndefined
+	var gender int8 = user.GenderUndefined
 	if !helper.IsEmpty(params.Gender) {
 		switch params.Gender {
 		case "male":
@@ -273,7 +279,7 @@ func (params updateProfileParams) Validate() (updateProfileArgs, error) {
 	return args, nil
 }
 
-func (params changePasswordParams) Validate() (changePasswordArgs, error) {
+func (params changePasswordParams) validate() (changePasswordArgs, error) {
 
 	var args changePasswordArgs
 	params = changePasswordParams{
@@ -331,11 +337,11 @@ func (params changePasswordParams) Validate() (changePasswordArgs, error) {
 	return args, nil
 }
 
-func (params forgotParams) Validate() (forgotArgs, error) {
+func (params forgotParams) validate() (forgotArgs, error) {
 
 	var args forgotArgs
 	params = forgotParams{
-		Email:      params.Email,
+		Email:      helper.Trim(params.Email),
 		IsSendCode: params.IsSendCode,
 		Code:       params.Code,
 		Password:   html.EscapeString(params.Password),

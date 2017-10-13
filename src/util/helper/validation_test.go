@@ -1222,3 +1222,50 @@ func TestNormalizeEmail(t *testing.T) {
 		})
 	}
 }
+
+func TestTrim(t *testing.T) {
+	type args struct {
+		str string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				str: "",
+			},
+			want: "",
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				str: " Risal Falah ",
+			},
+			want: "Risal Falah",
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				str: " Risal        Falah ",
+			},
+			want: "Risal Falah",
+		},
+		{
+			name: "Test Case 4",
+			args: args{
+				str: " Risal    $    Falah ",
+			},
+			want: "Risal $ Falah",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Trim(tt.args.str); got != tt.want {
+				t.Errorf("Trim() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
