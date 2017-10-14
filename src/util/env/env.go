@@ -7,6 +7,7 @@ import "os"
 const (
 	EnvDevelopment = "development"
 	EnvProduction  = "production"
+	EnvStaging     = "staging"
 )
 
 // Get is used to get current environment from "LCENV" variables on the OS
@@ -16,7 +17,7 @@ func Get() string {
 		env = EnvDevelopment
 	}
 
-	if env != EnvDevelopment && env != EnvProduction {
+	if env != EnvDevelopment && env != EnvProduction && env != EnvStaging {
 		env = EnvDevelopment
 	}
 	return env
@@ -33,6 +34,14 @@ func IsProduction() bool {
 // IsDevelopment is used to check whether current environment is on "development" or not
 func IsDevelopment() bool {
 	if Get() == EnvDevelopment {
+		return true
+	}
+	return false
+}
+
+// IsStaging is used to check whether current environment is on "staging" or not
+func IsStaging() bool {
+	if Get() == EnvStaging {
 		return true
 	}
 	return false

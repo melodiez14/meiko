@@ -1,0 +1,30 @@
+{
+    "webserver": {
+        "port": "9000"
+    },
+    "database": {
+        "host": "us-cdbr-iron-east-05.cleardb.net",
+        "port": "3306",
+        "username": "b056cfdd1466e0",
+        "password": "b34f6efc",
+        "driver": "mysql",
+        "database": "heroku_f39d37ae8e8fe47"
+    },
+    "redis": {
+        "address": "greeneye.redistogo.com:11420",
+        "password": "88be55fc4637e4a603b8a5ea2365f23c"
+    },
+    "email": {
+        "username": "meikodevelopment@gmail.com",
+        "password": "sandiaman01",
+        "address": "smtp.gmail.com",
+        "port": 587
+    },
+    "auth": {
+        "sessionkey": "_SID_Meiko_"
+    },
+    "directory": {
+        "public": "./",
+        "profile": "./"
+    }
+}
