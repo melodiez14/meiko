@@ -317,3 +317,96 @@ func ForgotNewPassword(email, password string) error {
 	}
 	return nil
 }
+
+func Update(identityCode int64, name, note string, phone, lineID sql.NullString, gender, status int8) error {
+
+	if gender != GenderMale && gender != GenderFemale {
+		gender = GenderUndefined
+	}
+
+	queryLineID := fmt.Sprintf("NULL")
+	if lineID.Valid {
+		queryLineID = fmt.Sprintf("('%s')", lineID.String)
+	}
+
+	queryPhone := fmt.Sprintf("NULL")
+	if phone.Valid {
+		queryPhone = fmt.Sprintf("('%s')", phone.String)
+	}
+
+	query := fmt.Sprintf(`
+			UPDATE
+				users
+			SET
+				name = ('%s'),
+				phone = %s,
+				line_id = %s,
+				note = ('%s'),
+				gender = (%d),
+				status = (%d),
+				updated_at = NOW()
+			WHERE
+				identity_code = (%d);
+			`, name, queryPhone, queryLineID, note, gender, status, identityCode)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func Delete(identityCode int64) error {
+	query := fmt.Sprintf(`
+		DELETE FROM
+			users
+		WHERE
+			identity_code = (%d);
+		`, identityCode)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func Create(identityCode int64, name, email string) error {
+	query := fmt.Sprintf(`
+		INSERT INTO
+		users (
+			name,
+			email,
+			password,
+			identity_code,
+			status,
+			created_at,
+			updated_at
+		) VALUES (
+			('%s'),
+			('%s'),
+			('x'),
+			(%d),
+			(%d),
+			NOW(),
+			NOW()
+		);
+		`, name, email, identityCode, StatusActivated)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
