@@ -1379,3 +1379,251 @@ func TestSelectByID(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	type args struct {
+		identityCode int64
+		name         string
+		note         string
+		phone        sql.NullString
+		lineID       sql.NullString
+		gender       int8
+		status       int8
+	}
+	type mock struct {
+		query        string
+		lastInsertID int64
+		rowsAffected int64
+		err          error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mock    mock
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				note:         "Hello my name is risal",
+				phone:        sql.NullString{Valid: true, String: "085860141146"},
+				lineID:       sql.NullString{Valid: true, String: "risalfa"},
+				gender:       3,
+				status:       1,
+			},
+			mock: mock{
+				query:        `^\s*UPDATE\s*users\s*SET\s*name\s*=\s*\('[\w ]*'\),\s*phone\s*=\s*\('\d*'\),\s*line_id\s*=\s*\('\w*'\),\s*note\s*=\s*(.+),\s*gender\s*=\s*\([012]\),\s*status\s*=\s*\([012]\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 1,
+				rowsAffected: 1,
+				err:          nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				note:         "Hello my name is risal",
+				phone:        sql.NullString{Valid: true, String: "085860141146"},
+				lineID:       sql.NullString{Valid: true, String: "risalfa"},
+				gender:       3,
+				status:       1,
+			},
+			mock: mock{
+				query:        `^\s*UPDATE\s*users\s*SET\s*name\s*=\s*\('[\w ]*'\),\s*phone\s*=\s*\('\d*'\),\s*line_id\s*=\s*\('\w*'\),\s*note\s*=\s*(.+),\s*gender\s*=\s*\([012]\),\s*status\s*=\s*\([012]\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 0,
+				rowsAffected: 0,
+				err:          nil,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				note:         "Hello my name is risal",
+				phone:        sql.NullString{Valid: true, String: "085860141146"},
+				lineID:       sql.NullString{Valid: true, String: "risalfa"},
+				gender:       3,
+				status:       1,
+			},
+			mock: mock{
+				query:        `^\s*UPDATE\s*users\s*SET\s*name\s*=\s*\('[\w ]*'\),\s*phone\s*=\s*\('\d*'\),\s*line_id\s*=\s*\('\w*'\),\s*note\s*=\s*(.+),\s*gender\s*=\s*\([012]\),\s*status\s*=\s*\([012]\),\s*updated_at\s*=\s*NOW\(\)\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 0,
+				rowsAffected: 0,
+				err:          fmt.Errorf("Error connection"),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		db, _ := conn.InitDBMock()
+		q := db.ExpectExec(tt.mock.query)
+		if tt.mock.err == nil {
+			q.WillReturnResult(sqlmock.NewResult(tt.mock.lastInsertID, tt.mock.rowsAffected))
+		} else {
+			q.WillReturnError(tt.mock.err)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Update(tt.args.identityCode, tt.args.name, tt.args.note, tt.args.phone, tt.args.lineID, tt.args.gender, tt.args.status); (err != nil) != tt.wantErr {
+				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	type args struct {
+		identityCode int64
+	}
+	type mock struct {
+		query        string
+		lastInsertID int64
+		rowsAffected int64
+		err          error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mock    mock
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				identityCode: 140810140016,
+			},
+			mock: mock{
+				query:        `^\s*DELETE\s*FROM\s*users\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 1,
+				rowsAffected: 1,
+				err:          nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				identityCode: 140810140016,
+			},
+			mock: mock{
+				query:        `^\s*DELETE\s*FROM\s*users\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 0,
+				rowsAffected: 0,
+				err:          nil,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				identityCode: 140810140016,
+			},
+			mock: mock{
+				query:        `^\s*DELETE\s*FROM\s*users\s*WHERE\s*identity_code\s*=\s*\(\d*\);$`,
+				lastInsertID: 1,
+				rowsAffected: 1,
+				err:          fmt.Errorf("Error connection"),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		db, _ := conn.InitDBMock()
+		q := db.ExpectExec(tt.mock.query)
+		if tt.mock.err == nil {
+			q.WillReturnResult(sqlmock.NewResult(tt.mock.lastInsertID, tt.mock.rowsAffected))
+		} else {
+			q.WillReturnError(tt.mock.err)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Delete(tt.args.identityCode); (err != nil) != tt.wantErr {
+				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCreate(t *testing.T) {
+	type args struct {
+		identityCode int64
+		name         string
+		email        string
+	}
+	type mock struct {
+		query        string
+		lastInsertID int64
+		rowsAffected int64
+		err          error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mock    mock
+		wantErr bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				email:        "risal@live.com",
+			},
+			mock: mock{
+				query:        `^\s*INSERT\s*INTO\s*users\s*\(\s*name,\s*email,\s*password,\s*identity_code,\s*status,\s*created_at,\s*updated_at\s*\)\s*VALUES\s*\(\s*\('[\w ]*'\),\s*\('[\w@.]*'\),\s*\('[\S]'\),\s*\(\d*\),\s*\([012]\),\s*NOW\(\),\s*NOW\(\)\s*\);$`,
+				lastInsertID: 1,
+				rowsAffected: 1,
+				err:          nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				email:        "risal@live.com",
+			},
+			mock: mock{
+				query:        `^\s*INSERT\s*INTO\s*users\s*\(\s*name,\s*email,\s*password,\s*identity_code,\s*status,\s*created_at,\s*updated_at\s*\)\s*VALUES\s*\(\s*\('[\w ]*'\),\s*\('[\w@.]*'\),\s*\('[\S]'\),\s*\(\d*\),\s*\([012]\),\s*NOW\(\),\s*NOW\(\)\s*\);$`,
+				lastInsertID: 0,
+				rowsAffected: 0,
+				err:          nil,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				identityCode: 140810140016,
+				name:         "Risal Falah",
+				email:        "risal@live.com",
+			},
+			mock: mock{
+				query:        `^\s*INSERT\s*INTO\s*users\s*\(\s*name,\s*email,\s*password,\s*identity_code,\s*status,\s*created_at,\s*updated_at\s*\)\s*VALUES\s*\(\s*\('[\w ]*'\),\s*\('[\w@.]*'\),\s*\('[\S]'\),\s*\(\d*\),\s*\([012]\),\s*NOW\(\),\s*NOW\(\)\s*\);$`,
+				lastInsertID: 0,
+				rowsAffected: 0,
+				err:          fmt.Errorf("Error connection"),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		db, _ := conn.InitDBMock()
+		q := db.ExpectExec(tt.mock.query)
+		if tt.mock.err == nil {
+			q.WillReturnResult(sqlmock.NewResult(tt.mock.lastInsertID, tt.mock.rowsAffected))
+		} else {
+			q.WillReturnError(tt.mock.err)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Create(tt.args.identityCode, tt.args.name, tt.args.email); (err != nil) != tt.wantErr {
+				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

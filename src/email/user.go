@@ -19,7 +19,17 @@ func SendForgotPassword(name, email string, code uint16) {
 		"code": code,
 	}
 
-	NewRequest(email, "Email Validation").
+	NewRequest(email, "Forgot Password").
 		SetTemplate("files/var/www/meiko/email/forgot_password.html", data).
+		Deliver()
+}
+
+func SendAccountCreated(name, email string, code uint16) {
+	data := map[string]interface{}{
+		"code": code,
+	}
+
+	NewRequest(email, "Your account has been created").
+		SetTemplate("files/var/www/meiko/email/account_created.html", data).
 		Deliver()
 }

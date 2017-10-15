@@ -271,7 +271,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	params := activationParams{
-		IdentityCode: r.FormValue("id"),
+		IdentityCode: ps.ByName("id"),
 		Status:       r.FormValue("status"),
 	}
 
@@ -290,8 +290,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	case alias.UserStatusActivated:
 		oldStatus = alias.UserStatusVerified
 	}
-
-	u, err := user.GetByIdentityCode(sess.IdentityCode)
+	u, err := user.GetByIdentityCode(args.IdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -315,7 +314,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 		}
 
-		s := auth.User{
+		sess = &auth.User{
 			ID:           u.ID,
 			Name:         u.Name,
 			Email:        u.Email,
@@ -327,8 +326,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			Phone:        u.Phone.String,
 			Roles:        roles,
 		}
-
-		s.UpdateSession(w)
+		sess.UpdateSession()
 	}()
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -404,7 +402,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 	}
 
-	s := auth.User{
+	sess = &auth.User{
 		ID:           u.ID,
 		Name:         u.Name,
 		Email:        u.Email,
@@ -417,13 +415,15 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Roles:        roles,
 	}
 
-	err = s.SetSession(w)
+	cookie, err := sess.SetSession()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
 			SetMessage("Internal server error"))
 		return
 	}
+
+	http.SetCookie(w, cookie)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
@@ -558,9 +558,9 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	var gender string
 	switch u.Gender {
-	case alias.UserGenderMale:
+	case user.GenderMale:
 		gender = "male"
-	case alias.UserGenderFemale:
+	case user.GenderFemale:
 		gender = "female"
 	}
 
@@ -592,13 +592,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		gender	= optional, male or female
 		phone	= optional, numeric, 10<=characters<=12
 		line_id	= optional, 0<characters<=45
-		note	= optional, 0<characters<=100
+		about_me= optional, 0<characters<=100
 	@example:
 		name=Risal Falah
 		gender=male
 		phone=085860141146
 		line_id=risalfa
-		note=Hello my name is risal
+		about_me=Hello my name is risal
 	@return
 */
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -667,7 +667,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
 	}
 
-	s := auth.User{
+	sess = &auth.User{
 		ID:           u.ID,
 		Name:         u.Name,
 		Email:        u.Email,
@@ -680,7 +680,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		Roles:        roles,
 	}
 
-	s.UpdateSession(w)
+	sess.UpdateSession()
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage("Data updated").
@@ -691,13 +691,13 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 // ChangePasswordHandler handles the http request for updating user password
 /*
 	@params:
-		id						= required, numeric, characters=12
+		id						= required, numeric, 10<=characters<=18
 		email					= required, email format, 0<characters<45
 		old_password			= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 		password				= required, minimum 1 uppercase, lowercase, numeric, characters>=6
 		password_confirmation	= required, should be same as password
 	@example:
-		npm=140810140016
+		id=140810140016
 		email=risal.falah@gmail.com
 		old_password			= Qwerty123
 		password				= Qwerty321
@@ -758,15 +758,347 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	err := sess.DestroySession(r, w)
+	cookie, err := sess.DestroySession(r)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
 			SetMessage("Internal server error"))
 	}
+	http.SetCookie(w, cookie)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Logout success"))
+	return
+}
+
+// DetailHandler handles the http request for showing details of specific user
+/*
+	@params:
+	@example:
+	@return:
+		id			= 140810140016
+		name 		= Risal Falah
+		email		= risal.falah@gmail.com
+		gender 		= male or female
+		phone 		= 085860141146
+		line_id 	= risalfa
+		about_me	= hello my name is risal falah, you can call me ical
+*/
+func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := detailParams{
+		IdentityCode: ps.ByName("id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if sess.IdentityCode == args.IdentityCode {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+
+	u, err := user.GetByIdentityCode(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+
+	var gender string
+	switch u.Gender {
+	case user.GenderMale:
+		gender = "male"
+	case user.GenderFemale:
+		gender = "female"
+	}
+
+	res := detailResponse{
+		Name:         u.Name,
+		Email:        u.Email,
+		Gender:       gender,
+		Phone:        u.Phone.String,
+		IdentityCode: u.IdentityCode,
+		LineID:       u.LineID.String,
+		Note:         u.Note,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// UpdateHandler handles the http request for updating the user account
+/*
+	@params:
+		id		= required, numeric, 10<=characters<=18
+		name	= required, alphaspace, 0<characters<=50
+		email	= required, email format
+		gender	= optional, male or female
+		phone	= optional, numeric, 10<=characters<=12
+		line_id	= optional, 0<characters<=45
+		about_me= optional, 0<characters<=100
+	@example:
+		id=140810140016
+		name=Risal Falah
+		gender=male
+		phone=085860141146
+		line_id=risalfa
+		about_me=Hello my name is risal
+	@return
+*/
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleUpdate, rg.RoleXUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := updateParams{
+		IdentityCode: ps.ByName("id"),
+		Name:         r.FormValue("name"),
+		Email:        r.FormValue("email"),
+		Gender:       r.FormValue("gender"),
+		Phone:        r.FormValue("phone"),
+		LineID:       r.FormValue("line_id"),
+		Note:         r.FormValue("about_me"),
+		Status:       r.FormValue("status"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if sess.IdentityCode == args.IdentityCode {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			SetMessage("Bad Request"))
+		return
+	}
+
+	if args.Phone.Valid {
+		if user.IsPhoneExist(args.IdentityCode, args.Phone.String) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError(fmt.Sprintf("phone %s has been registered!", args.Phone.String)))
+			return
+		}
+	}
+
+	if args.LineID.Valid {
+		if user.IsLineIDExist(args.IdentityCode, args.LineID.String) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError(fmt.Sprintf("line id %s has been registered!", args.LineID.String)))
+			return
+		}
+	}
+
+	err = user.Update(args.IdentityCode, args.Name, args.Note, args.Phone, args.LineID, args.Gender, args.Status)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal server error"))
+		return
+	}
+
+	u, err := user.GetByIdentityCode(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal server error"))
+		return
+	}
+
+	roles := make(map[string][]string)
+	if u.RoleGroupsID.Valid {
+		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+	}
+
+	sess = &auth.User{
+		ID:           u.ID,
+		Name:         u.Name,
+		Email:        u.Email,
+		Gender:       u.Gender,
+		Note:         u.Note,
+		Status:       u.Status,
+		IdentityCode: u.IdentityCode,
+		LineID:       u.LineID.String,
+		Phone:        u.Phone.String,
+		Roles:        roles,
+	}
+
+	go sess.UpdateSession()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("Data updated").
+		SetCode(http.StatusOK))
+	return
+}
+
+// DeleteHandler handles the http request for updating the user account
+/*
+	@params:
+		id	= required, numeric, 10<=characters<=18
+	@example:
+		id	= 140810140016
+	@return
+*/
+func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleDelete, rg.RoleXDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := deleteParams{
+		IdentityCode: ps.ByName("id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if sess.IdentityCode == args.IdentityCode {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	u, err := user.GetByIdentityCode(args.IdentityCode, user.ColID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(fmt.Sprintf("Invalid Request")))
+		return
+	}
+
+	err = user.Delete(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = auth.DestroyAllSession(u.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("User successfully deleted").
+		SetCode(http.StatusOK))
+	return
+}
+
+// CreateHandler handles the http request for creating new user account
+/*
+	@params:
+		id		= required, numeric, 10<=characters<=18
+		email	= required, email format
+		gender	= optional, male or female
+	@example:
+		id		= 140810140016
+		email	= risal@live.com
+		gender	= male
+	@return
+*/
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleUser, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := createParams{
+		IdentityCode: r.FormValue("id"),
+		Name:         r.FormValue("name"),
+		Email:        r.FormValue("email"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// check is email registered
+	_, err = user.GetByEmail(args.Email, user.ColEmail)
+	if err == nil || (err != nil && err != sql.ErrNoRows) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%s has been registered", args.Email)))
+		return
+	}
+
+	// check is identity registered
+	_, err = user.GetByIdentityCode(args.IdentityCode, user.ColIdentityCode)
+	if err == nil || (err != nil && err != sql.ErrNoRows) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError(fmt.Sprintf("%d has been registered!", args.IdentityCode)))
+		return
+	}
+
+	err = user.Create(args.IdentityCode, args.Name, args.Email)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	// generate verification code
+	verification, err := user.GenerateVerification(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError).
+			AddError("Internal server error"))
+		return
+	}
+
+	// change to email template
+	go email.SendAccountCreated(args.Name, args.Email, verification.Code)
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetMessage("User successfully created").
+		SetCode(http.StatusOK))
 	return
 }

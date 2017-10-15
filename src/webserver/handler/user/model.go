@@ -102,9 +102,9 @@ type getProfileResponse struct {
 	Email                 string `json:"email"`
 	Gender                string `json:"gender"`
 	Phone                 string `json:"phone"`
-	IdentityCode          int64  `json:"identity"`
+	IdentityCode          int64  `json:"id"`
 	LineID                string `json:"line_id"`
-	Note                  string `json:"note"`
+	Note                  string `json:"about_me"`
 	ImageProfile          string `json:"img"`
 	ImageProfileThumbnail string `json:"img_t"`
 }
@@ -132,4 +132,64 @@ type activationParams struct {
 type activationArgs struct {
 	IdentityCode int64
 	Status       int8
+}
+
+type detailParams struct {
+	IdentityCode string
+}
+
+type detailArgs struct {
+	IdentityCode int64
+}
+
+type detailResponse struct {
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Gender       string `json:"gender"`
+	Phone        string `json:"phone"`
+	IdentityCode int64  `json:"id"`
+	LineID       string `json:"line_id"`
+	Note         string `json:"about_me"`
+}
+
+type updateParams struct {
+	IdentityCode string
+	Name         string
+	Email        string
+	Gender       string
+	Phone        string
+	LineID       string
+	Note         string
+	Status       string
+}
+
+type updateArgs struct {
+	IdentityCode int64
+	Name         string
+	Email        string
+	Gender       int8
+	Phone        sql.NullString
+	LineID       sql.NullString
+	Note         string
+	Status       int8
+}
+
+type deleteParams struct {
+	IdentityCode string
+}
+
+type deleteArgs struct {
+	IdentityCode int64
+}
+
+type createParams struct {
+	IdentityCode string
+	Name         string
+	Email        string
+}
+
+type createArgs struct {
+	IdentityCode int64
+	Name         string
+	Email        string
 }

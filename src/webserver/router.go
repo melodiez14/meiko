@@ -22,17 +22,31 @@ func loadRouter(r *httprouter.Router) {
 	// Home Handler
 	r.GET("/", handler.HelloHandler)
 
-	// User Handler
+	// ==================================================================
+	// ========================== User Handler ==========================
+	// ==================================================================
+
+	// User section
 	r.POST("/api/v1/user/register", auth.OptionalAuthorize(user.SignUpHandler))
 	r.POST("/api/v1/user/verify", auth.OptionalAuthorize(user.EmailVerificationHandler))
-	r.GET("/api/v1/user/verified", auth.MustAuthorize(user.ReadHandler))
 	r.POST("/api/v1/user/signin", auth.OptionalAuthorize(user.SignInHandler))
 	r.POST("/api/v1/user/forgot", auth.OptionalAuthorize(user.ForgotHandler))
 	r.DELETE("/api/v1/user/signout", auth.MustAuthorize(user.SignOutHandler))
 	r.POST("/api/v1/user/profile", auth.MustAuthorize(user.UpdateProfileHandler))
 	r.GET("/api/v1/user/profile", auth.MustAuthorize(user.GetProfileHandler))
-	r.POST("/api/v1/user/activate", auth.MustAuthorize(user.ActivationHandler))
 	r.POST("/api/v1/user/changepassword", auth.MustAuthorize(user.ChangePasswordHandler))
+
+	// Admin section
+	r.GET("/api/admin/v1/user", auth.MustAuthorize(user.ReadHandler))
+	r.POST("/api/admin/v1/user", auth.MustAuthorize(user.CreateHandler))
+	r.GET("/api/admin/v1/user/:id", auth.MustAuthorize(user.DetailHandler))
+	r.PATCH("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))
+	r.PATCH("/api/admin/v1/user/:id/activate", auth.MustAuthorize(user.ActivationHandler))
+	r.DELETE("/api/admin/v1/user/:id", auth.MustAuthorize(user.DeleteHandler))
+
+	// ==================================================================
+	// ======================== End User Handler ========================
+	// ==================================================================
 
 	// File Handler
 	r.POST("/api/v1/image", auth.MustAuthorize(file.UploadImageHandler))

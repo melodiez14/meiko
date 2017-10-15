@@ -1282,3 +1282,609 @@ func Test_forgotParams_validate(t *testing.T) {
 		})
 	}
 }
+
+func Test_detailParams_validate(t *testing.T) {
+	type fields struct {
+		IdentityCode string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    detailArgs
+		wantErr bool
+	}{
+		{
+			name:    "Test Case 1",
+			fields:  fields{},
+			want:    detailArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			fields: fields{
+				IdentityCode: "Hello Moto",
+			},
+			want:    detailArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			fields: fields{
+				IdentityCode: "123456789",
+			},
+			want:    detailArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			fields: fields{
+				IdentityCode: "1234567890123456789",
+			},
+			want:    detailArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 5",
+			fields: fields{
+				IdentityCode: " 140810140016 ",
+			},
+			want:    detailArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 6",
+			fields: fields{
+				IdentityCode: "140810140016",
+			},
+			want: detailArgs{
+				IdentityCode: 140810140016,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params := detailParams{
+				IdentityCode: tt.fields.IdentityCode,
+			}
+			got, err := params.validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("detailParams.validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("detailParams.validate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_updateParams_validate(t *testing.T) {
+	type fields struct {
+		IdentityCode string
+		Name         string
+		Email        string
+		Gender       string
+		Phone        string
+		LineID       string
+		Note         string
+		Status       string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    updateArgs
+		wantErr bool
+	}{
+		{
+			name:    "Test Case 1",
+			fields:  fields{},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			fields: fields{
+				IdentityCode: " 123456789 ",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			fields: fields{
+				IdentityCode: " 1234567890123456789 ",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			fields: fields{
+				IdentityCode: "hellohellohello",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 5",
+			fields: fields{
+				IdentityCode: "140810140016",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 6",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "  risal",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 7",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "  risal.",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 8",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "   risal@ live.com  ",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 9",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "   risal@live.com  ",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 10",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "Risal !",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 11",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 12",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 13",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "female",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 14",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "haha",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 14",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "haha",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 15",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "haha",
+				Phone:        "085860141146",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 16",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+				Phone:        "85860141146",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 17",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+				Phone:        "85860141146",
+				LineID:       "risalfa",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 18",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Note:         "Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello Hello ",
+				Gender:       "male",
+				Phone:        "85860141146",
+				LineID:       "risalfa",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 19",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+				Phone:        "085860141146",
+				LineID:       "risalfa",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 20",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+				Phone:        "85860141146",
+				LineID:       "risalfarisalfarisalfarisalfarisalfarisalfarisalfa",
+			},
+			want:    updateArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 21",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Status:       "active",
+			},
+			want: updateArgs{
+				IdentityCode: 140810140016,
+				Email:        "risal@live.com",
+				Name:         "Risal Falah",
+				Status:       user.StatusActivated,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 22",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "male",
+				Status:       "active",
+			},
+			want: updateArgs{
+				IdentityCode: 140810140016,
+				Email:        "risal@live.com",
+				Name:         "Risal Falah",
+				Gender:       user.GenderMale,
+				Status:       user.StatusActivated,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 23",
+			fields: fields{
+				IdentityCode: "140810140016",
+				Email:        "risal@live.com",
+				Name:         "  Risal  Falah     ",
+				Gender:       "female",
+				Status:       "inactive",
+			},
+			want: updateArgs{
+				IdentityCode: 140810140016,
+				Email:        "risal@live.com",
+				Name:         "Risal Falah",
+				Gender:       user.GenderFemale,
+				Status:       user.StatusVerified,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params := updateParams{
+				IdentityCode: tt.fields.IdentityCode,
+				Name:         tt.fields.Name,
+				Email:        tt.fields.Email,
+				Gender:       tt.fields.Gender,
+				Phone:        tt.fields.Phone,
+				LineID:       tt.fields.LineID,
+				Note:         tt.fields.Note,
+				Status:       tt.fields.Status,
+			}
+			got, err := params.validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("updateParams.validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("updateParams.validate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_deleteParams_validate(t *testing.T) {
+	type fields struct {
+		IdentityCode string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    deleteArgs
+		wantErr bool
+	}{
+		{
+			name:    "Test Case 1",
+			fields:  fields{},
+			want:    deleteArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			fields: fields{
+				IdentityCode: "Hello Moto",
+			},
+			want:    deleteArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			fields: fields{
+				IdentityCode: "123456789",
+			},
+			want:    deleteArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			fields: fields{
+				IdentityCode: "1234567890123456789",
+			},
+			want:    deleteArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 5",
+			fields: fields{
+				IdentityCode: " 140810140016 ",
+			},
+			want:    deleteArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 6",
+			fields: fields{
+				IdentityCode: "140810140016",
+			},
+			want: deleteArgs{
+				IdentityCode: 140810140016,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params := deleteParams{
+				IdentityCode: tt.fields.IdentityCode,
+			}
+			got, err := params.validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("deleteParams.validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("deleteParams.validate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_createParams_validate(t *testing.T) {
+	type fields struct {
+		IdentityCode string
+		Name         string
+		Email        string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    createArgs
+		wantErr bool
+	}{
+		{
+			name:    "Test Case 1",
+			fields:  fields{},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 2",
+			fields: fields{
+				IdentityCode: "123456789",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 3",
+			fields: fields{
+				IdentityCode: "1234567890123456789",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 4",
+			fields: fields{
+				IdentityCode: "123456789012",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 5",
+			fields: fields{
+				IdentityCode: " 12345 6789012 ",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 6",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah Asep Nur Muhammad Iskandar Yusuf Rifki Muhammad       ",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 7",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah !",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 8",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 9",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah",
+				Email:        "risal falah",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 10",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah",
+				Email:        "ris.",
+			},
+			want:    createArgs{},
+			wantErr: true,
+		},
+		{
+			name: "Test Case 11",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah",
+				Email:        "  risal@live.com  ",
+			},
+			want: createArgs{
+				IdentityCode: 123456789012,
+				Name:         "Risal Falah",
+				Email:        "risal@live.com",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test Case 12",
+			fields: fields{
+				IdentityCode: "123456789012",
+				Name:         "Risal Falah",
+				Email:        "  risal@live.com  ",
+			},
+			want: createArgs{
+				IdentityCode: 123456789012,
+				Name:         "Risal Falah",
+				Email:        "risal@live.com",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params := createParams{
+				IdentityCode: tt.fields.IdentityCode,
+				Name:         tt.fields.Name,
+				Email:        tt.fields.Email,
+			}
+			got, err := params.validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("createParams.validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("createParams.validate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -100,8 +100,8 @@ const (
 		WHERE
 			(status = (%d) OR status = (%d)) AND
 			id != (%d)
-		LIMIT (%d)
-		OFFSET (%d);
+		LIMIT %d
+		OFFSET %d;
 	`
 
 	generateVerificationQuery = `

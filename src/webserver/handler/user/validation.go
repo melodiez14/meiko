@@ -123,7 +123,7 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 	}
 
 	// should be positive number
-	if page < 0 || total < 0 {
+	if page < 1 || total < 1 {
 		return args, fmt.Errorf("Invalid request")
 	}
 
@@ -142,7 +142,7 @@ func (params activationParams) validate() (activationArgs, error) {
 		return args, fmt.Errorf("Bad Request")
 	}
 
-	identityCode, err := strconv.ParseInt(params.IdentityCode, 10, 64)
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
 		return args, fmt.Errorf("Error validation: ID should be numeric")
 	}
@@ -257,7 +257,7 @@ func (params updateProfileParams) validate() (updateProfileArgs, error) {
 		phone = sql.NullString{String: params.Phone, Valid: true}
 	}
 
-	// Line verification (can be empty)
+	// Line vallidation (can be empty)
 	var lineID sql.NullString
 	if !helper.IsEmpty(params.LineID) {
 		if len(params.LineID) > alias.UserLineIDLengthMax {
@@ -400,5 +400,161 @@ func (params forgotParams) validate() (forgotArgs, error) {
 		Code:       uint16(code),
 		Password:   helper.StringToMD5(params.Password),
 	}
+	return args, nil
+}
+
+func (params detailParams) validate() (detailArgs, error) {
+	var args detailArgs
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	args = detailArgs{
+		IdentityCode: identityCode,
+	}
+	return args, nil
+}
+
+func (params updateParams) validate() (updateArgs, error) {
+
+	var args updateArgs
+	params = updateParams{
+		IdentityCode: helper.Trim(params.IdentityCode),
+		Email:        helper.Trim(params.Email),
+		Name:         helper.Trim(params.Name),
+		Note:         helper.Trim(html.EscapeString(params.Note)),
+		Gender:       params.Gender,
+		Phone:        helper.Trim(params.Phone),
+		LineID:       html.EscapeString(params.LineID),
+		Status:       params.Status,
+	}
+
+	// Identity code validation
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
+	if err != nil {
+		return args, fmt.Errorf("Invalid identity code")
+	}
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Invalid email")
+	}
+
+	// Name validation
+	name, err := helper.NormalizeName(params.Name)
+	if err != nil {
+		return args, err
+	}
+
+	// Note validation
+	if !helper.IsEmpty(params.Note) {
+		if len(params.Note) > alias.UserNoteLengthMax {
+			return args, fmt.Errorf("Error validation: Note too long")
+		}
+	}
+
+	// Gender validation
+	var gender int8 = user.GenderUndefined
+	if !helper.IsEmpty(params.Gender) {
+		switch params.Gender {
+		case "male":
+			gender = alias.UserGenderMale
+		case "female":
+			gender = alias.UserGenderFemale
+		default:
+			return args, fmt.Errorf("Error validation: wrong gender")
+		}
+	}
+
+	// Phone validation (can be empty)
+	var phone sql.NullString
+	if !helper.IsEmpty(params.Phone) {
+		if !helper.IsPhone(params.Phone) {
+			return args, fmt.Errorf("Error validation: wrong input phone")
+		}
+		phone = sql.NullString{String: params.Phone, Valid: true}
+	}
+
+	// Line validation (can be empty)
+	var lineID sql.NullString
+	if !helper.IsEmpty(params.LineID) {
+		if len(params.LineID) > alias.UserLineIDLengthMax {
+			return args, fmt.Errorf("Error validation: Line Id too long")
+		}
+		lineID = sql.NullString{String: params.LineID, Valid: true}
+	}
+
+	// Status validation
+	var status int8
+	switch params.Status {
+	case "active":
+		status = user.StatusActivated
+	case "inactive":
+		status = user.StatusVerified
+	default:
+		return args, fmt.Errorf("Error validation: wrong status")
+	}
+
+	args = updateArgs{
+		IdentityCode: identityCode,
+		Name:         name,
+		Email:        email,
+		Gender:       gender,
+		Phone:        phone,
+		LineID:       lineID,
+		Note:         params.Note,
+		Status:       status,
+	}
+
+	return args, nil
+}
+
+func (params deleteParams) validate() (deleteArgs, error) {
+	var args deleteArgs
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	args = deleteArgs{
+		IdentityCode: identityCode,
+	}
+	return args, nil
+}
+
+func (params createParams) validate() (createArgs, error) {
+	var args createArgs
+	params = createParams{
+		IdentityCode: helper.Trim(params.IdentityCode),
+		Name:         helper.Trim(params.Name),
+		Email:        helper.Trim(params.Email),
+	}
+
+	// identity code validation
+	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	// Name validation
+	name, err := helper.NormalizeName(params.Name)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
+	}
+
+	// Email validation
+	email, err := helper.NormalizeEmail(params.Email)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: %s", err.Error())
+	}
+
+	args = createArgs{
+		IdentityCode: identityCode,
+		Name:         name,
+		Email:        email,
+	}
+
 	return args, nil
 }
