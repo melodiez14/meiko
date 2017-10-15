@@ -1,0 +1,91 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "Uw5UChpoAJpXs26wFdSjYW9go4s=",
+			"path": "github.com/disintegration/imaging",
+			"revision": "c3956f26e8f5f2370428d573648fedc717fbe51e",
+			"revisionTime": "2017-09-16T18:52:59Z"
+		},
+		{
+			"checksumSHA1": "gz19tguybjObeGgTyTVDyVGaaBM=",
+			"path": "github.com/domodwyer/mailyak",
+			"revision": "7dd2d12f0bba55a3aad8059d9c43c9b6550d38ee",
+			"revisionTime": "2017-07-31T18:33:20Z"
+		},
+		{
+			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "b925df3cc15d8646e9b5b333ebaf3011385aba11",
+			"revisionTime": "2017-08-14T17:23:35Z"
+		},
+		{
+			"checksumSHA1": "zxm1ahSCAclqI4JIvyuRbytF2pA=",
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "b925df3cc15d8646e9b5b333ebaf3011385aba11",
+			"revisionTime": "2017-08-14T17:23:35Z"
+		},
+		{
+			"checksumSHA1": "N5D1aYGZh5OUVArhFW0voidER3A=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "26471af196a17ee75a22e6481b5a5897fb16b081",
+			"revisionTime": "2017-08-22T21:48:09Z"
+		},
+		{
+			"checksumSHA1": "SEZulQ/Gm4f6P6/c3waZjXxvl0g=",
+			"path": "github.com/jmoiron/sqlx",
+			"revision": "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f",
+			"revisionTime": "2017-04-30T19:46:03Z"
+		},
+		{
+			"checksumSHA1": "xXjxKqs3ECyWO5zjIVb2qgj9rcU=",
+			"path": "github.com/jmoiron/sqlx/reflectx",
+			"revision": "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f",
+			"revisionTime": "2017-04-30T19:46:03Z"
+		},
+		{
+			"checksumSHA1": "gKyBj05YkfuLFruAyPZ4KV9nFp8=",
+			"path": "github.com/julienschmidt/httprouter",
+			"revision": "975b5c4c7c21c0e3d2764200bf2aa8e34657ae6e",
+			"revisionTime": "2017-04-30T22:20:11Z"
+		},
+		{
+			"checksumSHA1": "97d1x3kkzlOLFrtQ/NXL8j5sqz8=",
+			"path": "github.com/rafaeljusto/redigomock",
+			"revision": "7ae0511314e9946bb0c87d6d485169ab2467a290",
+			"revisionTime": "2017-07-20T13:15:24Z"
+		},
+		{
+			"checksumSHA1": "bOUCnFlRuGN/E633R/lFuiWVrkk=",
+			"path": "github.com/robfig/cron",
+			"revision": "736158dc09e10f1911ca3a1e1b01f11b566ce5db",
+			"revisionTime": "2017-05-26T15:01:27Z"
+		},
+		{
+			"checksumSHA1": "UD/pejajPyS7WaWVXq2NU1eK4Ic=",
+			"path": "golang.org/x/image/bmp",
+			"revision": "334384d9e19178a0488c9360d94d183c1ef0f711",
+			"revisionTime": "2017-07-19T03:20:01Z"
+		},
+		{
+			"checksumSHA1": "SmD/LkP3vgBGPKT6I38wH7Jb6QI=",
+			"path": "golang.org/x/image/tiff",
+			"revision": "334384d9e19178a0488c9360d94d183c1ef0f711",
+			"revisionTime": "2017-07-19T03:20:01Z"
+		},
+		{
+			"checksumSHA1": "PF6VjvpNpOdR8epWH1Liyy7x1Qg=",
+			"path": "golang.org/x/image/tiff/lzw",
+			"revision": "334384d9e19178a0488c9360d94d183c1ef0f711",
+			"revisionTime": "2017-07-19T03:20:01Z"
+		},
+		{
+			"checksumSHA1": "uR1qI7p56R7u43DJGoYtyRleQpA=",
+			"path": "gopkg.in/DATA-DOG/go-sqlmock.v1",
+			"revision": "b983233bc0bbea4dc6e8ec8c8c923d935765ffec",
+			"revisionTime": "2017-02-21T15:59:18Z"
+		}
+	],
+	"rootPath": "github.com/melodiez14/meiko"
+}

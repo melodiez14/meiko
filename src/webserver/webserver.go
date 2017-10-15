@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"fmt"
-
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -25,7 +23,12 @@ type requestLogger struct {
 func Start(cfg Config) {
 	log.Println("Initializing web server")
 	l := log.New(os.Stdout, "[meiko] ", 0)
-	port := fmt.Sprintf(":%s", cfg.Port)
+
+	port := ":" + cfg.Port
+	if len(cfg.Port) < 1 {
+		port = ":" + os.Getenv("PORT")
+	}
+
 	r := httprouter.New()
 	loadRouter(r)
 
