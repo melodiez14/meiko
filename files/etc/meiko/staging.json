@@ -1,6 +1,6 @@
 {
     "webserver": {
-        "port": "9000"
+        "port": ""
     },
     "database": {
         "host": "us-cdbr-iron-east-05.cleardb.net",
@@ -24,7 +24,8 @@
         "sessionkey": "_SID_Meiko_"
     },
     "directory": {
-        "public": "./",
-        "profile": "./"
+        "static": "/var/www/meiko/static",
+        "profile": "/var/www/meiko/data/users",
+        "email": "/var/www/meiko/email"
     }
 }

@@ -7,8 +7,9 @@ import (
 
 // DirectoryConfig is loaded from json configuration
 type DirectoryConfig struct {
-	Public  string `json:"public"`
+	Static  string `json:"static"`
 	Profile string `json:"profile"`
+	Email   string `json:"email"`
 }
 
 // Dir is the list of directory
@@ -18,13 +19,18 @@ var Dir DirectoryConfig
 func InitDirectory(cfg DirectoryConfig) {
 	log.Println("Initializing directory")
 
-	if _, err := os.Stat(cfg.Public); os.IsNotExist(err) {
-		log.Fatalf("Public: %s is not exist", cfg.Public)
+	if _, err := os.Stat(cfg.Static); os.IsNotExist(err) {
+		log.Fatalf("Static: %s is not exist", cfg.Static)
 		return
 	}
 
 	if _, err := os.Stat(cfg.Profile); os.IsNotExist(err) {
 		log.Fatalf("Profile: %s is not exist", cfg.Profile)
+		return
+	}
+
+	if _, err := os.Stat(cfg.Email); os.IsNotExist(err) {
+		log.Fatalf("Email: %s is not exist", cfg.Email)
 		return
 	}
 

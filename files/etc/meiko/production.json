@@ -11,7 +11,8 @@
         "database": "meiko"
     },
     "redis": {
-        "address": "localhost:6379"
+        "address": "localhost:6379",
+        "password": ""
     },
     "email": {
         "username": "",
@@ -23,7 +24,8 @@
         "sessionkey": "_SID_Meiko_"
     },
     "directory": {
-        "public": "public",
-        "profile": "private/profile"
+        "static": "/var/www/meiko/static",
+        "profile": "/var/www/meiko/data/users",
+        "email": "/var/www/meiko/email"
     }
 }

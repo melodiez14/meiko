@@ -33,6 +33,3 @@ _testmain.go
 ehthumbs.db
 Thumbs.db
 bin/
-
-private/profile/*
-vendor
