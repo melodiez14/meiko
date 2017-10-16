@@ -24,8 +24,8 @@
         "sessionkey": "_SID_Meiko_"
     },
     "directory": {
-        "static": "/var/www/meiko/static",
-        "profile": "/var/www/meiko/data/users",
-        "email": "/var/www/meiko/email"
+        "static": "files/var/www/meiko/static",
+        "profile": "files/var/www/meiko/data/users",
+        "email": "files/var/www/meiko/email"
     }
 }

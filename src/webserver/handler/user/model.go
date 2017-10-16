@@ -40,6 +40,11 @@ type signInArgs struct {
 	Password string
 }
 
+type signInResponse struct {
+	IsLoggedIn bool                `json:"is_logged_in"`
+	Modules    map[string][]string `json:"modules"`
+}
+
 type forgotResponse struct {
 	Email          string `json:"email"`
 	ExpireDuration string `json:"expire_duration"`

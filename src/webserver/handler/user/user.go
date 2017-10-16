@@ -425,9 +425,35 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	http.SetCookie(w, cookie)
 
+	// set response data
+	var role string
+	roles = map[string][]string{}
+	for i, val := range sess.Roles {
+		for _, v := range val {
+			switch v {
+			case rg.RoleCreate, rg.RoleXCreate:
+				role = "CREATE"
+			case rg.RoleRead, rg.RoleXRead:
+				role = "READ"
+			case rg.RoleUpdate, rg.RoleXUpdate:
+				role = "UPDATE"
+			case rg.RoleDelete, rg.RoleXDelete:
+				role = "DELETE"
+			}
+			if !helper.IsStringInSlice(role, roles[i]) {
+				roles[i] = append(roles[i], role)
+			}
+		}
+	}
+
+	res := signInResponse{
+		IsLoggedIn: true,
+		Modules:    roles,
+	}
+
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Login success"))
+		SetData(res))
 	return
 }
 
