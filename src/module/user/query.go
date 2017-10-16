@@ -118,6 +118,7 @@ const (
 
 	getConfirmationQuery = `
 		SELECT
+			id,
 			email_verification_attempt,
 			email_verification_code
 		FROM
