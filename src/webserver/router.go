@@ -32,7 +32,7 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/v1/user/verify", auth.OptionalAuthorize(user.EmailVerificationHandler))
 	r.POST("/api/v1/user/signin", auth.OptionalAuthorize(user.SignInHandler))
 	r.POST("/api/v1/user/forgot", auth.OptionalAuthorize(user.ForgotHandler))
-	r.DELETE("/api/v1/user/signout", auth.MustAuthorize(user.SignOutHandler))
+	r.POST("/api/v1/user/signout", auth.MustAuthorize(user.SignOutHandler)) // delete
 	r.POST("/api/v1/user/profile", auth.MustAuthorize(user.UpdateProfileHandler))
 	r.GET("/api/v1/user/profile", auth.MustAuthorize(user.GetProfileHandler))
 	r.POST("/api/v1/user/changepassword", auth.MustAuthorize(user.ChangePasswordHandler))
@@ -41,9 +41,9 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/user", auth.MustAuthorize(user.ReadHandler))
 	r.POST("/api/admin/v1/user", auth.MustAuthorize(user.CreateHandler))
 	r.GET("/api/admin/v1/user/:id", auth.MustAuthorize(user.DetailHandler))
-	r.PATCH("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))
-	r.PATCH("/api/admin/v1/user/:id/activate", auth.MustAuthorize(user.ActivationHandler))
-	r.DELETE("/api/admin/v1/user/:id", auth.MustAuthorize(user.DeleteHandler))
+	r.POST("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))              // patch
+	r.POST("/api/admin/v1/user/:id/activate", auth.MustAuthorize(user.ActivationHandler)) // patch
+	r.POST("/api/admin/v1/user/:id/delete", auth.MustAuthorize(user.DeleteHandler))       // delete
 
 	// ==================================================================
 	// ======================== End User Handler ========================
@@ -66,7 +66,7 @@ func loadRouter(r *httprouter.Router) {
 	// Course Handler
 	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
-	r.PATCH("/api/admin/v1/course/:id", auth.MustAuthorize(course.UpdateHandler))
+	r.POST("/api/admin/v1/course/:id", auth.MustAuthorize(course.UpdateHandler)) // patch
 	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
 	r.GET("/api/v1/course/assistant", auth.MustAuthorize(course.GetAssistantHandler))
 	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
