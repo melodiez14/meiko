@@ -110,7 +110,7 @@ const (
 		SET
 			email_verification_code = (%d),
 			email_verification_expire_date = (DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
-			email_verification_attempt = NULL,
+			email_verification_attempt = 0,
 			updated_at = NOW()
 		WHERE
 			identity_code = (%d);

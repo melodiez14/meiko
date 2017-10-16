@@ -993,7 +993,7 @@ func TestGenerateVerification(t *testing.T) {
 				identity: 140810140016,
 			},
 			mock: mock{
-				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s=\sNULL,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s*=\s*0,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
 				lastInsertID: 1,
 				rowsAffected: 1,
 				err:          nil,
@@ -1012,7 +1012,7 @@ func TestGenerateVerification(t *testing.T) {
 				identity: 140810140016,
 			},
 			mock: mock{
-				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s=\sNULL,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s*=\s*0,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          nil,
