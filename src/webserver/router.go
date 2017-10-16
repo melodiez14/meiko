@@ -13,6 +13,7 @@ import (
 	"github.com/melodiez14/meiko/src/webserver/handler/information"
 	"github.com/melodiez14/meiko/src/webserver/handler/notification"
 	"github.com/melodiez14/meiko/src/webserver/handler/place"
+	"github.com/melodiez14/meiko/src/webserver/handler/rolegroup"
 	"github.com/melodiez14/meiko/src/webserver/handler/user"
 )
 
@@ -46,6 +47,16 @@ func loadRouter(r *httprouter.Router) {
 
 	// ==================================================================
 	// ======================== End User Handler ========================
+	// ==================================================================
+
+	// ==================================================================
+	// ======================== Rolegroup Handler =======================
+	// ==================================================================
+
+	r.GET("/api/v1/role", auth.OptionalAuthorize(auth.OptionalAuthorize(rolegroup.GetPrivilege)))
+
+	// ==================================================================
+	// ====================== End Rolegroup Handler =====================
 	// ==================================================================
 
 	// File Handler
