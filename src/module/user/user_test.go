@@ -460,7 +460,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)id,(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"0", "1234"},
 				err:    nil,
@@ -474,7 +474,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)id,(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"4", "1234"},
 				err:    nil,
@@ -488,7 +488,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)id,(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"1", "3213"},
 				err:    nil,
@@ -502,7 +502,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)id,(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{},
 				result: []driver.Value{},
 				err:    fmt.Errorf("Error connection"),
@@ -516,7 +516,7 @@ func TestIsValidConfirmationCode(t *testing.T) {
 				code:  1234,
 			},
 			mockSelect: mockSelect{
-				query:  `^\s*SELECT(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)id,(\s*)email_verification_attempt,(\s*)email_verification_code(\s*)FROM(\s*)users(\s*)WHERE(\s*)email(\s*)=(\s*)(.+)AND(\s*)NOW\(\)(\s*)<(\s*)email_verification_expire_date(\s*)LIMIT(\s*)1`,
 				column: []string{"email_verification_attempt", "email_verification_code"},
 				result: []driver.Value{"1", "4321"},
 				err:    nil,
@@ -993,7 +993,7 @@ func TestGenerateVerification(t *testing.T) {
 				identity: 140810140016,
 			},
 			mock: mock{
-				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s=\sNULL,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s*=\s*0,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
 				lastInsertID: 1,
 				rowsAffected: 1,
 				err:          nil,
@@ -1012,7 +1012,7 @@ func TestGenerateVerification(t *testing.T) {
 				identity: 140810140016,
 			},
 			mock: mock{
-				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s=\sNULL,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
+				query:        `^\s*UPDATE\s*users\s*SET\s*email_verification_code\s=\s\(\d+\),\s*email_verification_expire_date\s=\s\(DATE_ADD\(NOW\(\), INTERVAL 30 MINUTE\)\),\s*email_verification_attempt\s*=\s*0,\s*updated_at\s=\sNOW\(\)\s*WHERE\s*identity_code\s=\s\(\d+\);`,
 				lastInsertID: 0,
 				rowsAffected: 0,
 				err:          nil,

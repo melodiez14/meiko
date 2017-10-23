@@ -12,6 +12,24 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
+// SelectByID function for check in database to get user information from database using user ID
+/*
+	@params
+		id				= []int64
+	@example
+		id				= [140810140060,140810140061]
+	@return:
+		ID				= 140810140060
+		Name			= kharil azmi ashari
+		Email			= khairil_azmi_ashari@yahoo.com
+		Gender			= 1
+		Note			= just doing nothing
+		Status			= 1
+		IdentityCode	= 140810140060
+		LineID			= khaazas
+		Phone			= 082214467300
+		RoleGroupsID	= 0
+*/
 func SelectByID(id []int64, column ...string) ([]User, error) {
 	var user []User
 	var c []string
@@ -45,6 +63,24 @@ func SelectByID(id []int64, column ...string) ([]User, error) {
 	return user, nil
 }
 
+// GetByEmail function for check in database to get user information from database using user email
+/*
+	@params
+		email			= string
+	@example
+		email			= khairil_azmi_ashari@yahoo.com
+	@return:
+		ID				= 140810140060
+		Name			= kharil azmi ashari
+		Email			= khairil_azmi_ashari@yahoo.com
+		Gender			= 1
+		Note			= just doing nothing
+		Status			= 1
+		IdentityCode	= 140810140060
+		LineID			= khaazas
+		Phone			= 082214467300
+		RoleGroupsID	= 0
+*/
 func GetByEmail(email string, column ...string) (User, error) {
 	var user User
 	var c []string
@@ -75,6 +111,22 @@ func GetByEmail(email string, column ...string) (User, error) {
 	return user, nil
 }
 
+// GetByIdentityCode function for check in database to get user information from database using user idetity code
+/*
+	@params
+	@example
+	@return:
+		ID				= 140810140060
+		Name			= kharil azmi ashari
+		Email			= khairil_azmi_ashari@yahoo.com
+		Gender			= 1
+		Note			= just doing nothing
+		Status			= 1
+		IdentityCode	= 140810140060
+		LineID			= khaazas
+		Phone			= 082214467300
+		RoleGroupsID	= 0
+*/
 func GetByIdentityCode(identityCode int64, column ...string) (User, error) {
 	var user User
 	var c []string
@@ -105,6 +157,26 @@ func GetByIdentityCode(identityCode int64, column ...string) (User, error) {
 	return user, nil
 }
 
+// SignIn function to sign using email and password then check in database is this valid account
+/*
+	@params:
+		email			= required, string
+		password		= required, string
+	@example
+		email			= khairil_azmi_ashari@yahoo.com
+		password		= Khairil14001
+	@return
+		ID				= 140810140060
+		Name			= kharil azmi ashari
+		Email			= khairil_azmi_ashari@yahoo.com
+		Gender			= 1
+		Note			= just doing nothing
+		Status			= 1
+		IdentityCode	= 140810140060
+		LineID			= khaazas
+		Phone			= 082214467300
+		RoleGroupsID	= 0
+*/
 func SignIn(email, password string) (User, error) {
 	var user User
 	query := fmt.Sprintf(querySignIn, email, password)
@@ -115,6 +187,21 @@ func SignIn(email, password string) (User, error) {
 	return user, nil
 }
 
+// SignUp function to sign up an account by fill with identity code, name, email, and password.
+//then check to database and save the information in database if there is valid new account
+/*
+	@params:
+		identityCode	= required, int64
+		name			= required, string
+		email			= required, string
+		password		= required, string
+	@example
+		identityCode	= 140810140060
+		name			= khairil azmi ashari
+		email			= khairil_azmi_ashari@yahoo.com
+		password		= Khairil14001
+	@return
+*/
 func SignUp(identityCode int64, name, email, password string) error {
 	query := fmt.Sprintf(querySignUp, name, email, password, identityCode)
 	result, err := conn.DB.Exec(query)
@@ -128,6 +215,17 @@ func SignUp(identityCode int64, name, email, password string) error {
 	return nil
 }
 
+// IsPhoneExist check is phone number exist in database
+// SignIn function to sign using email and password then check in database is this valid account
+/*
+	@params:
+		identityCode	= required, int64
+		phone			= required, string
+	@example
+		identityCode	= 140810140060
+		phone			= 08214467300
+	@return
+*/
 func IsPhoneExist(identityCode int64, phone string) bool {
 	var user User
 	query := fmt.Sprintf(`
@@ -147,6 +245,17 @@ func IsPhoneExist(identityCode int64, phone string) bool {
 	return true
 }
 
+// IsLineIDExist check is Line ID exist in database
+// SignIn function to sign using email and password then check in database is this valid account
+/*
+	@params:
+		identityCode	= required, int64
+		lineID			= required, string
+	@example
+		identityCode	= 140810140060
+		lineID			= khaazass
+	@return
+*/
 func IsLineIDExist(identityCode int64, lineID string) bool {
 	var user User
 	query := fmt.Sprintf(`
@@ -166,6 +275,24 @@ func IsLineIDExist(identityCode int64, lineID string) bool {
 	return true
 }
 
+// UpdateProfile function to update user profile information in database
+/*
+	@params:
+		identityCode	= int64
+		name			= string
+		note			= string
+		phone			= string
+		lineID			= string
+		gender			= int8
+	@example:
+		identityCode	= 140810140060
+		name			= kharil azmi ashari
+		note			= just doing nothing
+		phone			= 140810140060
+		lineID			= khaazas
+		gender			= 1
+	@return
+*/
 func UpdateProfile(identityCode int64, name, note string, phone, lineID sql.NullString, gender int8) error {
 
 	if gender != GenderMale && gender != GenderFemale {
@@ -206,6 +333,14 @@ func UpdateProfile(identityCode int64, name, note string, phone, lineID sql.Null
 	return nil
 }
 
+// GenerateVerification ganarate verifocation code to get confirmation from valid email
+/*
+	@params:
+		identity	= int64
+	@example:
+		identity	= 140810140060
+	@return
+*/
 func GenerateVerification(identity int64) (Verification, error) {
 
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -226,6 +361,17 @@ func GenerateVerification(identity int64) (Verification, error) {
 	return v, nil
 }
 
+// IsValidConfirmationCode function to check is confirmation code is valid code used
+// form right user email account
+/*
+	@params:
+		email	= string
+		code	= uint16
+	@example:
+		email	= khairil_azmi_ashari@yahoo.com
+		code	= 140810
+	@return
+*/
 func IsValidConfirmationCode(email string, code uint16) bool {
 	var c Confirmation
 	query := fmt.Sprintf(getConfirmationQuery, email)
@@ -247,6 +393,14 @@ func IsValidConfirmationCode(email string, code uint16) bool {
 	return true
 }
 
+// UpdateToVerified function to change account status to be verified after do email verification
+/*
+	@params:
+		identityCode	= string
+	@example:
+		identityCode	= 140810140060
+	@return
+*/
 func UpdateToVerified(identityCode int64) error {
 	query := fmt.Sprintf(queryUpdateToVerified, StatusVerified, identityCode)
 	result, err := conn.DB.Exec(query)
@@ -260,6 +414,16 @@ func UpdateToVerified(identityCode int64) error {
 	return nil
 }
 
+// UpdateStatus function to update status and send update to database
+/*
+	@params:
+		identityCode	= string
+		status			= string
+	@example:
+		identityCode	= 140810140060
+		status			= i'm single, thanks you
+	@return
+*/
 func UpdateStatus(identityCode int64, status int8) error {
 	query := fmt.Sprintf(queryUpdateStatus, status, identityCode)
 	result, err := conn.DB.Exec(query)
@@ -273,6 +437,28 @@ func UpdateStatus(identityCode int64, status int8) error {
 	return nil
 }
 
+// SelectDashboard function to show dashboard and send user information
+/*
+	@params:
+		id		= string
+		limit	= uint16
+		offset	= uint16
+	@example:
+		id		= 140810140060
+		limit	= 1
+		offset	= 1
+	@return:
+		ID				= 140810140060
+		Name			= kharil azmi ashari
+		Email			= khairil_azmi_ashari@yahoo.com
+		Gender			= 1
+		Note			= just doing nothing
+		Status			= 1
+		IdentityCode	= 140810140060
+		LineID			= khaazas
+		Phone			= 082214467300
+		RoleGroupsID	= 0
+*/
 func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
 	var user []User
 	query := fmt.Sprintf(querySelectDashboard, StatusVerified, StatusActivated, id, limit, offset)
@@ -283,6 +469,18 @@ func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
 	return user, nil
 }
 
+// ChangePassword function to change user password account
+/*
+	@params:
+		idnetityCode	= int64
+		password		= string
+		oldpassword		= string
+	@example:
+		idnetityCode	= 140810140060
+		password		= Old001
+		oldpassword		= New001
+	@return
+*/
 func ChangePassword(identityCode int64, password, oldPassword string) error {
 	query := fmt.Sprintf(`
 		UPDATE
@@ -304,6 +502,17 @@ func ChangePassword(identityCode int64, password, oldPassword string) error {
 	return nil
 }
 
+// ForgotNewPassword function to renew password when user forget their own password
+// and password will sent to verified email
+/*
+	@params:
+		email		= string
+		paswword	= string
+	@example:
+		email		= khairil_azmi_ashari@yahoo.com
+		paswword	= Khairil14001
+	@return
+*/
 func ForgotNewPassword(email, password string) error {
 	query := fmt.Sprintf(queryForgotNewPassword, password, email)
 	result, err := conn.DB.Exec(query)
@@ -317,6 +526,24 @@ func ForgotNewPassword(email, password string) error {
 	return nil
 }
 
+// Update function to update user information from inputed data
+/*
+	@params:
+		identityCode	= int64
+		name			= string
+		note			= string
+		lineID			= sql.String
+		gender			= int8
+		status			= int8
+	@example:
+		identityCode	= 140810140060
+		name			= kharil azmi ashari
+		note			= just doing nothing
+		lineID			= khaazas
+		gender			= 1
+		status			= 1
+	@return
+*/
 func Update(identityCode int64, name, note string, phone, lineID sql.NullString, gender, status int8) error {
 
 	if gender != GenderMale && gender != GenderFemale {
@@ -358,6 +585,14 @@ func Update(identityCode int64, name, note string, phone, lineID sql.NullString,
 	return nil
 }
 
+// Delete function to delete user using identity code
+/*
+	@params:
+		identityCode	= int64
+	@example:
+		identityCode	= 140810140060
+	@return
+*/
 func Delete(identityCode int64) error {
 	query := fmt.Sprintf(`
 		DELETE FROM
@@ -378,6 +613,18 @@ func Delete(identityCode int64) error {
 	return nil
 }
 
+// Create function to create user to database from valid singup process
+/*
+	@params:
+		identityCode	= int64
+		name			= string
+		email			= khairil_azmi_ashari@yahoo.com
+	@example:
+		identityCode	= 140810140060
+		name			= kharil azmi ashari
+		email			= khairil_azmi_ashari@yahoo.com
+	@return
+*/
 func Create(identityCode int64, name, email string) error {
 	query := fmt.Sprintf(`
 		INSERT INTO

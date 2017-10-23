@@ -9,11 +9,31 @@ import (
 	"time"
 )
 
+// StringToMD5 convert inputed text to MD5 format
+/*
+	@params:
+		data	= string
+	@example:
+		data 	= me
+	@return
+		MD5		= ab86a1e1ef70dff97959067b723c5c24
+*/
 func StringToMD5(text string) string {
 	data := []byte(text)
 	return fmt.Sprintf("%x", md5.Sum(data))
 }
 
+// ExtractExtension extract file name given to be seperate into file name and it's extension
+/*
+	@params:
+		fileName	= string
+	@example:
+		fileName 	= me.pdf
+	@return
+		fn			= me
+		ext			= pdf
+		error		= nil/false
+*/
 func ExtractExtension(fileName string) (string, string, error) {
 
 	splitted := strings.Split(fileName, ".")
@@ -40,6 +60,17 @@ func ExtractExtension(fileName string) (string, string, error) {
 	return fn, ext, nil
 }
 
+// DateToString Give time range from accesse time by user
+/*
+	@params:
+		t1		= time reference
+		t2		= time acces by user
+	@example:
+		t1 		= 18 October 2017, 5:25:10
+		t2		= 18 October 2017, 5:25:15
+	@return
+		string 	= 5 seconds
+*/
 func DateToString(t1, t2 time.Time) string {
 
 	ts := t2.Sub(t1)
@@ -62,6 +93,15 @@ func DateToString(t1, t2 time.Time) string {
 
 }
 
+// IntDayToString Change day format from time format to string
+/*
+	@params:
+		day		= int8
+	@example:
+		day 	= 0
+	@return
+		string 	= Moday
+*/
 func IntDayToString(day int8) string {
 
 	if day < 0 || day > 6 {
@@ -81,6 +121,15 @@ func IntDayToString(day int8) string {
 	return days[day]
 }
 
+// MinutesToTimeString Change minutes format from time format to string
+/*
+	@params:
+		minutes	= uint16
+	@example:
+		minutes = 0
+	@return
+		string 	= 00:00
+*/
 func MinutesToTimeString(minutes uint16) string {
 	if minutes > 1440 {
 		return ""
@@ -103,6 +152,16 @@ func MinutesToTimeString(minutes uint16) string {
 	return fmt.Sprintf("%s:%s", h, m)
 }
 
+// DayStringToInt Change day format fromSstring format to Int
+/*
+	@params:
+		day		= String
+	@example:
+		day 	= Monday
+	@return
+		int8 	= 0
+		error	= nil/true
+*/
 func DayStringToInt(day string) (int8, error) {
 	day = strings.ToLower(day)
 	days := []string{
