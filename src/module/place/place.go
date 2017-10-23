@@ -1,6 +1,7 @@
 package place
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -27,13 +28,11 @@ func IsExistID(id string) bool {
 	return true
 }
 
-func (args Place) Insert(txs ...*sqlx.Tx) error {
+func Insert(id string, description sql.NullString, tx ...*sqlx.Tx) error {
 
-	var desc string
-	if args.Description.Valid {
-		desc = fmt.Sprintf("('%s')", args.Description.String)
-	} else {
-		desc = "(NULL)"
+	queryDescription := "(NULL)"
+	if description.Valid {
+		queryDescription = fmt.Sprintf("('%s')", description.String)
 	}
 
 	query := fmt.Sprintf(`INSERT INTO
@@ -47,19 +46,23 @@ func (args Place) Insert(txs ...*sqlx.Tx) error {
 			%s,
 			NOW(),
 			NOW()
-		)`, args.ID, desc)
+		)`, id, queryDescription)
 
-	if len(txs) == 1 {
-		_, err := txs[0].Exec(query)
-		if err != nil {
-			return err
-		}
-		return nil
+	var result sql.Result
+	var err error
+	if len(tx) == 1 {
+		result, err = tx[0].Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
 	}
-
-	_, err := conn.DB.Exec(query)
 	if err != nil {
 		return err
 	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
 	return nil
 }

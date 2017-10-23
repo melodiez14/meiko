@@ -19,7 +19,7 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	sess := r.Context().Value("User").(*auth.User)
 
 	// get enrolled course
-	courseIDs, err := course.SelectIDByUserID(sess.ID)
+	schedulesID, err := course.SelectIDByUserID(sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -28,11 +28,7 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	// get information list
-	informations, err := inf.Select(inf.ColTitle, inf.ColCreatedAt).
-		Where(inf.ColType, inf.OperatorEquals, alias.InformationStatusGeneral).
-		OrWhere(inf.ColCourseID, inf.OperatorIn, courseIDs).
-		OrderBy(inf.ColCreatedAt, inf.OrderDesc).
-		Exec()
+	informations, err := inf.SelectByScheduleID(schedulesID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError).
@@ -45,8 +41,9 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	t2 := time.Now()
 	for _, val := range informations {
 		informationResponses = append(informationResponses, informationResponse{
-			Title: val.Title,
-			Date:  helper.DateToString(val.CreatedAt, t2),
+			Title:       val.Title,
+			Date:        helper.DateToString(val.CreatedAt, t2),
+			Description: val.Description.String,
 		})
 	}
 

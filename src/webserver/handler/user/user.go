@@ -350,7 +350,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	sess := r.Context().Value("User").(*auth.User)
 	if sess != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusFound).
+			SetCode(http.StatusForbidden).
 			AddError("You have already logged in"))
 		return
 	}

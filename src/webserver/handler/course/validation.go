@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	cs "github.com/melodiez14/meiko/src/module/course"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
-func (params readParams) Validate() (readArgs, error) {
+func (params readParams) validate() (readArgs, error) {
 
 	var args readArgs
 	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
@@ -39,19 +40,30 @@ func (params readParams) Validate() (readArgs, error) {
 	return args, nil
 }
 
-func (params createParams) Validate() (createArgs, error) {
+func (params createParams) validate() (createArgs, error) {
 
 	var args createArgs
 	params = createParams{
-		Name:        params.Name,
-		Description: html.EscapeString(params.Description),
+		ID:          html.EscapeString(helper.Trim(params.ID)),
+		Name:        helper.Trim(params.Name),
+		Description: html.EscapeString(helper.Trim(params.Description)),
 		UCU:         params.UCU,
 		Semester:    params.Semester,
+		Year:        params.Year,
 		StartTime:   params.StartTime,
 		EndTime:     params.EndTime,
-		Class:       strings.ToUpper(params.Class),
+		Class:       strings.ToUpper(helper.Trim(params.Class)),
 		Day:         strings.ToLower(params.Day),
-		PlaceID:     html.EscapeString(params.PlaceID),
+		PlaceID:     html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
+		IsUpdate:    params.IsUpdate,
+	}
+
+	// Course Validation
+	if helper.IsEmpty(params.ID) {
+		return args, fmt.Errorf("course_id cannot be empty")
+	}
+	if len(params.ID) > cs.MaximumID {
+		return args, fmt.Errorf("course_id can have only maximum 45 characters length")
 	}
 
 	// Name validation
@@ -90,13 +102,25 @@ func (params createParams) Validate() (createArgs, error) {
 		return args, fmt.Errorf("Invalid semester")
 	}
 
+	// Year validation
+	if helper.IsEmpty(params.Year) {
+		return args, fmt.Errorf("Year can't be empty")
+	}
+	year, err := strconv.ParseInt(params.Year, 10, 16)
+	if err != nil {
+		return args, fmt.Errorf("Year must be numeric")
+	}
+	if year < 2017 || year > 2020 {
+		return args, fmt.Errorf("Invalid year")
+	}
+
 	// Start time validation
 	if helper.IsEmpty(params.StartTime) {
 		return args, fmt.Errorf("Start time can't be empty")
 	}
 	startTime, err := strconv.ParseInt(params.StartTime, 10, 16)
 	if err != nil {
-		return args, fmt.Errorf("Invalid end time")
+		return args, fmt.Errorf("Invalid start time")
 	}
 	if startTime < 0 || startTime >= 1440 {
 		return args, fmt.Errorf("Invalid start time")
@@ -107,20 +131,25 @@ func (params createParams) Validate() (createArgs, error) {
 		return args, fmt.Errorf("End time can't be empty")
 	}
 	endTime, err := strconv.ParseInt(params.EndTime, 10, 16)
-	if helper.IsEmpty(params.EndTime) {
+	if err != nil {
 		return args, fmt.Errorf("Invalid end time")
 	}
 	if endTime < 0 || endTime >= 1440 {
 		return args, fmt.Errorf("Invalid end time")
 	}
 
+	if startTime > endTime {
+		return args, fmt.Errorf("Start time more than end time")
+	}
+
 	// Class validation
 	if helper.IsEmpty(params.Class) {
 		return args, fmt.Errorf("Class can't be empty")
 	}
-	if len(params.Class) != 1 || !helper.IsAlphaSpace(params.Class) {
+	if len(params.Class) != 1 || !helper.IsAlpha(params.Class) {
 		return args, fmt.Errorf("Invalid class")
 	}
+	class := strings.ToUpper(params.Class)
 
 	// Day validation
 	if helper.IsEmpty(params.Day) {
@@ -133,26 +162,35 @@ func (params createParams) Validate() (createArgs, error) {
 
 	// Place ID validation
 	if helper.IsEmpty(params.PlaceID) {
-		return args, fmt.Errorf("Day can't be empty")
+		return args, fmt.Errorf("Place ID can't be empty")
 	}
 	if len(params.PlaceID) > 30 {
 		return args, fmt.Errorf("Invalid place id")
 	}
 
+	isUpdate := false
+	// Is Update Course
+	if params.IsUpdate == "true" {
+		isUpdate = true
+	}
+
 	return createArgs{
+		ID:          params.ID,
 		Name:        name,
 		Description: description,
 		UCU:         int8(ucu),
 		Semester:    int8(semester),
+		Year:        int16(year),
 		StartTime:   int16(startTime),
 		EndTime:     int16(endTime),
-		Class:       params.Class,
+		Class:       class,
 		Day:         day,
 		PlaceID:     params.PlaceID,
+		IsUpdate:    isUpdate,
 	}, nil
 }
 
-func (params getParams) Validate() (getArgs, error) {
+func (params getParams) validate() (getArgs, error) {
 
 	var args getArgs
 	if params.Payload != "last" && params.Payload != "current" && params.Payload != "all" {
@@ -166,40 +204,46 @@ func (params getParams) Validate() (getArgs, error) {
 	return args, nil
 }
 
-func (params getAssistantParams) Validate() (getAssistantArgs, error) {
+func (params getAssistantParams) validate() (getAssistantArgs, error) {
 
 	var args getAssistantArgs
-	id, err := strconv.ParseInt(params.ID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Bad request")
 	}
 
 	args = getAssistantArgs{
-		ID: id,
+		ScheduleID: scheduleID,
 	}
 	return args, nil
 }
 
-func (params updateParams) Validate() (updateArgs, error) {
+func (params updateParams) validate() (updateArgs, error) {
 
 	var args updateArgs
 	params = updateParams{
-		ID:          params.ID,
-		Name:        params.Name,
-		Description: html.EscapeString(params.Description),
+		ID:          html.EscapeString(helper.Trim(params.ID)),
+		Name:        helper.Trim(params.Name),
+		Description: html.EscapeString(helper.Trim(params.Description)),
 		UCU:         params.UCU,
+		ScheduleID:  params.ScheduleID,
+		Status:      params.Status,
 		Semester:    params.Semester,
+		Year:        params.Year,
 		StartTime:   params.StartTime,
 		EndTime:     params.EndTime,
-		Class:       strings.ToUpper(params.Class),
+		Class:       strings.ToUpper(helper.Trim(params.Class)),
 		Day:         strings.ToLower(params.Day),
-		PlaceID:     html.EscapeString(params.PlaceID),
+		PlaceID:     html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
+		IsUpdate:    params.IsUpdate,
 	}
 
-	// Name validation
-	id, err := strconv.ParseInt(params.ID, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("Bad Request")
+	// Course Validation
+	if helper.IsEmpty(params.ID) {
+		return args, fmt.Errorf("course_id cannot be empty")
+	}
+	if len(params.ID) > cs.MaximumID {
+		return args, fmt.Errorf("course_id can have only maximum 45 characters length")
 	}
 
 	// Name validation
@@ -238,13 +282,25 @@ func (params updateParams) Validate() (updateArgs, error) {
 		return args, fmt.Errorf("Invalid semester")
 	}
 
+	// Year validation
+	if helper.IsEmpty(params.Year) {
+		return args, fmt.Errorf("Year can't be empty")
+	}
+	year, err := strconv.ParseInt(params.Year, 10, 16)
+	if err != nil {
+		return args, fmt.Errorf("Year must be numeric")
+	}
+	if year < 2017 || year > 2020 {
+		return args, fmt.Errorf("Invalid year")
+	}
+
 	// Start time validation
 	if helper.IsEmpty(params.StartTime) {
 		return args, fmt.Errorf("Start time can't be empty")
 	}
 	startTime, err := strconv.ParseInt(params.StartTime, 10, 16)
 	if err != nil {
-		return args, fmt.Errorf("Invalid end time")
+		return args, fmt.Errorf("Invalid start time")
 	}
 	if startTime < 0 || startTime >= 1440 {
 		return args, fmt.Errorf("Invalid start time")
@@ -255,20 +311,25 @@ func (params updateParams) Validate() (updateArgs, error) {
 		return args, fmt.Errorf("End time can't be empty")
 	}
 	endTime, err := strconv.ParseInt(params.EndTime, 10, 16)
-	if helper.IsEmpty(params.EndTime) {
+	if err != nil {
 		return args, fmt.Errorf("Invalid end time")
 	}
 	if endTime < 0 || endTime >= 1440 {
 		return args, fmt.Errorf("Invalid end time")
 	}
 
+	if startTime > endTime {
+		return args, fmt.Errorf("Start time more than end time")
+	}
+
 	// Class validation
 	if helper.IsEmpty(params.Class) {
 		return args, fmt.Errorf("Class can't be empty")
 	}
-	if len(params.Class) != 1 || !helper.IsAlphaSpace(params.Class) {
+	if len(params.Class) != 1 || !helper.IsAlpha(params.Class) {
 		return args, fmt.Errorf("Invalid class")
 	}
+	class := strings.ToUpper(params.Class)
 
 	// Day validation
 	if helper.IsEmpty(params.Day) {
@@ -281,22 +342,71 @@ func (params updateParams) Validate() (updateArgs, error) {
 
 	// Place ID validation
 	if helper.IsEmpty(params.PlaceID) {
-		return args, fmt.Errorf("Day can't be empty")
+		return args, fmt.Errorf("Place ID can't be empty")
 	}
 	if len(params.PlaceID) > 30 {
 		return args, fmt.Errorf("Invalid place id")
 	}
 
+	isUpdate := false
+	// Is Update Course
+	if params.IsUpdate == "true" {
+		isUpdate = true
+	}
+
+	var status int8
+	switch params.Status {
+	case "active":
+		status = cs.StatusScheduleActive
+	case "inactive":
+		status = cs.StatusScheduleInactive
+	default:
+		return args, fmt.Errorf("Error status")
+	}
+	if params.Status == "active" {
+		status = cs.StatusScheduleActive
+	}
+
+	var scheduleID int64
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("invalid request")
+	}
+	scheduleID, err = strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("invalid request")
+	}
+
 	return updateArgs{
-		ID:          id,
+		ID:          params.ID,
 		Name:        name,
 		Description: description,
 		UCU:         int8(ucu),
+		ScheduleID:  scheduleID,
+		Status:      status,
 		Semester:    int8(semester),
+		Year:        int16(year),
 		StartTime:   int16(startTime),
 		EndTime:     int16(endTime),
-		Class:       params.Class,
+		Class:       class,
 		Day:         day,
 		PlaceID:     params.PlaceID,
+		IsUpdate:    isUpdate,
+	}, nil
+}
+
+func (params deleteScheduleParams) validate() (deleteScheduleArgs, error) {
+
+	var args deleteScheduleArgs
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("ID cannot be empty")
+	}
+
+	scheduleId, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("ID must be numeric")
+	}
+
+	return deleteScheduleArgs{
+		ScheduleID: scheduleId,
 	}, nil
 }

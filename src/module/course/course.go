@@ -2,356 +2,619 @@ package course
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/melodiez14/meiko/src/util/helper"
 
 	"database/sql"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func Get(column ...string) QueryGet {
-	var c []string
-	if len(column) < 1 {
-		c = []string{
-			ColID,
-			ColName,
-			ColDescription,
-			ColUCU,
-			ColSemester,
-			ColStatus,
-			ColStartTime,
-			ColEndTime,
-			ColClass,
-			ColDay,
-			ColPlaceID,
-		}
-	} else {
-		for _, v := range column {
-			c = append(c, v)
-		}
-	}
-	columnQuery := strings.Join(c, ", ")
-	return QueryGet{fmt.Sprintf(queryGet, columnQuery)}
-}
-
-func (q QueryGet) Where(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	case []int64:
-		var vals []string
-		rv := reflect.ValueOf(value).Interface().([]int64)
-		if len(rv) < 1 {
-			return q
-		}
-		for _, v := range rv {
-			vals = append(vals, fmt.Sprintf("%d", v))
-		}
-		str := strings.Join(vals, ", ")
-		return QueryGet{fmt.Sprintf("%s OR %s %s (%s)", q.string, column, operator, str)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) AndWhere(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) OrWhere(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) Exec() (Course, error) {
-	var course Course
-	query := fmt.Sprintf("%s LIMIT 1", q.string)
-	err := conn.DB.Get(&course, query)
-	if err != nil {
-		return course, err
-	}
-	return course, nil
-}
-
-func Select(column ...string) QuerySelect {
-	var c []string
-	if len(column) < 1 {
-		c = []string{
-			ColID,
-			ColName,
-			ColDescription,
-			ColUCU,
-			ColSemester,
-			ColStatus,
-			ColStartTime,
-			ColEndTime,
-			ColClass,
-			ColDay,
-			ColPlaceID,
-		}
-	} else {
-		for _, v := range column {
-			c = append(c, v)
-		}
-	}
-	columnQuery := strings.Join(c, ", ")
-	return QuerySelect{fmt.Sprintf(querySelect, columnQuery)}
-}
-
-func (q QuerySelect) Where(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	case []int64:
-		var vals []string
-		rv := reflect.ValueOf(value).Interface().([]int64)
-		for _, v := range rv {
-			vals = append(vals, fmt.Sprintf("%d", v))
-		}
-		str := strings.Join(vals, ", ")
-		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%s)", q.string, column, operator, str)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) AndWhere(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	case []int64:
-		var vals []string
-		rv := reflect.ValueOf(value).Interface().([]int64)
-		if len(rv) < 1 {
-			return q
-		}
-		for _, v := range rv {
-			vals = append(vals, fmt.Sprintf("%d", v))
-		}
-		str := strings.Join(vals, ", ")
-		return QuerySelect{fmt.Sprintf("%s AND %s %s (%s)", q.string, column, operator, str)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) Limit(value uint16) QuerySelect {
-	return QuerySelect{fmt.Sprintf("%s LIMIT %d", q.string, value)}
-}
-
-func (q QuerySelect) Offset(value uint16) QuerySelect {
-	return QuerySelect{fmt.Sprintf("%s OFFSET %d", q.string, value)}
-}
-
-func (q QuerySelect) Exec() ([]Course, error) {
-	var courses []Course
-	err := conn.DB.Select(&courses, q.string)
-	if err != nil {
-		return courses, err
-	}
-	return courses, nil
-}
-
-func Insert(column map[string]interface{}) QueryInsert {
-
-	c := []string{"created_at", "updated_at"}
-	v := []string{"NOW()", "NOW()"}
-	for i, val := range column {
-		switch val.(type) {
-		case int, int8, int16, int64:
-			c = append(c, i)
-			v = append(v, fmt.Sprintf("(%d)", val))
-		case string:
-			c = append(c, i)
-			v = append(v, fmt.Sprintf("('%s')", val))
-		}
-	}
-	columnQuery := strings.Join(c, ", ")
-	valueQuery := strings.Join(v, ", ")
-	return QueryInsert{fmt.Sprintf(queryInsert, columnQuery, valueQuery)}
-}
-
-func (q QueryInsert) Exec(txs ...*sqlx.Tx) error {
-	// if exist tx
-	if len(txs) == 1 {
-		result, err := txs[0].Exec(q.string)
-		if err != nil {
-			return err
-		}
-		rows, err := result.RowsAffected()
-		if rows == 0 {
-			return fmt.Errorf("No rows affected")
-		}
-		return nil
-	}
-
-	result, err := conn.DB.Exec(q.string)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("No rows affected")
-	}
-	return nil
-}
-
-func Update(column map[string]interface{}) QueryUpdate {
-	c := []string{"updated_at = NOW()"}
-	for i, val := range column {
-		switch val.(type) {
-		case int, int16, int8, int64:
-			c = append(c, fmt.Sprintf("%s = (%d)", i, val))
-		case string:
-			c = append(c, fmt.Sprintf("%s = ('%s')", i, val))
-		case sql.NullString:
-			str := reflect.ValueOf(val).Interface().(sql.NullString)
-			if str.Valid {
-				c = append(c, fmt.Sprintf("%s = ('%s')", i, str.String))
-			} else {
-				c = append(c, fmt.Sprintf("%s = NULL", i))
-			}
-		}
-	}
-	columnQuery := strings.Join(c, ", ")
-	return QueryUpdate{fmt.Sprintf(queryUpdate, columnQuery)}
-}
-
-func (q QueryUpdate) Where(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryUpdate) AndWhere(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryUpdate) Exec(txs ...*sqlx.Tx) error {
-	// if exist tx
-	if len(txs) == 1 {
-		result, err := txs[0].Exec(q.string)
-		if err != nil {
-			return err
-		}
-		rows, err := result.RowsAffected()
-		if rows == 0 {
-			return fmt.Errorf("No rows affected")
-		}
-		return nil
-	}
-	result, err := conn.DB.Exec(q.string)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("No rows affected")
-	}
-	return nil
-}
-
-func GetByUserID(userID int64) ([]Course, error) {
-	var courses []Course
-	query := fmt.Sprintf(queryGetCourseByUserID, userID)
-	err := conn.DB.Select(&courses, query)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	}
-	return courses, nil
-}
-
 func SelectIDByUserID(userID int64, status ...int8) ([]int64, error) {
+	var st string
+	if len(status) == 1 {
+		st = fmt.Sprintf("AND status = (%d)", status[0])
+	}
+
+	var scheduleID []int64
+	query := fmt.Sprintf(`SELECT schedules_id FROM p_users_schedules WHERE users_id = (%d) %s`, userID, st)
+	err := conn.DB.Select(&scheduleID, query)
+	if err != nil && err != sql.ErrNoRows {
+		return scheduleID, err
+	}
+
+	return scheduleID, nil
+}
+
+func SelectScheduleIDByUserID(userID int64, status ...int8) ([]int64, error) {
 
 	var st string
 	if len(status) == 1 {
 		st = fmt.Sprintf("AND status = (%d)", status[0])
 	}
 
-	courseIDs := []int64{}
-	query := fmt.Sprintf(`SELECT courses_id FROM p_users_courses WHERE users_id = (%d) %s`, userID, st)
-	err := conn.DB.Select(&courseIDs, query)
+	var scheduleIDs []int64
+	query := fmt.Sprintf(`SELECT schedules_id FROM p_users_schedules WHERE users_id = (%d) %s;`, userID, st)
+	err := conn.DB.Select(&scheduleIDs, query)
 	if err != nil && err != sql.ErrNoRows {
-		return courseIDs, err
+		return scheduleIDs, err
 	}
-
-	return courseIDs, nil
+	return scheduleIDs, nil
 }
 
-func IsEnrolled(userID, courseID int64) bool {
-	var v int64
-	query := fmt.Sprintf("SELECT users_id FROM p_users_courses WHERE users_id = (%d) AND courses_id = (%d) LIMIT 1", userID, courseID)
-	err := conn.DB.Get(&v, query)
+func IsEnrolled(userID, scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) LIMIT 1", userID, scheduleID)
+	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func SelectAssistantID(courseID int64) ([]int64, error) {
+func SelectAssistantID(scheduleID int64) ([]int64, error) {
 
 	userIDs := []int64{}
-	query := fmt.Sprintf(`SELECT users_id FROM p_users_courses WHERE courses_id = (%d) AND status = (%d)`, courseID, PStatusAssistant)
+	query := fmt.Sprintf(`SELECT
+		p.users_id
+	FROM
+		p_users_schedules p
+	WHERE 
+		p.status = (%d) AND
+		p.schedules_id = (%d);`, PStatusAssistant, scheduleID)
 	err := conn.DB.Select(&userIDs, query)
 	if err != nil && err != sql.ErrNoRows {
 		return userIDs, err
 	}
 
 	return userIDs, nil
+}
+
+func IsExist(courseID string) bool {
+
+	var x string
+	query := fmt.Sprintf(`SELECT 'x' FROM courses WHERE id = ('%s') LIMIT 1`, courseID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+
+}
+
+func Update(courseID, name string, description sql.NullString, ucu int8, tx ...*sqlx.Tx) error {
+
+	queryDescription := fmt.Sprintf("NULL")
+	if description.Valid {
+		queryDescription = fmt.Sprintf("('%s')", description.String)
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE
+			courses
+		SET
+			name = ('%s'),
+			description = %s,
+			ucu = (%d),
+			updated_at = NOW()
+		WHERE
+			id = ('%s');
+		`, name, queryDescription, ucu, courseID)
+
+	var result sql.Result
+	var err error
+	if len(tx) == 1 {
+		result, err = tx[0].Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func Insert(courseID, name string, description sql.NullString, ucu int8, tx ...*sqlx.Tx) error {
+
+	queryDescription := fmt.Sprintf("NULL")
+	if description.Valid {
+		queryDescription = fmt.Sprintf("('%s')", description.String)
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO
+			courses (
+				id,
+				name,
+				description,
+				ucu,
+				created_at,
+				updated_at
+			)
+		VALUES (
+			('%s'),
+			('%s'),
+			%s,
+			(%d),
+			NOW(),
+			NOW()
+		);`, courseID, name, queryDescription, ucu)
+
+	var result sql.Result
+	var err error
+	if len(tx) == 1 {
+		result, err = tx[0].Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func IsExistSchedule(semester int8, year int16, courseID, class string, scheduleID ...int64) bool {
+
+	var sc string
+	if len(scheduleID) == 1 {
+		sc = fmt.Sprintf(" AND id != (%d) ", scheduleID[0])
+	}
+
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			schedules
+		WHERE
+			semester = (%d) AND
+			year = (%d) AND
+			courses_id = ('%s') AND
+			class = ('%s') %s
+		LIMIT 1;`, semester, year, courseID, class, sc)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day, status int8, class, courseID, placeID string, tx ...*sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO
+			schedules (
+				status,
+				start_time,
+				end_time,
+				day,
+				class,
+				semester,
+				year,
+				courses_id,
+				places_id,
+				created_by,
+				created_at,
+				updated_at
+			)
+		VALUES (
+			(%d),
+			(%d),
+			(%d),
+			(%d),
+			('%s'),
+			(%d),
+			(%d),
+			('%s'),
+			('%s'),
+			(%d),
+			NOW(),
+			NOW()
+		)`, status, startTime, endTime, day, class, semester, year, courseID, placeID, userID)
+
+	var result sql.Result
+	var err error
+	switch len(tx) {
+	case 1:
+		result, err = tx[0].Exec(query)
+	default:
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
+
+	var course []CourseSchedule
+	query := fmt.Sprintf(`
+		SELECT
+			cs.id,
+			cs.name,
+			cs.description,
+			cs.ucu,
+			sc.id,
+			sc.status,
+			sc.start_time,
+			sc.end_time,
+			sc.day,
+			sc.class,
+			sc.semester,
+			sc.year,
+			sc.places_id,
+			sc.created_by
+		FROM
+			courses cs
+		RIGHT JOIN
+			schedules sc
+		ON
+			cs.id = sc.courses_id
+		LIMIT %d OFFSET %d;`, limit, offset)
+
+	rows, err := conn.DB.Queryx(query)
+	defer rows.Close()
+	if err != nil {
+		return course, err
+	}
+
+	for rows.Next() {
+		var id, name, class, placeID string
+		var description sql.NullString
+		var ucu, status, day, semester int8
+		var startTime, endTime uint16
+		var year int16
+		var scheduleID, createdBy int64
+
+		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+		if err != nil {
+			return course, err
+		}
+
+		course = append(course, CourseSchedule{
+			Course: Course{
+				ID:          id,
+				Name:        name,
+				Description: description,
+				UCU:         ucu,
+			},
+			Schedule: Schedule{
+				ID:        scheduleID,
+				Status:    status,
+				StartTime: startTime,
+				EndTime:   endTime,
+				Day:       day,
+				Class:     class,
+				Semester:  semester,
+				Year:      year,
+				PlaceID:   placeID,
+				CreatedBy: createdBy,
+			},
+		})
+	}
+
+	return course, nil
+}
+
+func GetByScheduleID(scheduleID int64) (CourseSchedule, error) {
+
+	var course CourseSchedule
+	query := fmt.Sprintf(`
+		SELECT
+			cs.id,
+			cs.name,
+			cs.description,
+			cs.ucu,
+			sc.id,
+			sc.status,
+			sc.start_time,
+			sc.end_time,
+			sc.day,
+			sc.class,
+			sc.semester,
+			sc.year,
+			sc.places_id,
+			sc.created_by
+		FROM
+			courses cs
+		RIGHT JOIN
+			schedules sc
+		ON
+			cs.id = sc.courses_id
+		WHERE
+			sc.id = (%d)
+		LIMIT 1;`, scheduleID)
+
+	rows := conn.DB.QueryRowx(query)
+
+	// scan data to variable
+	var id, name, class, placeID string
+	var description sql.NullString
+	var ucu, status, day, semester int8
+	var startTime, endTime uint16
+	var year int16
+	var createdBy int64
+
+	err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+	if err != nil {
+		return course, err
+	}
+
+	return CourseSchedule{
+		Course: Course{
+			ID:          id,
+			Name:        name,
+			Description: description,
+			UCU:         ucu,
+		},
+		Schedule: Schedule{
+			ID:        scheduleID,
+			Status:    status,
+			StartTime: startTime,
+			EndTime:   endTime,
+			Day:       day,
+			Class:     class,
+			Semester:  semester,
+			Year:      year,
+			PlaceID:   placeID,
+			CreatedBy: createdBy,
+		},
+	}, nil
+}
+
+func IsExistScheduleID(scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			schedules
+		WHERE
+			id = (%d)
+		LIMIT 1;`, scheduleID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func UpdateSchedule(scheduleID int64, startTime, endTime, year int16, semester, day, status int8, class, courseID, placeID string, tx ...*sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE 
+			schedules
+		SET
+			status = (%d),
+			start_time = (%d),
+			end_time = (%d),
+			day = (%d),
+			class = ('%s'),
+			semester = (%d),
+			year = (%d),
+			courses_id = ('%s'),
+			places_id = ('%s'),
+			updated_at = NOW()
+		WHERE
+			id = (%d);`, status, startTime, endTime, day, class, semester, year, courseID, placeID, scheduleID)
+
+	var result sql.Result
+	var err error
+	switch len(tx) {
+	case 1:
+		result, err = tx[0].Exec(query)
+	default:
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func SelectByScheduleID(scheduleID []int64, status int8) ([]CourseSchedule, error) {
+
+	var course []CourseSchedule
+	if len(scheduleID) < 1 {
+		return course, nil
+	}
+
+	d := helper.Int64ToStringSlice(scheduleID)
+	ids := strings.Join(d, ", ")
+
+	query := fmt.Sprintf(`
+		SELECT
+			cs.id,
+			cs.name,
+			cs.description,
+			cs.ucu,
+			sc.id,
+			sc.status,
+			sc.start_time,
+			sc.end_time,
+			sc.day,
+			sc.class,
+			sc.semester,
+			sc.year,
+			sc.places_id,
+			sc.created_by
+		FROM
+			courses cs
+		RIGHT JOIN
+			schedules sc
+		ON
+			cs.id = sc.courses_id
+		WHERE
+			sc.id IN (%s) AND
+			sc.status = (%d)`, ids, status)
+
+	rows, err := conn.DB.Queryx(query)
+	defer rows.Close()
+	if err != nil {
+		return course, err
+	}
+
+	for rows.Next() {
+		var id, name, class, placeID string
+		var description sql.NullString
+		var ucu, status, day, semester int8
+		var startTime, endTime uint16
+		var year int16
+		var scheduleID, createdBy int64
+
+		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+		if err != nil {
+			return course, err
+		}
+
+		course = append(course, CourseSchedule{
+			Course: Course{
+				ID:          id,
+				Name:        name,
+				Description: description,
+				UCU:         ucu,
+			},
+			Schedule: Schedule{
+				ID:        scheduleID,
+				Status:    status,
+				StartTime: startTime,
+				EndTime:   endTime,
+				Day:       day,
+				Class:     class,
+				Semester:  semester,
+				Year:      year,
+				PlaceID:   placeID,
+				CreatedBy: createdBy,
+			},
+		})
+	}
+
+	return course, nil
+}
+
+func SelectByStatus(status int8) ([]CourseSchedule, error) {
+
+	var course []CourseSchedule
+	query := fmt.Sprintf(`
+		SELECT
+			cs.id,
+			cs.name,
+			cs.description,
+			cs.ucu,
+			sc.id,
+			sc.status,
+			sc.start_time,
+			sc.end_time,
+			sc.day,
+			sc.class,
+			sc.semester,
+			sc.year,
+			sc.places_id,
+			sc.created_by
+		FROM
+			courses cs
+		RIGHT JOIN
+			schedules sc
+		ON
+			cs.id = sc.courses_id
+		WHERE
+			sc.status = (%d)`, status)
+
+	rows, err := conn.DB.Queryx(query)
+	defer rows.Close()
+	if err != nil {
+		return course, err
+	}
+
+	for rows.Next() {
+		var id, name, class, placeID string
+		var description sql.NullString
+		var ucu, status, day, semester int8
+		var startTime, endTime uint16
+		var year int16
+		var scheduleID, createdBy int64
+
+		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+		if err != nil {
+			return course, err
+		}
+
+		course = append(course, CourseSchedule{
+			Course: Course{
+				ID:          id,
+				Name:        name,
+				Description: description,
+				UCU:         ucu,
+			},
+			Schedule: Schedule{
+				ID:        scheduleID,
+				Status:    status,
+				StartTime: startTime,
+				EndTime:   endTime,
+				Day:       day,
+				Class:     class,
+				Semester:  semester,
+				Year:      year,
+				PlaceID:   placeID,
+				CreatedBy: createdBy,
+			},
+		})
+	}
+
+	return course, nil
+}
+
+func DeleteSchedule(scheduleID int64, tx ...*sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		DELETE FROM
+			schedules
+		WHERE
+			id = (%d);
+		`, scheduleID)
+
+	var result sql.Result
+	var err error
+	if len(tx) == 1 {
+		result, err = tx[0].Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
 }

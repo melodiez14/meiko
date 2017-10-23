@@ -12,44 +12,39 @@ type (
 )
 
 const (
-	ColID          = "id"
-	ColName        = "name"
-	ColDescription = "description"
-	ColUCU         = "ucu"
-	ColSemester    = "semester"
-	ColStatus      = "status"
-	ColStartTime   = "start_time"
-	ColEndTime     = "end_time"
-	ColClass       = "classes"
-	ColDay         = "day"
-	ColPlaceID     = "places_id"
-	ColCreatedBy   = "created_by"
+	StatusScheduleInactive = 0
+	StatusScheduleActive   = 1
+	StatusScheduleDeleted  = 2
 
-	StatusInactive = 0
-	StatusActive   = 1
-	StatusDeleted  = 2
+	MaximumID = 40
 
-	PStatusStudent   = 0
-	PStatusAssistant = 1
-
-	OperatorEquals  = "="
-	OperatorUnquals = "!="
-	OperatorIn      = "IN"
-	OperatorMore    = ">"
-	OperatorLess    = "<"
+	PStatusUnapproved = 0
+	PStatusStudent    = 1
+	PStatusAssistant  = 2
 )
 
 type Course struct {
-	ID          int64          `db:"id"`
+	ID          string         `db:"id"`
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
 	UCU         int8           `db:"ucu"`
-	Semester    int8           `db:"semester"`
-	Status      int8           `db:"status"`
-	StartTime   uint16         `db:"start_time"`
-	EndTime     uint16         `db:"end_time"`
-	Class       string         `db:"classes"`
-	Day         int8           `db:"day"`
-	PlaceID     string         `db:"places_id"`
-	CreatedBy   int64          `db:"created_by"`
+}
+
+type Schedule struct {
+	ID        int64  `db:"id"`
+	Status    int8   `db:"status"`
+	StartTime uint16 `db:"start_time"`
+	EndTime   uint16 `db:"end_time"`
+	Day       int8   `db:"day"`
+	Class     string `db:"class"`
+	Semester  int8   `db:"semester"`
+	Year      int16  `db:"year"`
+	CourseID  string `db:"courses_id"`
+	PlaceID   string `db:"places_id"`
+	CreatedBy int64  `db:"created_by"`
+}
+
+type CourseSchedule struct {
+	Course   Course
+	Schedule Schedule
 }
