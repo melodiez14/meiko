@@ -371,7 +371,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	u, err := user.SignIn(args.Email, args.Password)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
+			SetCode(http.StatusUnauthorized).
 			AddError("Invalid email or password"))
 		return
 	}
