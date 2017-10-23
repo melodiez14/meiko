@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -180,4 +181,12 @@ func DayStringToInt(day string) (int8, error) {
 	}
 
 	return 0, fmt.Errorf("Not valid day")
+}
+
+func Int64ToStringSlice(value []int64) []string {
+	var str []string
+	for _, val := range value {
+		str = append(str, strconv.FormatInt(val, 10))
+	}
+	return str
 }

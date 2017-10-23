@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
@@ -648,6 +649,36 @@ func TestDayStringToInt(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("DayStringToInt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInt64ToStringSlice(t *testing.T) {
+	type args struct {
+		value []int64
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Empty slice",
+			args: args{},
+		},
+		{
+			name: "Filled slice",
+			args: args{
+				value: []int64{123, 98123987123, 3232, -1230123},
+			},
+			want: []string{"123", "98123987123", "3232", "-1230123"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Int64ToStringSlice(tt.args.value); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Int64ToStringSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}

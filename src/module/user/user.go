@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/helper"
+
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
@@ -31,11 +33,8 @@ import (
 func SelectByID(id []int64, column ...string) ([]User, error) {
 	var user []User
 	var c []string
-	var d []string
+	d := helper.Int64ToStringSlice(id)
 
-	for _, val := range id {
-		d = append(d, fmt.Sprintln(val))
-	}
 	if len(column) < 1 {
 		c = []string{
 			ColID,

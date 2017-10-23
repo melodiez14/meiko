@@ -15,7 +15,7 @@ type readArgs struct {
 }
 
 type readResponse struct {
-	ID        int64  `json:"id"`
+	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Class     string `json:"class"`
 	StartTime string `json:"start_time"`
@@ -25,27 +25,33 @@ type readResponse struct {
 }
 
 type createParams struct {
+	ID          string
 	Name        string
 	Description string
 	UCU         string
 	Semester    string
+	Year        string
 	StartTime   string
 	EndTime     string
 	Class       string
 	Day         string
 	PlaceID     string
+	IsUpdate    string
 }
 
 type createArgs struct {
+	ID          string
 	Name        string
 	Description sql.NullString
 	UCU         int8
 	Semester    int8
+	Year        int16
 	StartTime   int16
 	EndTime     int16
 	Class       string
 	Day         int8
 	PlaceID     string
+	IsUpdate    bool
 }
 
 type updateParams struct {
@@ -53,25 +59,33 @@ type updateParams struct {
 	Name        string
 	Description string
 	UCU         string
+	ScheduleID  string
+	Status      string
 	Semester    string
+	Year        string
 	StartTime   string
 	EndTime     string
 	Class       string
 	Day         string
 	PlaceID     string
+	IsUpdate    string
 }
 
 type updateArgs struct {
-	ID          int64
+	ID          string
 	Name        string
 	Description sql.NullString
 	UCU         int8
+	ScheduleID  int64
+	Status      int8
 	Semester    int8
+	Year        int16
 	StartTime   int16
 	EndTime     int16
 	Class       string
 	Day         int8
 	PlaceID     string
+	IsUpdate    bool
 }
 
 type summaryResponse struct {
@@ -91,14 +105,16 @@ type getResponse struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Class       string `json:"class"`
+	Semester    int8   `json:"semester"`
 }
 
 type getAssistantParams struct {
-	ID string
+	ScheduleID string
 }
 
 type getAssistantArgs struct {
-	ID int64
+	ScheduleID int64
 }
 
 type getAssistantResponse struct {
@@ -113,4 +129,12 @@ type courseResponse struct {
 	Name     string `json:"name"`
 	UCU      int8   `json:"ucu"`
 	Semester int8   `json:"semester"`
+}
+
+type deleteScheduleParams struct {
+	ScheduleID string
+}
+
+type deleteScheduleArgs struct {
+	ScheduleID int64
 }

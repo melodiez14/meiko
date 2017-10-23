@@ -1,18 +1,12 @@
 package webserver
 
 import (
-	"net/http"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/handler"
-	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
-	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
 	"github.com/melodiez14/meiko/src/webserver/handler/file"
 	"github.com/melodiez14/meiko/src/webserver/handler/information"
-	"github.com/melodiez14/meiko/src/webserver/handler/notification"
-	"github.com/melodiez14/meiko/src/webserver/handler/place"
 	"github.com/melodiez14/meiko/src/webserver/handler/rolegroup"
 	"github.com/melodiez14/meiko/src/webserver/handler/user"
 )
@@ -63,29 +57,39 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/v1/image", auth.MustAuthorize(file.UploadImageHandler))
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfile))
 
-	// Course Handler
-	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
-	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
-	r.POST("/api/admin/v1/course/:id", auth.MustAuthorize(course.UpdateHandler)) // patch
+	// ==================================================================
+	// ========================= Course Handler =========================
+	// ==================================================================
+
+	// User section
 	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
 	r.GET("/api/v1/course/assistant", auth.MustAuthorize(course.GetAssistantHandler))
-	r.GET("/api/v1/course/summary", auth.MustAuthorize(course.GetSummaryHandler))
+
+	// Admin section
+	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
+	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
+	r.POST("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))         //patch
+	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteSchedule)) //delete
+
+	// ==================================================================
+	// ======================== End Course Handler ======================
+	// ==================================================================
 
 	// Assignment Handler
-	r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
-	r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
+	// r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
+	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
 
-	// Attendance Handler
-	r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
-	r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
+	// // Attendance Handler
+	// r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
+	// r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
 
 	// Information Handler
 	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))
 
-	// Place Handler
-	r.GET("/api/v1/place/search", place.SearchHandler)
+	// // Place Handler
+	// r.GET("/api/v1/place/search", place.SearchHandler)
 
 	// Catch
-	r.NotFound = http.RedirectHandler("/", http.StatusPermanentRedirect)
-	r.MethodNotAllowed = http.RedirectHandler("/", http.StatusPermanentRedirect)
+	// r.NotFound = http.RedirectHandler("/", http.StatusPermanentRedirect)
+	// r.MethodNotAllowed = http.RedirectHandler("/", http.StatusPermanentRedirect)
 }
