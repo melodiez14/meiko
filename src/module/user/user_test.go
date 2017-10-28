@@ -389,7 +389,7 @@ func TestIsLineIDExist(t *testing.T) {
 				lineID:       "risalfa",
 			},
 			mock: mock{
-				query:  `^\s*SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)'x'(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"line_id"},
 				result: []driver.Value{"085860141146"},
 				err:    nil,
@@ -403,7 +403,7 @@ func TestIsLineIDExist(t *testing.T) {
 				lineID:       "viavallen",
 			},
 			mock: mock{
-				query:  `^\s*SELECT(\s*)line_id(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
+				query:  `^\s*SELECT(\s*)'x'(\s*)FROM(\s*)users(\s*)WHERE(\s*)line_id(\s*)=(\s*)(.+)AND(\s*)identity_code(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)1`,
 				column: []string{"line_id"},
 				result: []driver.Value{},
 				err:    sql.ErrNoRows,

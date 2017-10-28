@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/handler"
+	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
 	"github.com/melodiez14/meiko/src/webserver/handler/file"
 	"github.com/melodiez14/meiko/src/webserver/handler/information"
@@ -73,6 +74,17 @@ func loadRouter(r *httprouter.Router) {
 
 	// ==================================================================
 	// ======================== End Course Handler ======================
+	// ==================================================================
+
+	// ==================================================================
+	// =========================== Bot Handler ==========================
+	// ==================================================================
+
+	r.GET("/api/v1/bot", auth.MustAuthorize(bot.LoadHistoryHandler))
+	r.POST("/api/v1/bot", auth.MustAuthorize(bot.BotHandler))
+
+	// ==================================================================
+	// ========================= End Bot Handler ========================
 	// ==================================================================
 
 	// Assignment Handler

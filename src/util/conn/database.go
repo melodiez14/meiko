@@ -28,7 +28,7 @@ var DB *sqlx.DB
 func InitDB(cfg DatabaseConfig) {
 	log.Println("Initializing database")
 
-	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", cfg.UserName, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local", cfg.UserName, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 	db, err := sqlx.Connect(cfg.Driver, connString)
 	if err != nil {
 		log.Fatalln("Error to connect database")

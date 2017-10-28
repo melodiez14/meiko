@@ -72,10 +72,39 @@ func SelectAssistantID(scheduleID int64) ([]int64, error) {
 	return userIDs, nil
 }
 
+func SelectAllAssistantID() ([]int64, error) {
+
+	userIDs := []int64{}
+	query := fmt.Sprintf(`SELECT
+		users_id
+	FROM
+		p_users_schedules
+	WHERE 
+		status = (%d);`, PStatusAssistant)
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return userIDs, err
+	}
+
+	return userIDs, nil
+}
+
+func SelectAllName() ([]string, error) {
+
+	var names []string
+	query := fmt.Sprintf(`SELECT name FROM courses;`)
+	err := conn.DB.Select(&names, query)
+	if err != nil && err != sql.ErrNoRows {
+		return names, err
+	}
+
+	return names, nil
+}
+
 func IsExist(courseID string) bool {
 
 	var x string
-	query := fmt.Sprintf(`SELECT 'x' FROM courses WHERE id = ('%s') LIMIT 1`, courseID)
+	query := fmt.Sprintf(`SELECT 'x' FROM courses WHERE id = ('%s') LIMIT 1;`, courseID)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
@@ -487,9 +516,9 @@ func SelectByScheduleID(scheduleID []int64, status int8) ([]CourseSchedule, erro
 		var ucu, status, day, semester int8
 		var startTime, endTime uint16
 		var year int16
-		var scheduleID, createdBy int64
+		var scID, createdBy int64
 
-		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+		err := rows.Scan(&id, &name, &description, &ucu, &scID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
 		if err != nil {
 			return course, err
 		}
@@ -502,7 +531,7 @@ func SelectByScheduleID(scheduleID []int64, status int8) ([]CourseSchedule, erro
 				UCU:         ucu,
 			},
 			Schedule: Schedule{
-				ID:        scheduleID,
+				ID:        scID,
 				Status:    status,
 				StartTime: startTime,
 				EndTime:   endTime,

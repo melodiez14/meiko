@@ -100,7 +100,7 @@ func DateToString(t1, t2 time.Time) string {
 	@example:
 		day 	= 0
 	@return
-		string 	= Moday
+		string 	= Sunday
 */
 func IntDayToString(day int8) string {
 
@@ -109,13 +109,13 @@ func IntDayToString(day int8) string {
 	}
 
 	days := []string{
+		"Sunday",
 		"Monday",
 		"Tuesday",
 		"Wednesday",
 		"Thursday",
 		"Friday",
 		"Saturday",
-		"Sunday",
 	}
 
 	return days[day]
@@ -157,30 +157,32 @@ func MinutesToTimeString(minutes uint16) string {
 	@params:
 		day		= String
 	@example:
-		day 	= Monday
+		day 	= Sunday
 	@return
 		int8 	= 0
 		error	= nil/true
 */
 func DayStringToInt(day string) (int8, error) {
 	day = strings.ToLower(day)
-	days := []string{
-		"monday",
-		"tuesday",
-		"wednesday",
-		"thursday",
-		"friday",
-		"saturday",
-		"sunday",
-	}
 
-	for i, val := range days {
-		if day == val {
-			return int8(i), nil
-		}
+	switch day {
+	case "sunday":
+		return int8(time.Sunday), nil
+	case "monday":
+		return int8(time.Monday), nil
+	case "tuesday":
+		return int8(time.Tuesday), nil
+	case "wednesday":
+		return int8(time.Wednesday), nil
+	case "thursday":
+		return int8(time.Thursday), nil
+	case "friday":
+		return int8(time.Friday), nil
+	case "saturday":
+		return int8(time.Saturday), nil
+	default:
+		return 0, fmt.Errorf("not valid day")
 	}
-
-	return 0, fmt.Errorf("Not valid day")
 }
 
 func Int64ToStringSlice(value []int64) []string {
@@ -189,4 +191,21 @@ func Int64ToStringSlice(value []int64) []string {
 		str = append(str, strconv.FormatInt(val, 10))
 	}
 	return str
+}
+
+// TimeToDayInt converts time.Time slice into days int8
+/*
+	@params:
+		day		= time.Time
+	@example:
+		day 	= 2017-10-26 10:09:00.349054 +0700 WIB
+	@return
+		int8 	= 4
+*/
+func TimeToDayInt(time ...time.Time) []int8 {
+	var days []int8
+	for _, val := range time {
+		days = append(days, int8(val.Weekday()))
+	}
+	return days
 }
