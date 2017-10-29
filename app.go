@@ -2,19 +2,18 @@ package main
 
 import (
 	"flag"
-	"runtime"
-
-	"github.com/melodiez14/meiko/src/util/alias"
-
 	"log"
+	"runtime"
 
 	"github.com/melodiez14/meiko/src/cron"
 	"github.com/melodiez14/meiko/src/email"
+	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/util/env"
 	"github.com/melodiez14/meiko/src/util/jsonconfig"
 	"github.com/melodiez14/meiko/src/webserver"
+	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 )
 
 type configuration struct {
@@ -45,6 +44,7 @@ func main() {
 	alias.InitDirectory(config.Directory)
 	conn.InitDB(config.Database)
 	conn.InitRedis(config.Redis)
+	bot.Init()
 	cron.Init()
 	auth.Init(config.Auth)
 	email.Init(config.Email)

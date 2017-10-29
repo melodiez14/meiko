@@ -104,3 +104,53 @@ func TestIsStringInSlice(t *testing.T) {
 		})
 	}
 }
+
+func TestInt8InSlice(t *testing.T) {
+	type args struct {
+		val int8
+		arr []int8
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test Case 1",
+			args: args{
+				val: 127,
+				arr: []int8{
+					123, 122, 0, -100, 123, 41, 32, 88, 24, 127,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 2",
+			args: args{
+				val: -20,
+				arr: []int8{
+					-20, 12, 54, 3, 7, 8, 5, 3, 8, 8, -23,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Test Case 3",
+			args: args{
+				val: 100,
+				arr: []int8{
+					1, -2, 3, -4, 5, 10, 34, 67, 23,
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Int8InSlice(tt.args.val, tt.args.arr); got != tt.want {
+				t.Errorf("Int8InSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

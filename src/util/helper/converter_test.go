@@ -466,39 +466,39 @@ func TestIntDayToString(t *testing.T) {
 		want string
 	}{
 		{
-			name: "Test case 1",
+			name: "Day -1",
 			args: args{
 				day: -1,
 			},
 			want: "",
 		},
 		{
-			name: "Test case 2",
+			name: "Sunday",
 			args: args{
 				day: 0,
-			},
-			want: "Monday",
-		},
-		{
-			name: "Test case 3",
-			args: args{
-				day: 0,
-			},
-			want: "Monday",
-		},
-		{
-			name: "Test case 3",
-			args: args{
-				day: 6,
 			},
 			want: "Sunday",
 		},
 		{
+			name: "Test case 2",
+			args: args{
+				day: 1,
+			},
+			want: "Monday",
+		},
+		{
+			name: "Test case 3",
+			args: args{
+				day: 2,
+			},
+			want: "Tuesday",
+		},
+		{
 			name: "Test case 4",
 			args: args{
-				day: 7,
+				day: 3,
 			},
-			want: "",
+			want: "Wednesday",
 		},
 	}
 	for _, tt := range tests {
@@ -572,7 +572,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "monday",
 			},
-			want:    0,
+			want:    int8(time.Monday),
 			wantErr: false,
 		},
 		{
@@ -580,7 +580,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "tuesday",
 			},
-			want:    1,
+			want:    int8(time.Tuesday),
 			wantErr: false,
 		},
 		{
@@ -588,7 +588,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "wednesday",
 			},
-			want:    2,
+			want:    int8(time.Wednesday),
 			wantErr: false,
 		},
 		{
@@ -596,7 +596,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "thursday",
 			},
-			want:    3,
+			want:    int8(time.Thursday),
 			wantErr: false,
 		},
 		{
@@ -604,7 +604,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "friday",
 			},
-			want:    4,
+			want:    int8(time.Friday),
 			wantErr: false,
 		},
 		{
@@ -612,7 +612,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "saturday",
 			},
-			want:    5,
+			want:    int8(time.Saturday),
 			wantErr: false,
 		},
 		{
@@ -620,7 +620,7 @@ func TestDayStringToInt(t *testing.T) {
 			args: args{
 				day: "sunday",
 			},
-			want:    6,
+			want:    int8(time.Sunday),
 			wantErr: false,
 		},
 		{
@@ -679,6 +679,36 @@ func TestInt64ToStringSlice(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Int64ToStringSlice(tt.args.value); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Int64ToStringSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTimeToDayInt(t *testing.T) {
+	type args struct {
+		time []time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int8
+	}{
+		{
+			name: "27-29 October",
+			args: args{
+				time: []time.Time{
+					time.Date(2017, time.October, 27, 0, 0, 0, 0, time.Local),
+					time.Date(2017, time.October, 28, 0, 0, 0, 0, time.Local),
+					time.Date(2017, time.October, 29, 0, 0, 0, 0, time.Local),
+				},
+			},
+			want: []int8{5, 6, 0},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := TimeToDayInt(tt.args.time...); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TimeToDayInt() = %v, want %v", got, tt.want)
 			}
 		})
 	}

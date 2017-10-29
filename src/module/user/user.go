@@ -257,18 +257,18 @@ func IsPhoneExist(identityCode int64, phone string) bool {
 	@return
 */
 func IsLineIDExist(identityCode int64, lineID string) bool {
-	var user User
+	var x string
 	query := fmt.Sprintf(`
 			SELECT
-				line_id
+				'x'
 			FROM
 				 users
 			WHERE
 				line_id = ('%s') AND
 				identity_code != (%d)
-			LIMIT 1
+			LIMIT 1;
 		`, lineID, identityCode)
-	err := conn.DB.Get(&user, query)
+	err := conn.DB.Get(&x, query)
 	if err == sql.ErrNoRows {
 		return false
 	}
