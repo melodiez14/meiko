@@ -2,6 +2,7 @@ package course
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html"
 	"strconv"
@@ -44,18 +45,19 @@ func (params createParams) validate() (createArgs, error) {
 
 	var args createArgs
 	params = createParams{
-		ID:          html.EscapeString(helper.Trim(params.ID)),
-		Name:        helper.Trim(params.Name),
-		Description: html.EscapeString(helper.Trim(params.Description)),
-		UCU:         params.UCU,
-		Semester:    params.Semester,
-		Year:        params.Year,
-		StartTime:   params.StartTime,
-		EndTime:     params.EndTime,
-		Class:       strings.ToUpper(helper.Trim(params.Class)),
-		Day:         strings.ToLower(params.Day),
-		PlaceID:     html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
-		IsUpdate:    params.IsUpdate,
+		ID:             html.EscapeString(helper.Trim(params.ID)),
+		Name:           helper.Trim(params.Name),
+		Description:    html.EscapeString(helper.Trim(params.Description)),
+		UCU:            params.UCU,
+		Semester:       params.Semester,
+		Year:           params.Year,
+		StartTime:      params.StartTime,
+		EndTime:        params.EndTime,
+		Class:          strings.ToUpper(helper.Trim(params.Class)),
+		Day:            strings.ToLower(params.Day),
+		PlaceID:        html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
+		IsUpdate:       params.IsUpdate,
+		GradeParameter: params.GradeParameter,
 	}
 
 	// Course Validation
@@ -174,19 +176,50 @@ func (params createParams) validate() (createArgs, error) {
 		isUpdate = true
 	}
 
+	var gps []gradeParameter
+	if !helper.IsEmpty(params.GradeParameter) {
+		var gp []gradeParameter
+		err = json.Unmarshal([]byte(params.GradeParameter), &gp)
+		if err != nil {
+			return args, fmt.Errorf("Invalid grade parameter")
+		}
+
+		var percentage float32
+		gpName := []string{
+			cs.GradeParameterAssignment,
+			cs.GradeParameterAttendance,
+			cs.GradeParameterFinal,
+			cs.GradeParameterMid,
+			cs.GradeParameterQuiz,
+		}
+
+		for _, val := range gp {
+			percentage += val.Percentage
+			if !helper.IsStringInSlice(val.Name, gpName) {
+				return args, fmt.Errorf("Invalid grade parameter")
+			}
+			gps = append(gps, val)
+		}
+
+		if helper.Float32Round(percentage) != 100 {
+			return args, fmt.Errorf("Total percentage must be 100%%")
+		}
+	}
+
 	return createArgs{
-		ID:          params.ID,
-		Name:        name,
-		Description: description,
-		UCU:         int8(ucu),
-		Semester:    int8(semester),
-		Year:        int16(year),
-		StartTime:   int16(startTime),
-		EndTime:     int16(endTime),
-		Class:       class,
-		Day:         day,
-		PlaceID:     params.PlaceID,
-		IsUpdate:    isUpdate,
+		ID:             params.ID,
+		Name:           name,
+		Description:    description,
+		UCU:            int8(ucu),
+		Semester:       int8(semester),
+		Year:           int16(year),
+		StartTime:      int16(startTime),
+		EndTime:        int16(endTime),
+		Class:          class,
+		Day:            day,
+		PlaceID:        params.PlaceID,
+		IsUpdate:       isUpdate,
+		GradeParameter: gps,
 	}, nil
 }
 
@@ -429,5 +462,16 @@ func (params searchParams) validate() (searchArgs, error) {
 
 	return searchArgs{
 		Text: text,
+	}, nil
+}
+
+func (params readScheduleParameterParams) validate() (readScheduleParameterArgs, error) {
+	var args readScheduleParameterArgs
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("schedule id must be numeric")
+	}
+	return readScheduleParameterArgs{
+		ScheduleID: scheduleID,
 	}, nil
 }

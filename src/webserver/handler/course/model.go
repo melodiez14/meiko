@@ -65,38 +65,45 @@ type readDetailResponse struct {
 }
 
 type listParameterResponse struct {
-	id    string
-	value string
+	Name string `json:"id"`
+	Text string `json:"text"`
+}
+
+type gradeParameter struct {
+	Name       string  `json:"name"`
+	Percentage float32 `json:"percentage"`
 }
 
 type createParams struct {
-	ID          string
-	Name        string
-	Description string
-	UCU         string
-	Semester    string
-	Year        string
-	StartTime   string
-	EndTime     string
-	Class       string
-	Day         string
-	PlaceID     string
-	IsUpdate    string
+	ID             string
+	Name           string
+	Description    string
+	UCU            string
+	Semester       string
+	Year           string
+	StartTime      string
+	EndTime        string
+	Class          string
+	Day            string
+	PlaceID        string
+	IsUpdate       string
+	GradeParameter string
 }
 
 type createArgs struct {
-	ID          string
-	Name        string
-	Description sql.NullString
-	UCU         int8
-	Semester    int8
-	Year        int16
-	StartTime   int16
-	EndTime     int16
-	Class       string
-	Day         int8
-	PlaceID     string
-	IsUpdate    bool
+	ID             string
+	Name           string
+	Description    sql.NullString
+	UCU            int8
+	Semester       int8
+	Year           int16
+	StartTime      int16
+	EndTime        int16
+	Class          string
+	Day            int8
+	PlaceID        string
+	IsUpdate       bool
+	GradeParameter []gradeParameter
 }
 
 type updateParams struct {
@@ -184,16 +191,15 @@ type deleteScheduleArgs struct {
 	ScheduleID int64
 }
 
-type createParameterParams struct {
-	Name       string
-	Percentage string
-	Status     string
+type readScheduleParameterParams struct {
 	ScheduleID string
 }
 
-type createParameterArgs struct {
-	Name       string
-	Percentage float32
-	Status     uint8
+type readScheduleParameterArgs struct {
 	ScheduleID int64
+}
+
+type readScheduleParameterResponse struct {
+	Name       string  `json:"name"`
+	Percentage float32 `json:"percentage"`
 }

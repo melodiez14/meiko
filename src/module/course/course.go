@@ -222,8 +222,9 @@ func IsExistSchedule(semester int8, year int16, courseID, class string, schedule
 	return true
 }
 
-func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day, status int8, class, courseID, placeID string, tx ...*sqlx.Tx) error {
+func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day, status int8, class, courseID, placeID string, tx ...*sqlx.Tx) (int64, error) {
 
+	var id int64
 	query := fmt.Sprintf(`
 		INSERT INTO
 			schedules (
@@ -264,15 +265,15 @@ func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day,
 		result, err = conn.DB.Exec(query)
 	}
 	if err != nil {
-		return err
+		return id, err
 	}
 
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("No rows affected")
+	id, err = result.LastInsertId()
+	if err != nil {
+		return id, fmt.Errorf("Cannot get last insert id")
 	}
 
-	return nil
+	return id, nil
 }
 
 func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
@@ -668,4 +669,68 @@ func SelectByName(name string) ([]Course, error) {
 	}
 
 	return courses, nil
+}
+
+func InsertGradeParameter(gps []GradeParameter, tx *sqlx.Tx) error {
+
+	var values []string
+	var result sql.Result
+	var err error
+	if len(gps) < 1 {
+		return fmt.Errorf("Grade parameter at least consist of 1")
+	}
+
+	for _, val := range gps {
+		value := fmt.Sprintf(`('%s', %f, %d, NOW(), NOW())`, val.Name, val.Percentage, val.ScheduleID)
+		values = append(values, value)
+	}
+
+	queryValue := strings.Join(values, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			grade_parameters (
+				type,
+				percentage,
+				schedules_id,
+				created_at,
+				updated_at
+			)
+		VALUES 
+			%s
+	`, queryValue)
+
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error) {
+	var gps []GradeParameter
+	query := fmt.Sprintf(`
+		SELECT
+			type,
+			percentage
+		FROM
+			grade_parameters
+		WHERE
+			schedules_id = (%d);
+		`, scheduleID)
+	err := conn.DB.Select(&gps, query)
+	if err != nil && err != sql.ErrNoRows {
+		return gps, err
+	}
+
+	return gps, nil
 }

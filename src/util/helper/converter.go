@@ -209,3 +209,12 @@ func TimeToDayInt(time ...time.Time) []int8 {
 	}
 	return days
 }
+
+func Float64Round(value float64) float64 {
+	return math.Ceil(value - 0.5)
+}
+
+func Float32Round(value float32) float32 {
+	v := float64(value)
+	return float32(math.Ceil(v - 0.5))
+}

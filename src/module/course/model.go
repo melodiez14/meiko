@@ -26,7 +26,7 @@ const (
 	GradeParameterMid        = "MID"
 	GradeParameterAssignment = "ASSIGNMENT"
 	GradeParameterAttendance = "ATTENDANCE"
-	GradeParameterQuiz       = "KUIS"
+	GradeParameterQuiz       = "QUIZ"
 )
 
 type Course struct {
@@ -53,4 +53,10 @@ type Schedule struct {
 type CourseSchedule struct {
 	Course   Course
 	Schedule Schedule
+}
+
+type GradeParameter struct {
+	Name       string  `db:"type"`
+	Percentage float32 `db:"percentage"`
+	ScheduleID int64   `db:"schedules_id"`
 }

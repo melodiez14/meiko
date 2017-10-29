@@ -2,6 +2,7 @@ package course
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -56,18 +57,19 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := createParams{
-		ID:          r.FormValue("id"),
-		Name:        r.FormValue("name"),
-		Description: r.FormValue("description"),
-		UCU:         r.FormValue("ucu"),
-		Semester:    r.FormValue("semester"),
-		Year:        r.FormValue("year"),
-		StartTime:   r.FormValue("start_time"),
-		EndTime:     r.FormValue("end_time"),
-		Class:       r.FormValue("class"),
-		Day:         r.FormValue("day"),
-		PlaceID:     r.FormValue("place"),
-		IsUpdate:    r.FormValue("is_update"),
+		ID:             r.FormValue("id"),
+		Name:           r.FormValue("name"),
+		Description:    r.FormValue("description"),
+		UCU:            r.FormValue("ucu"),
+		Semester:       r.FormValue("semester"),
+		Year:           r.FormValue("year"),
+		StartTime:      r.FormValue("start_time"),
+		EndTime:        r.FormValue("end_time"),
+		Class:          r.FormValue("class"),
+		Day:            r.FormValue("day"),
+		PlaceID:        r.FormValue("place"),
+		IsUpdate:       r.FormValue("is_update"),
+		GradeParameter: r.FormValue("grade_parameter"),
 	}
 
 	args, err := params.validate()
@@ -130,7 +132,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// insert schedule
-	err = cs.InsertSchedule(sess.ID,
+	scheduleID, err := cs.InsertSchedule(sess.ID,
 		args.StartTime,
 		args.EndTime,
 		args.Year,
@@ -146,6 +148,27 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
+	}
+
+	// set grade parameter
+	if len(args.GradeParameter) > 0 {
+		var gps []cs.GradeParameter
+		for _, val := range args.GradeParameter {
+			gps = append(gps, cs.GradeParameter{
+				Name:       val.Name,
+				Percentage: val.Percentage,
+				ScheduleID: scheduleID,
+			})
+		}
+
+		err = cs.InsertGradeParameter(gps, tx)
+		if err != nil {
+			fmt.Println(err.Error())
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	err = tx.Commit()
@@ -695,25 +718,75 @@ func ListParameterHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	resp := []listParameterResponse{
 		{
-			id:    cs.GradeParameterAttendance,
-			value: "Attendance",
+			Name: cs.GradeParameterAttendance,
+			Text: "Attendance",
 		},
 		{
-			id:    cs.GradeParameterQuiz,
-			value: "Quiz",
+			Name: cs.GradeParameterQuiz,
+			Text: "Quiz",
 		},
 		{
-			id:    cs.GradeParameterMid,
-			value: "UTS",
+			Name: cs.GradeParameterMid,
+			Text: "UTS",
 		},
 		{
-			id:    cs.GradeParameterFinal,
-			value: "UAS",
+			Name: cs.GradeParameterFinal,
+			Text: "UAS",
 		},
 		{
-			id:    cs.GradeParameterAssignment,
-			value: "Assignment",
+			Name: cs.GradeParameterAssignment,
+			Text: "Assignment",
 		},
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+// ReadScheduleParameterHandler handles the http request returns list of grade parameters to the specific schedules_id. Accessing this handler require READ or XREAD ability
+/*
+	@params:
+		schedule_id = required, postitive numeric
+	@example:
+		schedule_id = 149
+	@return
+*/
+func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleSchedule, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readScheduleParameterParams{
+		ScheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad request"))
+		return
+	}
+
+	gps, err := cs.SelectGradeParameterByScheduleID(args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var resp []readScheduleParameterResponse
+	for _, val := range gps {
+		resp = append(resp, readScheduleParameterResponse{
+			Name:       val.Name,
+			Percentage: val.Percentage,
+		})
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
