@@ -647,3 +647,25 @@ func DeleteSchedule(scheduleID int64, tx ...*sqlx.Tx) error {
 
 	return nil
 }
+
+func SelectByName(name string) ([]Course, error) {
+	var courses []Course
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name,
+			description,
+			ucu
+		FROM
+			courses
+		WHERE
+			name LIKE ('%%%s%%')
+		LIMIT 5;
+	`, name)
+	err := conn.DB.Select(&courses, query)
+	if err != nil && err != sql.ErrNoRows {
+		return courses, err
+	}
+
+	return courses, nil
+}

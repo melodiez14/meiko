@@ -21,6 +21,12 @@ const (
 	PStatusUnapproved = 0
 	PStatusStudent    = 1
 	PStatusAssistant  = 2
+
+	GradeParameterFinal      = "FINAL"
+	GradeParameterMid        = "MID"
+	GradeParameterAssignment = "ASSIGNMENT"
+	GradeParameterAttendance = "ATTENDANCE"
+	GradeParameterQuiz       = "KUIS"
 )
 
 type Course struct {

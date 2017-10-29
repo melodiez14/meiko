@@ -69,8 +69,11 @@ func loadRouter(r *httprouter.Router) {
 	// Admin section
 	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
-	r.POST("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))         //patch
-	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteSchedule)) //delete
+	r.GET("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.ReadDetailHandler))             //read
+	r.POST("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))                //patch
+	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteScheduleHandler)) //delete
+	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
+	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
 
 	// ==================================================================
 	// ======================== End Course Handler ======================

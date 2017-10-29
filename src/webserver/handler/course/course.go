@@ -214,19 +214,148 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 
 		res = append(res, readResponse{
-			ID:        val.Course.ID,
-			Name:      val.Course.Name,
-			Class:     val.Schedule.Class,
-			StartTime: helper.MinutesToTimeString(val.Schedule.StartTime),
-			EndTime:   helper.MinutesToTimeString(val.Schedule.EndTime),
-			Day:       helper.IntDayToString(val.Schedule.Day),
-			Status:    status,
+			ID:         val.Course.ID,
+			Name:       val.Course.Name,
+			Class:      val.Schedule.Class,
+			StartTime:  helper.MinutesToTimeString(val.Schedule.StartTime),
+			EndTime:    helper.MinutesToTimeString(val.Schedule.EndTime),
+			Day:        helper.IntDayToString(val.Schedule.Day),
+			Status:     status,
+			ScheduleID: val.Schedule.ID,
 		})
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))
+	return
+}
+
+func SearchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleCourse, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := searchParams{
+		Text: r.FormValue("q"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
+		return
+	}
+
+	var resp []searchResponse
+	if len(args.Text) < 3 || len(args.Text) > 20 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	courses, err := cs.SelectByName(args.Text)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	for _, val := range courses {
+		resp = append(resp, searchResponse{
+			ID:          val.ID,
+			Name:        val.Name,
+			Description: val.Description.String,
+			UCU:         val.UCU,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+// ReadDetailHandler handles the http request for read course details. Accessing this handler needs READ or XREAD ability
+/*
+	@params:
+		schedule_id	= required, positive numeric
+	@example:
+		schedule_id = 123
+	@return
+		id = D10K-7D01
+		name = Mobile Computing
+		description = Mata kuliah ini mengajarkan tentang aplikasi client server
+		ucu = 3
+		status = 1
+		semester = 7
+		year = 2017
+		start_time = 600
+		end_time = 800
+		class = A
+		day = thursday
+		place_id = UDJT102
+		schedule_id = 123
+*/
+func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleCourse, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readDetailParams{
+		ScheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad request"))
+		return
+	}
+
+	course, err := cs.GetByScheduleID(args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	status := "active"
+	if course.Schedule.Status == cs.StatusScheduleInactive {
+		status = "inactive"
+	}
+
+	resp := readDetailResponse{
+		ID:          course.Course.ID,
+		Name:        course.Course.Name,
+		Description: course.Course.Description.String,
+		UCU:         course.Course.UCU,
+		Status:      status,
+		Semester:    course.Schedule.Semester,
+		Year:        course.Schedule.Year,
+		StartTime:   course.Schedule.StartTime,
+		EndTime:     course.Schedule.EndTime,
+		Class:       course.Schedule.Class,
+		Day:         helper.IntDayToString(course.Schedule.Day),
+		PlaceID:     course.Schedule.PlaceID,
+		ScheduleID:  course.Schedule.ID,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
 	return
 }
 
@@ -497,7 +626,15 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	return
 }
 
-func DeleteSchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// DeleteScheduleHandler handles the http request for deleting schedule. Accessing this handler require DELETE or XDELETE ability
+/*
+	@params:
+		schedule_id = required, postitive numeric
+	@example:
+		schedule_id = 149
+	@return
+*/
+func DeleteScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 	if !sess.IsHasRoles(rg.ModuleSchedule, rg.RoleDelete, rg.RoleXDelete) {
@@ -536,5 +673,51 @@ func DeleteSchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Success"))
+	return
+}
+
+// ListParameterHandler handles the http request returns list of grade parameters. Accessing this handler require READ or XREAD ability
+/*
+	@params:
+		schedule_id = required, postitive numeric
+	@example:
+		schedule_id = 149
+	@return
+*/
+func ListParameterHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleSchedule, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	resp := []listParameterResponse{
+		{
+			id:    cs.GradeParameterAttendance,
+			value: "Attendance",
+		},
+		{
+			id:    cs.GradeParameterQuiz,
+			value: "Quiz",
+		},
+		{
+			id:    cs.GradeParameterMid,
+			value: "UTS",
+		},
+		{
+			id:    cs.GradeParameterFinal,
+			value: "UAS",
+		},
+		{
+			id:    cs.GradeParameterAssignment,
+			value: "Assignment",
+		},
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
 	return
 }

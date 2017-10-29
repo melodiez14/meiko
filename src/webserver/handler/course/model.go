@@ -14,14 +14,59 @@ type readArgs struct {
 	Total uint16
 }
 
+type searchParams struct {
+	Text string
+}
+
+type searchArgs struct {
+	Text string
+}
+
+type searchResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	UCU         int8   `json:"ucu"`
+}
+
 type readResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Class     string `json:"class"`
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
-	Day       string `json:"day"`
-	Status    string `json:"status"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Class      string `json:"class"`
+	StartTime  string `json:"start_time"`
+	EndTime    string `json:"end_time"`
+	Day        string `json:"day"`
+	Status     string `json:"status"`
+	ScheduleID int64  `json:"schedule_id"`
+}
+
+type readDetailParams struct {
+	ScheduleID string
+}
+
+type readDetailArgs struct {
+	ScheduleID int64
+}
+
+type readDetailResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	UCU         int8   `json:"ucu"`
+	Status      string `json:"status"`
+	Semester    int8   `json:"semester"`
+	Year        int16  `json:"year"`
+	StartTime   uint16 `json:"start_time"`
+	EndTime     uint16 `json:"end_time"`
+	Class       string `json:"class"`
+	Day         string `json:"day"`
+	PlaceID     string `json:"place_id"`
+	ScheduleID  int64  `json:"schedule_id"`
+}
+
+type listParameterResponse struct {
+	id    string
+	value string
 }
 
 type createParams struct {
@@ -136,5 +181,19 @@ type deleteScheduleParams struct {
 }
 
 type deleteScheduleArgs struct {
+	ScheduleID int64
+}
+
+type createParameterParams struct {
+	Name       string
+	Percentage string
+	Status     string
+	ScheduleID string
+}
+
+type createParameterArgs struct {
+	Name       string
+	Percentage float32
+	Status     uint8
 	ScheduleID int64
 }

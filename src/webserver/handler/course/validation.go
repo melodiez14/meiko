@@ -410,3 +410,24 @@ func (params deleteScheduleParams) validate() (deleteScheduleArgs, error) {
 		ScheduleID: scheduleId,
 	}, nil
 }
+
+func (params readDetailParams) validate() (readDetailArgs, error) {
+	var args readDetailArgs
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("schedule id must be numeric")
+	}
+	return readDetailArgs{
+		ScheduleID: scheduleID,
+	}, nil
+}
+
+func (params searchParams) validate() (searchArgs, error) {
+
+	text := html.EscapeString(params.Text)
+	text = helper.Trim(text)
+
+	return searchArgs{
+		Text: text,
+	}, nil
+}
