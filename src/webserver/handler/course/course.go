@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 
 	"github.com/julienschmidt/httprouter"
+	ag "github.com/melodiez14/meiko/src/module/assignment"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	pl "github.com/melodiez14/meiko/src/module/place"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
@@ -152,22 +154,14 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// set grade parameter
 	if len(args.GradeParameter) > 0 {
-		var gps []cs.GradeParameter
 		for _, val := range args.GradeParameter {
-			gps = append(gps, cs.GradeParameter{
-				Name:       val.Name,
-				Percentage: val.Percentage,
-				ScheduleID: scheduleID,
-			})
-		}
-
-		err = cs.InsertGradeParameter(gps, tx)
-		if err != nil {
-			fmt.Println(err.Error())
-			tx.Rollback()
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError))
-			return
+			err = cs.InsertGradeParameter(val.Type, val.Percentage, val.StatusChange, scheduleID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
 		}
 	}
 
@@ -393,20 +387,21 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := updateParams{
-		ID:          r.FormValue("id"),
-		Name:        r.FormValue("name"),
-		Description: r.FormValue("description"),
-		UCU:         r.FormValue("ucu"),
-		ScheduleID:  ps.ByName("schedule_id"),
-		Status:      r.FormValue("status"),
-		Semester:    r.FormValue("semester"),
-		Year:        r.FormValue("year"),
-		StartTime:   r.FormValue("start_time"),
-		EndTime:     r.FormValue("end_time"),
-		Class:       r.FormValue("class"),
-		Day:         r.FormValue("day"),
-		PlaceID:     r.FormValue("place"),
-		IsUpdate:    r.FormValue("is_update"),
+		ID:             r.FormValue("id"),
+		Name:           r.FormValue("name"),
+		Description:    r.FormValue("description"),
+		UCU:            r.FormValue("ucu"),
+		ScheduleID:     ps.ByName("schedule_id"),
+		Status:         r.FormValue("status"),
+		Semester:       r.FormValue("semester"),
+		Year:           r.FormValue("year"),
+		StartTime:      r.FormValue("start_time"),
+		EndTime:        r.FormValue("end_time"),
+		Class:          r.FormValue("class"),
+		Day:            r.FormValue("day"),
+		PlaceID:        r.FormValue("place"),
+		IsUpdate:       r.FormValue("is_update"),
+		GradeParameter: r.FormValue("grade_parameter"),
 	}
 
 	args, err := params.validate()
@@ -422,6 +417,62 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusConflict).
 			AddError("Schedule already exist"))
+		return
+	}
+
+	// get old grade parameter
+	gpsOld, err := cs.SelectGradeParameterByScheduleID(args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var gpsTypeNew []string
+	var gpsTypeOld []string
+	var gpsInsert []gradeParameter
+	var gpsUpdate []gradeParameter
+	var gpsDelete []cs.GradeParameter
+
+	// new requested parameter from database
+	for _, val := range args.GradeParameter {
+		gpsTypeNew = append(gpsTypeNew, val.Type)
+	}
+
+	// old grade parameter from database
+	for _, val := range gpsOld {
+		gpsTypeOld = append(gpsTypeOld, val.Type)
+	}
+
+	// get insert and update grade parameter
+	for _, val := range args.GradeParameter {
+		if helper.IsStringInSlice(val.Type, gpsTypeOld) {
+			gpsUpdate = append(gpsUpdate, val)
+			continue
+		}
+		gpsInsert = append(gpsInsert, val)
+	}
+
+	// get delete grade parameter type
+	for _, val := range gpsOld {
+		if !helper.IsStringInSlice(val.Type, gpsTypeNew) {
+			gpsDelete = append(gpsDelete, val)
+		}
+	}
+
+	// check deleted dependent assignment
+	var dependent []string
+	for _, val := range gpsDelete {
+		if ag.IsExistByGradeParameterID(val.ID) {
+			dependent = append(dependent, val.Type)
+		}
+	}
+
+	if len(dependent) > 0 {
+		msg := fmt.Sprintf("Delete failed: Some assignment dependent to %s", strings.Join(dependent, ", "))
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusConflict).
+			AddError(msg))
 		return
 	}
 
@@ -475,12 +526,46 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		}
 	}
 
+	// update schedule
 	err = cs.UpdateSchedule(args.ScheduleID, args.StartTime, args.EndTime, args.Year, args.Semester, args.Day, args.Status, args.Class, args.ID, args.PlaceID, tx)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
+	}
+
+	// delete old grade parameter
+	for _, val := range gpsDelete {
+		err := cs.DeleteGradeParameter(val.ID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	// update the parameter
+	for _, val := range gpsUpdate {
+		err := cs.UpdateGradeParameter(val.Type, val.Percentage, val.StatusChange, args.ScheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	// insert the parameter
+	for _, val := range gpsInsert {
+		err := cs.InsertGradeParameter(val.Type, val.Percentage, val.StatusChange, args.ScheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	err = tx.Commit()
@@ -784,8 +869,9 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 	var resp []readScheduleParameterResponse
 	for _, val := range gps {
 		resp = append(resp, readScheduleParameterResponse{
-			Name:       val.Name,
-			Percentage: val.Percentage,
+			Type:         val.Type,
+			Percentage:   val.Percentage,
+			StatusChange: val.StatusChange,
 		})
 	}
 

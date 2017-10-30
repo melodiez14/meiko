@@ -4,13 +4,6 @@ import (
 	"database/sql"
 )
 
-type (
-	QueryGet    struct{ string }
-	QuerySelect struct{ string }
-	QueryInsert struct{ string }
-	QueryUpdate struct{ string }
-)
-
 const (
 	StatusScheduleInactive = 0
 	StatusScheduleActive   = 1
@@ -27,6 +20,9 @@ const (
 	GradeParameterAssignment = "ASSIGNMENT"
 	GradeParameterAttendance = "ATTENDANCE"
 	GradeParameterQuiz       = "QUIZ"
+
+	GradeParameterStatusUnchange = 0
+	GradeParameterStatusChange   = 1
 )
 
 type Course struct {
@@ -56,7 +52,9 @@ type CourseSchedule struct {
 }
 
 type GradeParameter struct {
-	Name       string  `db:"type"`
-	Percentage float32 `db:"percentage"`
-	ScheduleID int64   `db:"schedules_id"`
+	ID           int64   `db:"id"`
+	Type         string  `db:"type"`
+	Percentage   float32 `db:"percentage"`
+	ScheduleID   int64   `db:"schedules_id"`
+	StatusChange uint8   `db:"status_change"`
 }

@@ -179,13 +179,14 @@ func (params createParams) validate() (createArgs, error) {
 	var gps []gradeParameter
 	if !helper.IsEmpty(params.GradeParameter) {
 		var gp []gradeParameter
+		// convert json into gradeParameter struct
 		err = json.Unmarshal([]byte(params.GradeParameter), &gp)
 		if err != nil {
 			return args, fmt.Errorf("Invalid grade parameter")
 		}
 
 		var percentage float32
-		gpName := []string{
+		gpType := []string{
 			cs.GradeParameterAssignment,
 			cs.GradeParameterAttendance,
 			cs.GradeParameterFinal,
@@ -195,12 +196,18 @@ func (params createParams) validate() (createArgs, error) {
 
 		for _, val := range gp {
 			percentage += val.Percentage
-			if !helper.IsStringInSlice(val.Name, gpName) {
+			// check status change
+			if val.StatusChange != cs.GradeParameterStatusChange && val.StatusChange != cs.GradeParameterStatusUnchange {
+				return args, fmt.Errorf("Invalid grade parameter")
+			}
+			// validate type
+			if !helper.IsStringInSlice(val.Type, gpType) {
 				return args, fmt.Errorf("Invalid grade parameter")
 			}
 			gps = append(gps, val)
 		}
 
+		// validate total percentage should be 100
 		if helper.Float32Round(percentage) != 100 {
 			return args, fmt.Errorf("Total percentage must be 100%%")
 		}
@@ -255,20 +262,21 @@ func (params updateParams) validate() (updateArgs, error) {
 
 	var args updateArgs
 	params = updateParams{
-		ID:          html.EscapeString(helper.Trim(params.ID)),
-		Name:        helper.Trim(params.Name),
-		Description: html.EscapeString(helper.Trim(params.Description)),
-		UCU:         params.UCU,
-		ScheduleID:  params.ScheduleID,
-		Status:      params.Status,
-		Semester:    params.Semester,
-		Year:        params.Year,
-		StartTime:   params.StartTime,
-		EndTime:     params.EndTime,
-		Class:       strings.ToUpper(helper.Trim(params.Class)),
-		Day:         strings.ToLower(params.Day),
-		PlaceID:     html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
-		IsUpdate:    params.IsUpdate,
+		ID:             html.EscapeString(helper.Trim(params.ID)),
+		Name:           helper.Trim(params.Name),
+		Description:    html.EscapeString(helper.Trim(params.Description)),
+		UCU:            params.UCU,
+		ScheduleID:     params.ScheduleID,
+		Status:         params.Status,
+		Semester:       params.Semester,
+		Year:           params.Year,
+		StartTime:      params.StartTime,
+		EndTime:        params.EndTime,
+		Class:          strings.ToUpper(helper.Trim(params.Class)),
+		Day:            strings.ToLower(params.Day),
+		PlaceID:        html.EscapeString(strings.ToUpper(helper.Trim(params.PlaceID))),
+		IsUpdate:       params.IsUpdate,
+		GradeParameter: params.GradeParameter,
 	}
 
 	// Course Validation
@@ -381,12 +389,13 @@ func (params updateParams) validate() (updateArgs, error) {
 		return args, fmt.Errorf("Invalid place id")
 	}
 
+	// IsUpdate Course validation
 	isUpdate := false
-	// Is Update Course
 	if params.IsUpdate == "true" {
 		isUpdate = true
 	}
 
+	// validate is schedule active
 	var status int8
 	switch params.Status {
 	case "active":
@@ -400,6 +409,7 @@ func (params updateParams) validate() (updateArgs, error) {
 		status = cs.StatusScheduleActive
 	}
 
+	// validate schedule_id
 	var scheduleID int64
 	if helper.IsEmpty(params.ScheduleID) {
 		return args, fmt.Errorf("invalid request")
@@ -409,21 +419,60 @@ func (params updateParams) validate() (updateArgs, error) {
 		return args, fmt.Errorf("invalid request")
 	}
 
+	// validate grade parameter and convert to []gradeParameter struct
+	var gps []gradeParameter
+	if !helper.IsEmpty(params.GradeParameter) {
+		var gp []gradeParameter
+		// convert json into gradeParameter struct
+		err = json.Unmarshal([]byte(params.GradeParameter), &gp)
+		if err != nil {
+			return args, fmt.Errorf("Invalid grade parameter")
+		}
+
+		var percentage float32
+		gpType := []string{
+			cs.GradeParameterAssignment,
+			cs.GradeParameterAttendance,
+			cs.GradeParameterFinal,
+			cs.GradeParameterMid,
+			cs.GradeParameterQuiz,
+		}
+
+		for _, val := range gp {
+			percentage += val.Percentage
+			// check status change
+			if val.StatusChange != cs.GradeParameterStatusChange && val.StatusChange != cs.GradeParameterStatusUnchange {
+				return args, fmt.Errorf("Invalid grade parameter")
+			}
+			// validate type
+			if !helper.IsStringInSlice(val.Type, gpType) {
+				return args, fmt.Errorf("Invalid grade parameter")
+			}
+			gps = append(gps, val)
+		}
+
+		// validate total percentage should be 100
+		if helper.Float32Round(percentage) != 100 {
+			return args, fmt.Errorf("Total percentage must be 100%%")
+		}
+	}
+
 	return updateArgs{
-		ID:          params.ID,
-		Name:        name,
-		Description: description,
-		UCU:         int8(ucu),
-		ScheduleID:  scheduleID,
-		Status:      status,
-		Semester:    int8(semester),
-		Year:        int16(year),
-		StartTime:   int16(startTime),
-		EndTime:     int16(endTime),
-		Class:       class,
-		Day:         day,
-		PlaceID:     params.PlaceID,
-		IsUpdate:    isUpdate,
+		ID:             params.ID,
+		Name:           name,
+		Description:    description,
+		UCU:            int8(ucu),
+		ScheduleID:     scheduleID,
+		Status:         status,
+		Semester:       int8(semester),
+		Year:           int16(year),
+		StartTime:      int16(startTime),
+		EndTime:        int16(endTime),
+		Class:          class,
+		Day:            day,
+		PlaceID:        params.PlaceID,
+		IsUpdate:       isUpdate,
+		GradeParameter: gps,
 	}, nil
 }
 

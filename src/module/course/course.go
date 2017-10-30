@@ -671,34 +671,30 @@ func SelectByName(name string) ([]Course, error) {
 	return courses, nil
 }
 
-func InsertGradeParameter(gps []GradeParameter, tx *sqlx.Tx) error {
+func InsertGradeParameter(typ string, percentage float32, statusChange uint8, scheduleID int64, tx *sqlx.Tx) error {
 
-	var values []string
-	var result sql.Result
-	var err error
-	if len(gps) < 1 {
-		return fmt.Errorf("Grade parameter at least consist of 1")
-	}
-
-	for _, val := range gps {
-		value := fmt.Sprintf(`('%s', %f, %d, NOW(), NOW())`, val.Name, val.Percentage, val.ScheduleID)
-		values = append(values, value)
-	}
-
-	queryValue := strings.Join(values, ", ")
 	query := fmt.Sprintf(`
 		INSERT INTO
-			grade_parameters (
-				type,
-				percentage,
-				schedules_id,
-				created_at,
-				updated_at
-			)
-		VALUES 
-			%s
-	`, queryValue)
+		grade_parameters (
+			type,
+			percentage,
+			status_change,
+			schedules_id,
+			created_at,
+			updated_at
+		)
+		VALUES (
+			('%s'),
+			(%f),
+			(%d),
+			(%d),
+			NOW(),
+			NOW()
+		);
+		`, typ, percentage, statusChange, scheduleID)
 
+	var result sql.Result
+	var err error
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -720,8 +716,10 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 	var gps []GradeParameter
 	query := fmt.Sprintf(`
 		SELECT
+			id,
 			type,
-			percentage
+			percentage,
+			status_change
 		FROM
 			grade_parameters
 		WHERE
@@ -733,4 +731,65 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 	}
 
 	return gps, nil
+}
+
+func DeleteGradeParameter(id int64, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+			DELETE FROM
+				grade_parameters
+			WHERE
+				id = (%d);
+			`, id)
+
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
+func UpdateGradeParameter(typ string, percentage float32, statusChange uint8, scheduleID int64, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE
+			grade_parameters
+		SET
+			percentage = (%f),
+			status_change = (%d),
+			updated_at = NOW()
+		WHERE
+			type = ('%s') AND
+			schdules_id = (%d);
+		`, percentage, statusChange, typ, scheduleID)
+
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
 }

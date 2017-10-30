@@ -36,3 +36,21 @@ func GetCompleteByUserID(userID int64) ([]int64, error) {
 	}
 	return assignmentsID, nil
 }
+
+func IsExistByGradeParameterID(gpID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			assignments
+		WHERE
+			grade_parameters_id = (%d)
+		LIMIT 1;
+	`, gpID)
+	err := conn.DB.Get(&x, query)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}

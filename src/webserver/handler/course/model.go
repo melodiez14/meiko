@@ -70,8 +70,9 @@ type listParameterResponse struct {
 }
 
 type gradeParameter struct {
-	Name       string  `json:"name"`
-	Percentage float32 `json:"percentage"`
+	Type         string  `json:"type"`
+	Percentage   float32 `json:"percentage"`
+	StatusChange uint8   `json:"status_change"`
 }
 
 type createParams struct {
@@ -107,37 +108,39 @@ type createArgs struct {
 }
 
 type updateParams struct {
-	ID          string
-	Name        string
-	Description string
-	UCU         string
-	ScheduleID  string
-	Status      string
-	Semester    string
-	Year        string
-	StartTime   string
-	EndTime     string
-	Class       string
-	Day         string
-	PlaceID     string
-	IsUpdate    string
+	ID             string
+	Name           string
+	Description    string
+	UCU            string
+	ScheduleID     string
+	Status         string
+	Semester       string
+	Year           string
+	StartTime      string
+	EndTime        string
+	Class          string
+	Day            string
+	PlaceID        string
+	IsUpdate       string
+	GradeParameter string
 }
 
 type updateArgs struct {
-	ID          string
-	Name        string
-	Description sql.NullString
-	UCU         int8
-	ScheduleID  int64
-	Status      int8
-	Semester    int8
-	Year        int16
-	StartTime   int16
-	EndTime     int16
-	Class       string
-	Day         int8
-	PlaceID     string
-	IsUpdate    bool
+	ID             string
+	Name           string
+	Description    sql.NullString
+	UCU            int8
+	ScheduleID     int64
+	Status         int8
+	Semester       int8
+	Year           int16
+	StartTime      int16
+	EndTime        int16
+	Class          string
+	Day            int8
+	PlaceID        string
+	IsUpdate       bool
+	GradeParameter []gradeParameter
 }
 
 type summaryResponse struct {
@@ -200,6 +203,7 @@ type readScheduleParameterArgs struct {
 }
 
 type readScheduleParameterResponse struct {
-	Name       string  `json:"name"`
-	Percentage float32 `json:"percentage"`
+	Type         string  `json:"type"`
+	Percentage   float32 `json:"percentage"`
+	StatusChange uint8   `json:"status_change"`
 }
