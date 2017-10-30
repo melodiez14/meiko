@@ -772,7 +772,7 @@ func UpdateGradeParameter(typ string, percentage float32, statusChange uint8, sc
 			updated_at = NOW()
 		WHERE
 			type = ('%s') AND
-			schdules_id = (%d);
+			schedules_id = (%d);
 		`, percentage, statusChange, typ, scheduleID)
 
 	var result sql.Result
