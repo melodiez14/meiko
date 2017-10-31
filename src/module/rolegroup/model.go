@@ -6,6 +6,7 @@ const (
 	ModuleRole       = "roles"
 	ModuleAttendance = "attendances"
 	ModuleSchedule   = "schedules"
+	ModuleAssignment = "assignments"
 
 	RoleCreate  = "CREATE"
 	RoleRead    = "READ"

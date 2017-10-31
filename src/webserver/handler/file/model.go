@@ -5,13 +5,15 @@ import "image"
 type ByteSize uint64
 
 const (
-	B  ByteSize = 1
-	KB          = B << 10
-	MB          = KB << 10
-	GB          = MB << 10
+	B  = 1
+	KB = B << 10
+	MB = KB << 10
+	GB = MB << 10
 
 	MimeJPEG = "image/jpeg"
 	ExtJPEG  = "jpg"
+	MimeZIP  = "zip"
+	MimeRAR  = ""
 )
 
 type uploadImageMapper struct {
@@ -30,7 +32,6 @@ type uploadImageMapper struct {
 type uploadImageParams struct {
 	Height    int
 	Width     int
-	Payload   string
 	FileName  string
 	Extension string
 	Mime      string
@@ -49,4 +50,26 @@ type getProfileParams struct {
 
 type getProfileArgs struct {
 	Payload string
+}
+
+type uploadAssignmentParams struct {
+	FileName  string
+	Mime      string
+	Extension string
+}
+
+type uploadAssignmentArgs struct {
+	FileName  string
+	Mime      string
+	Extension string
+}
+
+type getFileParams struct {
+	payload  string
+	filename string
+}
+
+type getFileArgs struct {
+	payload  string
+	filename string
 }

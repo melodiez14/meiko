@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"html"
 
-	"github.com/melodiez14/meiko/src/util/alias"
-
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
-func (params uploadImageParams) Validate() (uploadImageArgs, error) {
+func (params uploadImageParams) validate() (uploadImageArgs, error) {
 
 	var args uploadImageArgs
 	params = uploadImageParams{
 		Height:    params.Height,
 		Width:     params.Width,
-		Payload:   html.EscapeString(params.Payload),
 		FileName:  html.EscapeString(params.FileName),
 		Extension: params.Extension,
 		Mime:      params.Mime,
@@ -38,28 +35,39 @@ func (params uploadImageParams) Validate() (uploadImageArgs, error) {
 	}
 
 	return uploadImageArgs{
-		Payload:   params.Payload,
 		FileName:  params.FileName,
 		Extension: params.Extension,
 		Mime:      params.Mime,
 	}, nil
 }
 
-func (params getProfileParams) Validate() (getProfileArgs, error) {
-
-	var args getProfileArgs
-
-	var payload string
-	switch params.Payload {
-	case alias.ParamsProfile:
-		payload = alias.TypeProfile
-	case alias.ParamsProfileThumbnail:
-		payload = alias.TypeProfileThumbnail
-	default:
-		return args, fmt.Errorf("Error parameter")
+func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
+	var args uploadAssignmentArgs
+	params = uploadAssignmentParams{
+		FileName:  html.EscapeString(params.FileName),
+		Extension: params.Extension,
+		Mime:      params.Mime,
 	}
 
-	return getProfileArgs{
-		Payload: payload,
+	if helper.IsEmpty(params.FileName) {
+		return args, fmt.Errorf("Filename is empty")
+	}
+
+	// validate mime and extension
+
+	return uploadAssignmentArgs{
+		FileName:  params.FileName,
+		Extension: params.Extension,
+		Mime:      params.Mime,
+	}, nil
+}
+
+func (params getFileParams) validate() (getFileArgs, error) {
+
+	// do a validation if necessary
+
+	return getFileArgs{
+		payload:  params.payload,
+		filename: params.filename,
 	}, nil
 }

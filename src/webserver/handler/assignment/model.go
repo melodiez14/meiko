@@ -11,3 +11,17 @@ type profileSummaryResponse struct {
 	Complete   int8   `json:"complete"`
 	Incomplete int8   `json:"incomplete"`
 }
+
+type createParams struct {
+	Subject     string
+	Description string
+	DueDate     string
+	Attachment  string
+}
+
+type createArgs struct {
+	Subject     string
+	Description string
+	DueDate     string
+	Attachment  string
+}

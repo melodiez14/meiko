@@ -438,6 +438,7 @@ func (params updateParams) validate() (updateArgs, error) {
 			cs.GradeParameterQuiz,
 		}
 
+		var gpChoosen []string
 		for _, val := range gp {
 			percentage += val.Percentage
 			// check status change
@@ -447,6 +448,9 @@ func (params updateParams) validate() (updateArgs, error) {
 			// validate type
 			if !helper.IsStringInSlice(val.Type, gpType) {
 				return args, fmt.Errorf("Invalid grade parameter")
+			}
+			if !helper.IsStringInSlice(val.Type, gpChoosen) {
+				return args, fmt.Errorf("Invalid grade parameter should be unique")
 			}
 			gps = append(gps, val)
 		}
@@ -483,13 +487,13 @@ func (params deleteScheduleParams) validate() (deleteScheduleArgs, error) {
 		return args, fmt.Errorf("ID cannot be empty")
 	}
 
-	scheduleId, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("ID must be numeric")
 	}
 
 	return deleteScheduleArgs{
-		ScheduleID: scheduleId,
+		ScheduleID: scheduleID,
 	}, nil
 }
 

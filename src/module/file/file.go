@@ -3,19 +3,21 @@ package file
 import (
 	"database/sql"
 	"fmt"
-	"reflect"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func Get(column ...string) QueryGet {
+func GetByID(id int64, column ...string) (File, error) {
+
 	var c []string
+	var file File
 	if len(column) < 1 {
 		c = []string{
 			ColID,
 			ColName,
-			ColPath,
 			ColMime,
 			ColExtension,
 			ColUserID,
@@ -24,50 +26,13 @@ func Get(column ...string) QueryGet {
 			ColTableID,
 		}
 	} else {
-		for _, v := range column {
-			c = append(c, v)
+		for _, val := range column {
+			c = append(c, val)
 		}
 	}
-	columnQuery := strings.Join(c, ", ")
-	return QueryGet{fmt.Sprintf(queryGet, columnQuery)}
-}
 
-func (q QueryGet) Where(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) AndWhere(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) OrWhere(column, operator string, value interface{}) QueryGet {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryGet{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryGet{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryGet) Exec() (File, error) {
-	var file File
-	query := fmt.Sprintf("%s LIMIT 1", q.string)
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(`SELECT %s FROM files WHERE id = (%d) LIMIT 1;`, cols, id)
 	err := conn.DB.Get(&file, query)
 	if err != nil {
 		return file, err
@@ -75,107 +40,89 @@ func (q QueryGet) Exec() (File, error) {
 	return file, nil
 }
 
-func Select(column ...string) QuerySelect {
+func GetByTypeUserID(userID int64, typ string, column ...string) (File, error) {
 	var c []string
+	var file File
 	if len(column) < 1 {
 		c = []string{
 			ColID,
 			ColName,
-			ColPath,
 			ColMime,
 			ColExtension,
 			ColUserID,
+			ColType,
 			ColTableName,
 			ColTableID,
 		}
 	} else {
-		for _, v := range column {
-			c = append(c, v)
+		for _, val := range column {
+			c = append(c, val)
 		}
 	}
-	columnQuery := strings.Join(c, ", ")
-	return QuerySelect{fmt.Sprintf(querySelect, columnQuery)}
-}
 
-func (q QuerySelect) Where(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) AndWhere(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySelect {
-	switch value.(type) {
-	case int, int8, int64:
-		return QuerySelect{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QuerySelect{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QuerySelect) Limit(value uint16) QuerySelect {
-	return QuerySelect{fmt.Sprintf("%s LIMIT %d", q.string, value)}
-}
-
-func (q QuerySelect) Offset(value uint16) QuerySelect {
-	return QuerySelect{fmt.Sprintf("%s OFFSET %d", q.string, value)}
-}
-
-func (q QuerySelect) Exec() ([]File, error) {
-	var files []File
-	err := conn.DB.Select(&files, q.string)
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(`SELECT %s FROM files WHERE users_id = (%d) AND type = ('%s') AND status = (%d) LIMIT 1;`, cols, userID, typ, StatusExist)
+	err := conn.DB.Get(&file, query)
 	if err != nil {
-		return files, err
+		return file, err
 	}
-	return files, nil
+	return file, nil
 }
 
-func Insert(column map[string]interface{}) QueryInsert {
+func DeleteProfileImage(userID int64, tx *sqlx.Tx) error {
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET
+			status = (%d),
+			updated_at = NOW()
+		WHERE
+			users_id = (%d) AND
+			type IN ('%s', '%s');`, StatusDeleted, userID, TypProfPict, TypProfPictThumb)
 
-	c := []string{"created_at", "updated_at"}
-	v := []string{"NOW()", "NOW()"}
-	for i, val := range column {
-		switch val.(type) {
-		case int, int8, int64:
-			c = append(c, i)
-			v = append(v, fmt.Sprintf("(%d)", val))
-		case string:
-			c = append(c, i)
-			v = append(v, fmt.Sprintf("('%s')", val))
-		case sql.NullString:
-			str := reflect.ValueOf(val).Interface().(sql.NullString)
-			c = append(c, i)
-			if str.Valid {
-				v = append(v, fmt.Sprintf("('%s')", str.String))
-			} else {
-				v = append(v, fmt.Sprintf("(NULL)"))
-			}
-		}
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
 	}
-	columnQuery := strings.Join(c, ", ")
-	valueQuery := strings.Join(v, ", ")
-	return QueryInsert{fmt.Sprintf(queryInsert, columnQuery, valueQuery)}
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (q QueryInsert) Exec() error {
-	result, err := conn.DB.Exec(q.string)
+func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx.Tx) error {
+
+	var result sql.Result
+	var err error
+	query := fmt.Sprintf(`
+		INSERT INTO
+		files (
+			id,
+			name,
+			mime,
+			extension,
+			type,
+			users_id,
+			created_at,
+			updated_at
+		) VALUES (
+			('%s'),
+			('%s'),
+			('%s'),
+			('%s'),
+			('%s'),
+			(%d),
+			NOW(),
+			NOW()
+		);`, id, name, mime, extension, typ, userID)
+
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
 	if err != nil {
 		return err
 	}
@@ -186,62 +133,25 @@ func (q QueryInsert) Exec() error {
 	return nil
 }
 
-func Update(column map[string]interface{}) QueryUpdate {
-	c := []string{"updated_at = NOW()"}
-	for i, val := range column {
-		switch val.(type) {
-		case int, int8, int64:
-			c = append(c, fmt.Sprintf("%s = (%d)", i, val))
-		case string:
-			c = append(c, fmt.Sprintf("%s = ('%s')", i, val))
-		case sql.NullString:
-			str := reflect.ValueOf(val).Interface().(sql.NullString)
-			if str.Valid {
-				c = append(c, fmt.Sprintf("%s = ('%s')", i, str.String))
-			} else {
-				c = append(c, fmt.Sprintf("%s = NULL", i))
-			}
-		}
-	}
-	columnQuery := strings.Join(c, ", ")
-	return QueryUpdate{fmt.Sprintf(queryUpdate, columnQuery)}
-}
+func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 
-func (q QueryUpdate) Where(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s WHERE %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
+	var result sql.Result
+	var err error
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET
+			table_name = ('%s'),
+			table_id = ('%s'),
+			updated_at = NOW()
+		WHERE
+			id = ('%s');`, tableName, tableID, id)
 
-func (q QueryUpdate) AndWhere(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s AND %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s AND %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
 	}
-}
-
-func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUpdate {
-	switch value.(type) {
-	case int, int8, int64:
-		return QueryUpdate{fmt.Sprintf("%s OR %s %s (%d)", q.string, column, operator, value)}
-	case string:
-		return QueryUpdate{fmt.Sprintf("%s OR %s %s ('%s')", q.string, column, operator, value)}
-	default:
-		return q
-	}
-}
-
-func (q QueryUpdate) Exec() error {
-	result, err := conn.DB.Exec(q.string)
 	if err != nil {
 		return err
 	}

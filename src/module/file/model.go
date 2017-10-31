@@ -3,7 +3,6 @@ package file
 const (
 	ColID        = "id"
 	ColName      = "name"
-	ColPath      = "path"
 	ColMime      = "mime"
 	ColExtension = "extension"
 	ColUserID    = "users_id"
@@ -11,24 +10,16 @@ const (
 	ColTableName = "table_name"
 	ColTableID   = "table_id"
 
-	OperatorEquals  = "="
-	OperatorUnquals = "!="
-	OperatorIn      = "IN"
-	OperatorMore    = ">"
-	OperatorLess    = "<"
-)
+	TypProfPict      = "PL-IMG-M"
+	TypProfPictThumb = "PL-IMG-T"
 
-type (
-	QueryGet    struct{ string }
-	QuerySelect struct{ string }
-	QueryInsert struct{ string }
-	QueryUpdate struct{ string }
+	StatusDeleted = 0
+	StatusExist   = 1
 )
 
 type File struct {
-	ID        int64  `db:"id"`
+	ID        string `db:"id"`
 	Name      string `db:"name"`
-	Path      string `db:"path"`
 	Mime      string `db:"mime"`
 	Extension string `db:"extension"`
 	UserID    int64  `db:"users_id"`

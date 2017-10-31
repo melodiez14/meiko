@@ -1,5 +1,14 @@
 package assignment
 
+import (
+	"net/http"
+
+	"github.com/julienschmidt/httprouter"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/webserver/template"
+)
+
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 // 	u := r.Context().Value("User").(*auth.User)
@@ -94,3 +103,15 @@ package assignment
 // 		SetData(res))
 // 	return
 // }
+
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+}
