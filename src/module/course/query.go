@@ -1,5 +1,6 @@
 package course
 
+// query constant to insert update select data from database
 const (
 	queryGet    = "SELECT %s FROM courses"
 	querySelect = "SELECT %s FROM courses"
@@ -7,6 +8,7 @@ const (
 	queryUpdate = "UPDATE courses SET %s"
 )
 
+// constanta query to show user course in database
 const queryGetCourseByUserID = `
 	SELECT
 		id,
@@ -27,6 +29,7 @@ const queryGetCourseByUserID = `
 		);
 `
 
+// constanta query to get course by by user id in coure in database
 const queryGetIDByUserID = `
 	SELECT
 		courses_id

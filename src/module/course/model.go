@@ -4,13 +4,19 @@ import (
 	"database/sql"
 )
 
+// type struct for collect query insert update select and get data form database 
 type (
+	// QueryGet Query to get data from database
 	QueryGet    struct{ string }
+	// QuerySelect Query to select data from database
 	QuerySelect struct{ string }
+	// QueryInsert Query to select data to database
 	QueryInsert struct{ string }
+	// QueryUpdate Query to select data to database
 	QueryUpdate struct{ string }
 )
 
+// constant to all over user information that needed to check course
 const (
 	ColID          = "id"
 	ColName        = "name"
@@ -39,6 +45,7 @@ const (
 	OperatorLess    = "<"
 )
 
+// Course struct user detail information to get course that will be send to server in database
 type Course struct {
 	ID          int64          `db:"id"`
 	Name        string         `db:"name"`

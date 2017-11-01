@@ -12,6 +12,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
+// Get Query language to do get from course in database
 func Get(column ...string) QueryGet {
 	var c []string
 	if len(column) < 1 {
@@ -37,6 +38,7 @@ func Get(column ...string) QueryGet {
 	return QueryGet{fmt.Sprintf(queryGet, columnQuery)}
 }
 
+// Where Query language to do get and using where from course in database
 func (q QueryGet) Where(column, operator string, value interface{}) QueryGet {
 	switch value.(type) {
 	case int, int8, int64:
@@ -59,6 +61,7 @@ func (q QueryGet) Where(column, operator string, value interface{}) QueryGet {
 	}
 }
 
+// AndWhere QueryGet function to use (and where) from course in database
 func (q QueryGet) AndWhere(column, operator string, value interface{}) QueryGet {
 	switch value.(type) {
 	case int, int8, int64:
@@ -70,6 +73,7 @@ func (q QueryGet) AndWhere(column, operator string, value interface{}) QueryGet 
 	}
 }
 
+// OrWhere QueryGet function to use (or where)  from course in database
 func (q QueryGet) OrWhere(column, operator string, value interface{}) QueryGet {
 	switch value.(type) {
 	case int, int8, int64:
@@ -81,6 +85,7 @@ func (q QueryGet) OrWhere(column, operator string, value interface{}) QueryGet {
 	}
 }
 
+// Exec QueryGet Function to execute query select from course in database 
 func (q QueryGet) Exec() (Course, error) {
 	var course Course
 	query := fmt.Sprintf("%s LIMIT 1", q.string)
@@ -91,6 +96,8 @@ func (q QueryGet) Exec() (Course, error) {
 	return course, nil
 }
 
+
+// Select Query language to do select from course in database
 func Select(column ...string) QuerySelect {
 	var c []string
 	if len(column) < 1 {
@@ -116,6 +123,7 @@ func Select(column ...string) QuerySelect {
 	return QuerySelect{fmt.Sprintf(querySelect, columnQuery)}
 }
 
+// Where QuerySelect function to use (where) from course in database
 func (q QuerySelect) Where(column, operator string, value interface{}) QuerySelect {
 	switch value.(type) {
 	case int, int8, int64:
@@ -135,6 +143,7 @@ func (q QuerySelect) Where(column, operator string, value interface{}) QuerySele
 	}
 }
 
+// AndWhere QuerySelect function to use (and where) from course in database
 func (q QuerySelect) AndWhere(column, operator string, value interface{}) QuerySelect {
 	switch value.(type) {
 	case int, int8, int64:
@@ -157,6 +166,7 @@ func (q QuerySelect) AndWhere(column, operator string, value interface{}) QueryS
 	}
 }
 
+// OrWhere QuerySelect function to use (or where)  from course in database
 func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySelect {
 	switch value.(type) {
 	case int, int8, int64:
@@ -168,14 +178,17 @@ func (q QuerySelect) OrWhere(column, operator string, value interface{}) QuerySe
 	}
 }
 
+// Limit Select Query language to do select using limit from course in database
 func (q QuerySelect) Limit(value uint16) QuerySelect {
 	return QuerySelect{fmt.Sprintf("%s LIMIT %d", q.string, value)}
 }
 
+// Offset Select Query language to do select using offset from course in database
 func (q QuerySelect) Offset(value uint16) QuerySelect {
 	return QuerySelect{fmt.Sprintf("%s OFFSET %d", q.string, value)}
 }
 
+// Exec QuerySelect Function to execute query select from course in database 
 func (q QuerySelect) Exec() ([]Course, error) {
 	var courses []Course
 	err := conn.DB.Select(&courses, q.string)
@@ -185,6 +198,7 @@ func (q QuerySelect) Exec() ([]Course, error) {
 	return courses, nil
 }
 
+// Insert Query language to do insert from course in database
 func Insert(column map[string]interface{}) QueryInsert {
 
 	c := []string{"created_at", "updated_at"}
@@ -204,6 +218,7 @@ func Insert(column map[string]interface{}) QueryInsert {
 	return QueryInsert{fmt.Sprintf(queryInsert, columnQuery, valueQuery)}
 }
 
+// Exec QueryInsert Function to execute query insert from course in database
 func (q QueryInsert) Exec(txs ...*sqlx.Tx) error {
 	// if exist tx
 	if len(txs) == 1 {
@@ -229,6 +244,7 @@ func (q QueryInsert) Exec(txs ...*sqlx.Tx) error {
 	return nil
 }
 
+// Update Query language to do update from course in database
 func Update(column map[string]interface{}) QueryUpdate {
 	c := []string{"updated_at = NOW()"}
 	for i, val := range column {
@@ -250,6 +266,7 @@ func Update(column map[string]interface{}) QueryUpdate {
 	return QueryUpdate{fmt.Sprintf(queryUpdate, columnQuery)}
 }
 
+// Where QueryUpdate function to use (where) from course in database
 func (q QueryUpdate) Where(column, operator string, value interface{}) QueryUpdate {
 	switch value.(type) {
 	case int, int8, int64:
@@ -261,6 +278,7 @@ func (q QueryUpdate) Where(column, operator string, value interface{}) QueryUpda
 	}
 }
 
+// AndWhere QueryUpdate function to use (and where) from course in database
 func (q QueryUpdate) AndWhere(column, operator string, value interface{}) QueryUpdate {
 	switch value.(type) {
 	case int, int8, int64:
@@ -272,6 +290,7 @@ func (q QueryUpdate) AndWhere(column, operator string, value interface{}) QueryU
 	}
 }
 
+// OrWhere QueryUpdate function to use (or where)  from course in database
 func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUpdate {
 	switch value.(type) {
 	case int, int8, int64:
@@ -283,6 +302,7 @@ func (q QueryUpdate) OrWhere(column, operator string, value interface{}) QueryUp
 	}
 }
 
+// Exec QueryUpdate Function to execute query update from course in database
 func (q QueryUpdate) Exec(txs ...*sqlx.Tx) error {
 	// if exist tx
 	if len(txs) == 1 {
@@ -307,6 +327,15 @@ func (q QueryUpdate) Exec(txs ...*sqlx.Tx) error {
 	return nil
 }
 
+// GetByUserID Query function to get course that take user using user ID
+/*
+	@params:
+		userID		= int64 
+	@example:
+		userID		= 4
+	@return:
+		courseID	= []All course take by user
+*/
 func GetByUserID(userID int64) ([]Course, error) {
 	var courses []Course
 	query := fmt.Sprintf(queryGetCourseByUserID, userID)
@@ -317,6 +346,17 @@ func GetByUserID(userID int64) ([]Course, error) {
 	return courses, nil
 }
 
+// SelectIDByUserID Query function to show course that take user using user ID
+/*
+	@params:
+		userID		= int64 
+		status		= bool
+	@example:
+		userID		= 4
+		status	= yes (enrolled)
+	@return:
+		courseID	= 1
+*/
 func SelectIDByUserID(userID int64, status ...int8) ([]int64, error) {
 
 	var st string
@@ -334,6 +374,17 @@ func SelectIDByUserID(userID int64, status ...int8) ([]int64, error) {
 	return courseIDs, nil
 }
 
+// IsEnrolled Query function check is course has enrolled or not
+/*
+	@params:
+		userID		= int64 
+		courseID	= int64
+	@example:
+		userID		= 4
+		courseID	= 12
+	@return:
+		enrolled_status	= true (enrolled) false (not enrolled)
+*/
 func IsEnrolled(userID, courseID int64) bool {
 	var v int64
 	query := fmt.Sprintf("SELECT users_id FROM p_users_courses WHERE users_id = (%d) AND courses_id = (%d) LIMIT 1", userID, courseID)
@@ -344,6 +395,15 @@ func IsEnrolled(userID, courseID int64) bool {
 	return true
 }
 
+// SelectAssistantID Query to select Assisten by its iD
+/*
+	@params:
+		courseID	= int64
+	@example:
+		courseID	= 1
+	@return:
+		userIDs	= userID{}
+*/
 func SelectAssistantID(courseID int64) ([]int64, error) {
 
 	userIDs := []int64{}
