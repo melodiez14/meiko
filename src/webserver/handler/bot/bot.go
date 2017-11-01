@@ -62,6 +62,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// prepare for response
 	resp := messageResponse{
+		Status:    bot.StatusBot,
 		Text:      args.Text,
 		TimeStamp: time.Now().Unix(),
 		Response:  respData,

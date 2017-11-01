@@ -43,8 +43,9 @@ type messageArgs struct {
 }
 
 type messageResponse struct {
+	Status    uint8       `json:"status"`
 	Text      string      `json:"original_text"`
-	TimeStamp int64       `json:"time_stamp"`
+	TimeStamp int64       `json:"time"`
 	Response  interface{} `json:"response"`
 }
 
@@ -59,6 +60,6 @@ type loadHistoryArgs struct {
 }
 
 type loadHistoryResponse struct {
-	TimeStamp int64       `json:"time_stamp"`
+	TimeStamp int64       `json:"time"`
 	Response  interface{} `json:"response"`
 }

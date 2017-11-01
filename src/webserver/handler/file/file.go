@@ -145,6 +145,14 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		return
 	}
 
+	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", args.payload, args.filename)
+	file, err := os.Open(path)
+	if err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	defer file.Close()
+
 	// set header
 	switch args.payload {
 	case "profile":
@@ -154,13 +162,7 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		return
 	}
 
-	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", args.payload, args.filename)
-	file, err := os.Open(path)
-	if err != nil {
-		w.WriteHeader(404)
-		return
-	}
-	defer file.Close()
+	w.Header().Set("Cache-Control", "public, max-age=2628000")
 
 	io.Copy(w, file)
 }

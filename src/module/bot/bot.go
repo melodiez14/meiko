@@ -29,8 +29,8 @@ func LoadByTime(t time.Time, isAfter bool, userID int64) ([]Log, error) {
 			created_at %s ('%s') AND
 			users_id = (%d)
 		ORDER BY
-			created_at %s
-		LIMIT 10;
+			id %s
+		LIMIT 20;
 	`, opr, t, userID, order)
 
 	err := conn.DB.Select(&log, query)
