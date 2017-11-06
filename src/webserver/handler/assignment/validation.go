@@ -11,19 +11,24 @@ import (
 func (params createParams) validate() (createArgs, error) {
 	var args createArgs
 	params = createParams{
-		ID:             params.ID,
-		GradeParameter: params.GradeParameter,
-		Status:         params.Status,
-		Description:    html.EscapeString(helper.Trim(params.Description)),
-		DueDate:        params.DueDate,
+		FilesID:           params.FilesID,
+		GradeParametersID: params.GradeParametersID,
+		Name:              html.EscapeString(helper.Trim(params.Name)),
+		Description:       html.EscapeString(helper.Trim(params.Description)),
+		Status:            params.Status,
+		DueDate:           params.DueDate,
 	}
 	// GradeParameter validation
-	if helper.IsEmpty(params.GradeParameter) {
+	if helper.IsEmpty(params.GradeParametersID) {
 		return args, fmt.Errorf("grade_parameters can not be empty")
 	}
-	id, err := strconv.ParseInt(params.GradeParameter, 10, 64)
+	GradeParametersID, err := strconv.ParseInt(params.GradeParametersID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("grade_parameters error parsing")
+	}
+	// Name
+	if helper.IsEmpty(params.Name) {
+		return args, fmt.Errorf("Name can not be empty")
 	}
 
 	// Status validation
@@ -39,11 +44,12 @@ func (params createParams) validate() (createArgs, error) {
 		return args, fmt.Errorf("due_date can not be empty")
 	}
 	return createArgs{
-		ID:             params.ID,
-		GradeParameter: id,
-		Status:         params.Status,
-		Description:    params.Description,
-		DueDate:        params.DueDate,
+		FilesID:           params.FilesID,
+		GradeParametersID: GradeParametersID,
+		Name:              params.Name,
+		Description:       params.Description,
+		Status:            params.Status,
+		DueDate:           params.DueDate,
 	}, nil
 
 }

@@ -13,17 +13,19 @@ package assignment
 // }
 
 type createParams struct {
-	ID             string
-	GradeParameter string
-	Status         string
-	Description    string
-	DueDate        string
+	FilesID           string
+	GradeParametersID string
+	Name              string
+	Description       string
+	Status            string
+	DueDate           string
 }
 
 type createArgs struct {
-	ID             string
-	GradeParameter int64
-	Status         string
-	Description    string
-	DueDate        string
+	FilesID           string
+	GradeParametersID int64
+	Name              string
+	Description       string
+	Status            string
+	DueDate           string
 }

@@ -3,6 +3,7 @@ package assignment
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -55,10 +56,13 @@ func IsExistByGradeParameterID(gpID int64) bool {
 	}
 	return true
 }
-func Insert(GradeParameters int64, Status, Description, DueDate string, tx ...*sqlx.Tx) error {
+
+// Insert function is ...
+func Insert(GradeParameters int64, Name, Status, Description, DueDate string, tx ...*sqlx.Tx) (string, error) {
 	query := fmt.Sprintf(`
 		INSERT INTO
 			assignments(
+				name,
 				status,
 				due_date,
 				grade_parameters_id,
@@ -69,12 +73,13 @@ func Insert(GradeParameters int64, Status, Description, DueDate string, tx ...*s
 		VALUES(
 			('%s'),
 			('%s'),
+			('%s'),
 			('%d'),
 			('%s'),
 			NOW(),
 			NOW()
 		);
-		`, Status, DueDate, GradeParameters, Description)
+		`, Name, Status, DueDate, GradeParameters, Description)
 
 	var result sql.Result
 	var err error
@@ -84,16 +89,21 @@ func Insert(GradeParameters int64, Status, Description, DueDate string, tx ...*s
 		result, err = conn.DB.Exec(query)
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Println(result)
 	rows, err := result.RowsAffected()
 	if rows == 0 {
-		return fmt.Errorf("No rows affected")
+		return "", fmt.Errorf("No rows affected")
 	}
-
-	return nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		return "", fmt.Errorf("Error get LastIsertedId")
+	}
+	ID := strconv.FormatInt(id, 10)
+	return ID, nil
 }
+
+// IsFileIDExist func is ...
 func IsFileIDExist(ID string) bool {
 	var x string
 	query := fmt.Sprintf(`
@@ -110,4 +120,36 @@ func IsFileIDExist(ID string) bool {
 		return false
 	}
 	return true
+}
+
+// UpdateFiles func is ...
+func UpdateFiles(FilesID, AssignmentID string, tx ...*sqlx.Tx) error {
+
+	TableName := "assignments"
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET 
+			table_name = ('%s'),
+			table_id = ('%s')
+		WHERE
+			id = ('%s')
+		;
+		`, TableName, AssignmentID, FilesID)
+	var result sql.Result
+	var err error
+	if len(tx) == 1 {
+		result, err = tx[0].Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
 }

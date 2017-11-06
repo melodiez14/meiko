@@ -11,6 +11,7 @@ import (
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
+// CreateHandler function is
 func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleCreate, rg.RoleXCreate) {
@@ -20,11 +21,12 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	params := createParams{
-		ID:             r.FormValue("id"),
-		GradeParameter: r.FormValue("grade_parameter"),
-		Status:         r.FormValue("status"),
-		Description:    r.FormValue("description"),
-		DueDate:        r.FormValue("due_date"),
+		FilesID:           r.FormValue("id"),
+		GradeParametersID: r.FormValue("grade_parameter"),
+		Name:              r.FormValue("name"),
+		Description:       r.FormValue("description"),
+		Status:            r.FormValue("status"),
+		DueDate:           r.FormValue("due_date"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -35,16 +37,19 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// is grade_parameter exist
-	asExist := as.IsExistByGradeParameterID(args.GradeParameter)
-	if !asExist {
+	//
+	if !as.IsExistByGradeParameterID(args.GradeParametersID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("grade parameters id does not exist!"))
+			AddError("Grade parameters id does not exist!"))
+		return
 	}
+	// Insert to table assignments
+	//
 	tx := conn.DB.MustBegin()
-
-	err = as.Insert(
-		args.GradeParameter,
+	TableID, err := as.Insert(
+		args.GradeParametersID,
+		args.Name,
 		args.Status,
 		args.Description,
 		args.DueDate,
@@ -56,21 +61,30 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	if args.ID == "" {
+	// Files null
+	//
+	if args.FilesID == "" {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusOK).
 			SetMessage("Success Without files"))
 		return
 	}
-	if !as.IsFileIDExist(args.ID) {
+	// Wrong file code
+	//
+	if !as.IsFileIDExist(args.FilesID) {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			SetMessage("Wrong file code!"))
+		return
+	}
+	err = as.UpdateFiles(args.FilesID, TableID, tx)
+	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	// update to files here
-	//
-	//
 	err = tx.Commit()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
