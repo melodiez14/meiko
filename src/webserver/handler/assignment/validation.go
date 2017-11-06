@@ -54,7 +54,6 @@ func (params createParams) validate() (createArgs, error) {
 
 }
 func (params readParams) validate() (readArgs, error) {
-
 	var args readArgs
 	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
 		return args, fmt.Errorf("page or total is empty")
@@ -78,6 +77,19 @@ func (params readParams) validate() (readArgs, error) {
 	args = readArgs{
 		Page:  uint16(page),
 		Total: uint16(total),
+	}
+	return args, nil
+}
+
+func (params detailParams) validate() (detailArgs, error) {
+	var args detailArgs
+	identityCode, err := strconv.ParseInt(params.IdentityCode, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error validation: ID should be numeric")
+	}
+
+	args = detailArgs{
+		IdentityCode: identityCode,
 	}
 	return args, nil
 }

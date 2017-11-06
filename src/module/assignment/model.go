@@ -32,3 +32,13 @@ type File struct {
 type FileAssignment struct {
 	Assignment Assignment
 }
+type GradeParameter struct {
+	Type         string `json:"type"`
+	Percentage   uint8  `json:"percentage"`
+	StatusChange uint8  `json:"status_change"`
+}
+type DetailAssignment struct {
+	Assignment     Assignment
+	File           File
+	GradeParameter GradeParameter
+}

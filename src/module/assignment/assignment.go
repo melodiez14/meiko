@@ -198,3 +198,67 @@ func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 	}
 	return assignment, nil
 }
+
+// GetByAssignementID func is ...
+func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
+
+	var assignment DetailAssignment
+	query := fmt.Sprintf(`
+			SELECT
+				asg.id,
+				asg.status,
+				asg.name,
+				asg.grade_parameters_id,
+				asg.description,
+				asg.due_date,
+				fs.name,
+				fs.mime,
+				gp.type
+			FROM((
+				assignments asg
+			LEFT JOIN
+				files fs
+			ON
+				asg.id = fs.table_id)
+			LEFT JOIN
+				grade_parameters gp
+			ON
+				gp.id = asg.grade_parameters_id)
+			WHERE
+				asg.id = (%d)
+			LIMIT 1;`, assignmentID)
+
+	rows := conn.DB.QueryRowx(query)
+
+	// scan data to variable
+	var name, Type string
+	var nameFile, mime, description sql.NullString
+	var status int8
+	var gradeParameterID int32
+	var id int64
+	var dueDate time.Time
+
+	err := rows.Scan(&id, &status, &name, &gradeParameterID, &description, &dueDate, &nameFile, &mime, &Type)
+	if err != nil {
+		fmt.Println(err.Error())
+		return assignment, err
+	}
+
+	return DetailAssignment{
+		Assignment: Assignment{
+			ID:               id,
+			Name:             name,
+			Description:      description,
+			Status:           status,
+			GradeParameterID: gradeParameterID,
+			DueDate:          dueDate,
+		},
+		File: File{
+			Name: nameFile,
+			Mime: mime,
+		},
+		GradeParameter: GradeParameter{
+			Type: Type,
+		},
+	}, nil
+}

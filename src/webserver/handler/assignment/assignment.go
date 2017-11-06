@@ -150,6 +150,61 @@ func GetAllAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprout
 
 }
 
+// DetailHandler func is ...
+func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := detailParams{
+		IdentityCode: ps.ByName("id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	u, err := as.GetByAssignementID(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+
+	var status string
+	switch u.Assignment.Status {
+	case 0:
+		status = "inactive"
+	case 1:
+		status = "active"
+	}
+
+	res := detailResponse{
+		ID:               u.Assignment.ID,
+		Status:           status,
+		Name:             u.Assignment.Name,
+		GradeParameterID: u.Assignment.GradeParameterID,
+		Description:      u.Assignment.Description,
+		DueDate:          u.Assignment.DueDate,
+		Mime:             u.File.Mime,
+		Percentage:       u.GradeParameter.Percentage,
+	}
+	_ = res
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 // 	u := r.Context().Value("User").(*auth.User)

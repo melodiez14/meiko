@@ -48,3 +48,23 @@ type readResponse struct {
 	GradeParameterID int32          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
 }
+
+type detailParams struct {
+	IdentityCode string
+}
+type detailArgs struct {
+	IdentityCode int64
+}
+type detailResponse struct {
+	ID               int64          `json:"id"`
+	Status           string         `json:"status"`
+	Name             string         `json:"name"`
+	GradeParameterID int32          `json:"grade_parameters_id"`
+	Description      sql.NullString `json:"description"`
+	DueDate          time.Time      `json:"due_date"`
+	FilesID          string         `json:"files_id"`
+	FilesName        sql.NullString `json:"files_name"`
+	Mime             sql.NullString `json:"mime"`
+	Type             sql.NullString `json:"type"`
+	Percentage       uint8          `json:"percentage"`
+}
