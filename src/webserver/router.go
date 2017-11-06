@@ -49,6 +49,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/files/:payload/:filename", file.GetFileHandler)
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfileHandler))
 	r.POST("/api/v1/image/profile", auth.MustAuthorize(file.UploadProfileImageHandler))
+	r.POST("/api/v1/file/assignment", auth.MustAuthorize(file.UploadAssignmentHandler))
 	// ======================== End File Handler ========================
 
 	// ========================= Course Handler =========================

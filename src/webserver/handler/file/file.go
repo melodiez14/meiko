@@ -196,8 +196,9 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 // not functional yet
-func UploadAssignment(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func UploadAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+	sess := r.Context().Value("User").(*auth.User)
 	r.ParseMultipartForm(2 * MB)
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -231,7 +232,34 @@ func UploadAssignment(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 			AddError(err.Error()))
 		return
 	}
-	_ = args
+
+	// get filename
+	t := time.Now().UnixNano()
+	rand.Seed(t)
+	id := fmt.Sprintf("%d.%06d", t, rand.Intn(999999))
+
+	// save file
+	go func() {
+		path := fmt.Sprintf("files/var/www/meiko/data/%s/%s.%s", "assignment", id, args.Extension)
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		defer f.Close()
+
+		file.Seek(0, 0)
+		io.Copy(f, file)
+	}()
+
+	err = fl.Insert(id, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypAssignment, nil)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK))
 	return
