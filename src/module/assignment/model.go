@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+const (
+	MaximumID = 40
+)
+
 type Assignment struct {
 	ID         int64     `db:"id"`
 	Name       string    `db:"name"`

@@ -4,10 +4,88 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	as "github.com/melodiez14/meiko/src/module/assignment"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
+
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := createParams{
+		ID:             r.FormValue("id"),
+		GradeParameter: r.FormValue("grade_parameter"),
+		Status:         r.FormValue("status"),
+		Description:    r.FormValue("description"),
+		DueDate:        r.FormValue("due_date"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// is grade_parameter exist
+	asExist := as.IsExistByGradeParameterID(args.GradeParameter)
+	if !asExist {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("grade parameters id does not exist!"))
+	}
+	tx := conn.DB.MustBegin()
+
+	err = as.Insert(
+		args.GradeParameter,
+		args.Status,
+		args.Description,
+		args.DueDate,
+		tx,
+	)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if args.ID == "" {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetMessage("Success Without files"))
+		return
+	}
+	if !as.IsFileIDExist(args.ID) {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	// update to files here
+	//
+	//
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success!"))
+	return
+
+}
+func GetAllAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+}
 
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
@@ -103,16 +181,3 @@ import (
 // 		SetData(res))
 // 	return
 // }
-
-// lanjutin sep
-func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-	sess := r.Context().Value("User").(*auth.User)
-	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleCreate, rg.RoleXCreate) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
-
-}

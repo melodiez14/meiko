@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/handler"
+	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
 	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
 	"github.com/melodiez14/meiko/src/webserver/handler/file"
@@ -72,10 +73,11 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/v1/bot", auth.MustAuthorize(bot.BotHandler))
 	// ========================= End Bot Handler ========================
 
-	// Assignment Handler
-	// r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
-	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
+	// ========================= Assignment Handler ========================
+	r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
 
+	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
+	// ========================= End Assignment Handler ========================
 	// // Attendance Handler
 	// r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
 	// r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
