@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/handler"
+	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
 	"github.com/melodiez14/meiko/src/webserver/handler/file"
@@ -65,7 +66,13 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteScheduleHandler))          //delete
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
+	r.GET("/api/admin/v1/list/course/student", auth.MustAuthorize(course.ListEnrolledHandler))
 	// ======================== End Course Handler ======================
+
+	// ======================= Attendance Handler =======================
+	// Admin section
+	r.GET("/api/v1/attendance/list", auth.MustAuthorize(attendance.ListStudentHandler))
+	// ===================== End Attendance Handler =====================
 
 	// =========================== Bot Handler ==========================
 	// User section

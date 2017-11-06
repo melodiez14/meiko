@@ -27,7 +27,7 @@ func initRgxAsistant() {
 		log.Fatalf("Bot init error: cannot get all assistant id")
 	}
 
-	user, err := usr.SelectByID(userID, usr.ColName)
+	user, err := usr.SelectByID(userID, false, usr.ColName)
 	if err != nil {
 		log.Fatalf("Bot init error: cannot get all assistant name")
 	}

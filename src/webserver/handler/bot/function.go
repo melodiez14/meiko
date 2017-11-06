@@ -79,7 +79,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 		}
 
 		// select assistant ID by schedule
-		assistants, err := usr.SelectByID(assistantID, usr.ColName)
+		assistants, err := usr.SelectByID(assistantID, false, usr.ColName)
 		if err != nil {
 			return args, nil
 

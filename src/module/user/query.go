@@ -1,18 +1,11 @@
 package user
 
 const (
-	queryGet        = "SELECT %s FROM users"
-	querySelect     = "SELECT %s FROM users"
-	queryInsert     = "INSERT INTO users (%s) VALUES (%s)"
-	queryUpdate     = "UPDATE users SET %s"
-	querySelectByID = `
-		SELECT
-			%s
-		FROM
-			users
-		WHERE
-			id IN (%s);
-	`
+	queryGet    = "SELECT %s FROM users"
+	querySelect = "SELECT %s FROM users"
+	queryInsert = "INSERT INTO users (%s) VALUES (%s)"
+	queryUpdate = "UPDATE users SET %s"
+
 	queryGetByEmail = `
 		SELECT
 			%s
