@@ -12,6 +12,7 @@ const (
 
 	TypProfPict      = "PL-IMG-M"
 	TypProfPictThumb = "PL-IMG-T"
+	TypAssignment    = "ASG-FILE"
 
 	StatusDeleted = 0
 	StatusExist   = 1
