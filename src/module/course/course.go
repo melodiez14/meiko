@@ -302,7 +302,6 @@ func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
 		ON
 			cs.id = sc.courses_id
 		LIMIT %d OFFSET %d;`, limit, offset)
-
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()
 	if err != nil {

@@ -76,6 +76,8 @@ func loadRouter(r *httprouter.Router) {
 
 	// ========================= Assignment Handler ========================
 	r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
+	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
+	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
 
 	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
 	// ========================= End Assignment Handler ========================

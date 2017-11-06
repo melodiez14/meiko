@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -152,4 +153,48 @@ func UpdateFiles(FilesID, AssignmentID string, tx ...*sqlx.Tx) error {
 	}
 
 	return nil
+}
+
+// SelectByPage func is ...
+func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
+	var assignment []FileAssignment
+	query := fmt.Sprintf(`
+			SELECT
+				asg.grade_parameters_id,
+				asg.name,
+				asg.description,
+				asg.status,
+				asg.due_date
+			FROM
+				assignments asg
+			LIMIT %d OFFSET %d;`, limit, offset)
+
+	rows, err := conn.DB.Queryx(query)
+	defer rows.Close()
+	if err != nil {
+		return assignment, err
+	}
+
+	for rows.Next() {
+		var name string
+		var description sql.NullString
+		var status int8
+		var gradeParameterID int32
+		var dueDate time.Time
+
+		err := rows.Scan(&gradeParameterID, &name, &description, &status, &dueDate)
+		if err != nil {
+			return assignment, err
+		}
+		assignment = append(assignment, FileAssignment{
+			Assignment: Assignment{
+				Name:             name,
+				Status:           status,
+				Description:      description,
+				GradeParameterID: gradeParameterID,
+				DueDate:          dueDate,
+			},
+		})
+	}
+	return assignment, nil
 }

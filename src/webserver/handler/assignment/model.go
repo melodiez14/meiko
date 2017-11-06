@@ -1,5 +1,8 @@
 package assignment
 
+import "time"
+import "database/sql"
+
 // type summaryResponse struct {
 // 	ID     int64  `json:"id"`
 // 	Name   string `json:"name"`
@@ -28,4 +31,20 @@ type createArgs struct {
 	Description       string
 	Status            string
 	DueDate           string
+}
+type readParams struct {
+	Page  string
+	Total string
+}
+
+type readArgs struct {
+	Page  uint16
+	Total uint16
+}
+type readResponse struct {
+	Name             string         `db:"name"`
+	Description      sql.NullString `db:"description"`
+	Status           string         `db:"status"`
+	GradeParameterID int32          `db:"grade_parameters_id"`
+	DueDate          time.Time      `db:"due_date"`
 }

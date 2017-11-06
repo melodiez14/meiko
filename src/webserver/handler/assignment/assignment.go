@@ -97,7 +97,56 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 
 }
+
+// GetAllAssignmentHandler func is ...
 func GetAllAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := readParams{
+		Page:  r.FormValue("pg"),
+		Total: r.FormValue("ttl"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
+		return
+	}
+	offset := (args.Page - 1) * args.Total
+	assignments, err := as.SelectByPage(args.Total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	var status string
+	var res []readResponse
+	for _, val := range assignments {
+
+		if val.Assignment.Status == as.StatusAssignmentActive {
+			status = "active"
+		} else {
+			status = "inactive"
+		}
+
+		res = append(res, readResponse{
+			Name:             val.Assignment.Name,
+			Description:      val.Assignment.Description,
+			Status:           status,
+			DueDate:          val.Assignment.DueDate,
+			GradeParameterID: val.Assignment.GradeParameterID,
+		})
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
 
 }
 
