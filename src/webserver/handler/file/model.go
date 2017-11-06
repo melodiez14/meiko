@@ -14,6 +14,8 @@ const (
 	ExtJPEG  = "jpg"
 	MimeZIP  = "zip"
 	MimeRAR  = ""
+
+	notFoundURL = "/api/v1/files/error/not-found.png"
 )
 
 type uploadImageMapper struct {

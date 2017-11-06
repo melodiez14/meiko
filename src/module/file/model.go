@@ -1,5 +1,9 @@
 package file
 
+import (
+	"database/sql"
+)
+
 const (
 	ColID        = "id"
 	ColName      = "name"
@@ -19,12 +23,12 @@ const (
 )
 
 type File struct {
-	ID        string `db:"id"`
-	Name      string `db:"name"`
-	Mime      string `db:"mime"`
-	Extension string `db:"extension"`
-	UserID    int64  `db:"users_id"`
-	Type      string `db:"type"`
-	TableName string `db:"table_name"`
-	TableID   string `db:"table_id"`
+	ID        string         `db:"id"`
+	Name      string         `db:"name"`
+	Mime      string         `db:"mime"`
+	Extension string         `db:"extension"`
+	UserID    int64          `db:"users_id"`
+	Type      string         `db:"type"`
+	TableName sql.NullString `db:"table_name"`
+	TableID   sql.NullString `db:"table_id"`
 }
