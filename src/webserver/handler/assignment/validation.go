@@ -1,6 +1,7 @@
 package assignment
 
 import (
+	"database/sql"
 	"fmt"
 	"html"
 	"strconv"
@@ -36,18 +37,19 @@ func (params createParams) validate() (createArgs, error) {
 		return args, fmt.Errorf("status can not be empty")
 	}
 	// Description validation
-	if helper.IsEmpty(params.Description) {
-		return args, fmt.Errorf("descriptin can not be empty")
+	var description sql.NullString
+	if !helper.IsEmpty(params.Description) {
+		description = sql.NullString{Valid: true, String: params.Description}
 	}
 	//DueDate validation
-	if helper.IsEmpty(params.Description) {
+	if helper.IsEmpty(params.DueDate) {
 		return args, fmt.Errorf("due_date can not be empty")
 	}
 	return createArgs{
 		FilesID:           params.FilesID,
 		GradeParametersID: GradeParametersID,
 		Name:              params.Name,
-		Description:       params.Description,
+		Description:       description,
 		Status:            params.Status,
 		DueDate:           params.DueDate,
 	}, nil

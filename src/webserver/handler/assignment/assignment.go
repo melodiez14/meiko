@@ -2,6 +2,7 @@ package assignment
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	as "github.com/melodiez14/meiko/src/module/assignment"
@@ -37,7 +38,6 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// is grade_parameter exist
-	//
 	if !as.IsExistByGradeParameterID(args.GradeParametersID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -45,14 +45,13 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	// Insert to table assignments
-	//
 	tx := conn.DB.MustBegin()
 	TableID, err := as.Insert(
 		args.GradeParametersID,
 		args.Name,
 		args.Status,
-		args.Description,
 		args.DueDate,
+		args.Description,
 		tx,
 	)
 	if err != nil {
@@ -62,29 +61,34 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	// Files null
-	//
 	if args.FilesID == "" {
+		tx.Commit()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusOK).
 			SetMessage("Success Without files"))
 		return
 	}
-	// Wrong file code
-	//
-	if !as.IsFileIDExist(args.FilesID) {
-		tx.Rollback()
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			SetMessage("Wrong file code!"))
-		return
+	// Split files id if possible
+	filesID := strings.Split(args.FilesID, "~")
+	for i := 0; i < len(filesID); i++ {
+		// Wrong file code
+		if !as.IsFileIDExist(filesID[i]) {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				SetMessage("Wrong file code!"))
+			return
+		}
+		// Update files
+		err = as.UpdateFiles(filesID[i], TableID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
-	err = as.UpdateFiles(args.FilesID, TableID, tx)
-	if err != nil {
-		tx.Rollback()
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
-		return
-	}
+
 	err = tx.Commit()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -194,15 +198,40 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		GradeParameterID: u.Assignment.GradeParameterID,
 		Description:      u.Assignment.Description,
 		DueDate:          u.Assignment.DueDate,
+		FilesName:        u.File.Name,
 		Mime:             u.File.Mime,
 		Percentage:       u.GradeParameter.Percentage,
+		Type:             u.GradeParameter.Type,
 	}
-	_ = res
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))
 	return
+}
+
+// UpdateHandler func is ...
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := detailParams{
+		IdentityCode: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	_ = args
+
 }
 
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

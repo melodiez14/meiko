@@ -28,10 +28,19 @@ type createArgs struct {
 	FilesID           string
 	GradeParametersID int64
 	Name              string
+	Description       sql.NullString
+	Status            string
+	DueDate           string
+}
+type updatePrams struct {
+	FilesID           string
+	GradeParametersID int64
+	Name              string
 	Description       string
 	Status            string
 	DueDate           string
 }
+
 type readParams struct {
 	Page  string
 	Total string
@@ -41,6 +50,7 @@ type readArgs struct {
 	Page  uint16
 	Total uint16
 }
+
 type readResponse struct {
 	Name             string         `db:"name"`
 	Description      sql.NullString `db:"description"`
@@ -52,9 +62,11 @@ type readResponse struct {
 type detailParams struct {
 	IdentityCode string
 }
+
 type detailArgs struct {
 	IdentityCode int64
 }
+
 type detailResponse struct {
 	ID               int64          `json:"id"`
 	Status           string         `json:"status"`
@@ -65,6 +77,6 @@ type detailResponse struct {
 	FilesID          string         `json:"files_id"`
 	FilesName        sql.NullString `json:"files_name"`
 	Mime             sql.NullString `json:"mime"`
-	Type             sql.NullString `json:"type"`
-	Percentage       uint8          `json:"percentage"`
+	Type             string         `json:"type"`
+	Percentage       float32        `json:"percentage"`
 }

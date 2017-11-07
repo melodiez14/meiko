@@ -59,7 +59,11 @@ func IsExistByGradeParameterID(gpID int64) bool {
 }
 
 // Insert function is ...
-func Insert(GradeParameters int64, Name, Status, Description, DueDate string, tx ...*sqlx.Tx) (string, error) {
+func Insert(GradeParameters int64, Name, Status, DueDate string, Description sql.NullString, tx ...*sqlx.Tx) (string, error) {
+	queryDescription := fmt.Sprintf("NULL")
+	if Description.Valid {
+		queryDescription = fmt.Sprintf("('%s')", Description.String)
+	}
 	query := fmt.Sprintf(`
 		INSERT INTO
 			assignments(
@@ -76,11 +80,11 @@ func Insert(GradeParameters int64, Name, Status, Description, DueDate string, tx
 			('%s'),
 			('%s'),
 			('%d'),
-			('%s'),
+			%s,
 			NOW(),
 			NOW()
 		);
-		`, Name, Status, DueDate, GradeParameters, Description)
+		`, Name, Status, DueDate, GradeParameters, queryDescription)
 
 	var result sql.Result
 	var err error
@@ -104,7 +108,7 @@ func Insert(GradeParameters int64, Name, Status, Description, DueDate string, tx
 	return ID, nil
 }
 
-// IsFileIDExist func is ...
+// IsFileIDExist func ...
 func IsFileIDExist(ID string) bool {
 	var x string
 	query := fmt.Sprintf(`
@@ -123,7 +127,7 @@ func IsFileIDExist(ID string) bool {
 	return true
 }
 
-// UpdateFiles func is ...
+// UpdateFiles func ...
 func UpdateFiles(FilesID, AssignmentID string, tx ...*sqlx.Tx) error {
 
 	TableName := "assignments"
@@ -155,7 +159,7 @@ func UpdateFiles(FilesID, AssignmentID string, tx ...*sqlx.Tx) error {
 	return nil
 }
 
-// SelectByPage func is ...
+// SelectByPage func ...
 func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 	var assignment []FileAssignment
 	query := fmt.Sprintf(`
@@ -199,7 +203,7 @@ func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 	return assignment, nil
 }
 
-// GetByAssignementID func is ...
+// GetByAssignementID func ...
 func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 
 	var assignment DetailAssignment
@@ -213,7 +217,8 @@ func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 				asg.due_date,
 				fs.name,
 				fs.mime,
-				gp.type
+				gp.type,
+				gp.percentage
 			FROM((
 				assignments asg
 			LEFT JOIN
@@ -237,8 +242,9 @@ func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 	var gradeParameterID int32
 	var id int64
 	var dueDate time.Time
+	var percentage float32
 
-	err := rows.Scan(&id, &status, &name, &gradeParameterID, &description, &dueDate, &nameFile, &mime, &Type)
+	err := rows.Scan(&id, &status, &name, &gradeParameterID, &description, &dueDate, &nameFile, &mime, &Type, &percentage)
 	if err != nil {
 		fmt.Println(err.Error())
 		return assignment, err
@@ -258,7 +264,8 @@ func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 			Mime: mime,
 		},
 		GradeParameter: GradeParameter{
-			Type: Type,
+			Type:       Type,
+			Percentage: percentage,
 		},
 	}, nil
 }
