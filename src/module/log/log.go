@@ -9,7 +9,7 @@ import (
 )
 
 // Insert used for logging the data and inserting the log into bot_logs table
-func Insert(text string, userID int64, status uint8, tx *sqlx.Tx) error {
+func Insert(text string, userID int64, status uint8, tx *sqlx.Tx) (int64, error) {
 
 	var result sql.Result
 	var err error
@@ -35,11 +35,11 @@ func Insert(text string, userID int64, status uint8, tx *sqlx.Tx) error {
 	}
 
 	if err != nil {
-		return err
+		return 0, err
 	}
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("No rows affected")
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("No rows affected")
 	}
-	return nil
+	return lastInsertID, nil
 }

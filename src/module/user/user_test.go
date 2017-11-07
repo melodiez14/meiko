@@ -1249,6 +1249,7 @@ func TestSignUp(t *testing.T) {
 func TestSelectByID(t *testing.T) {
 	type args struct {
 		id     []int64
+		isSort bool
 		column []string
 	}
 	type mock struct {
@@ -1265,13 +1266,58 @@ func TestSelectByID(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Test Case 1",
+			name: "Select without sort",
 			args: args{
 				id:     []int64{1, 2, 3},
 				column: []string{ColID, ColName, ColEmail, ColPhone},
 			},
 			mock: mock{
-				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\)\s*;$`,
+				column: []string{"id", "name", "email", "phone"},
+				result: [][]driver.Value{
+					[]driver.Value{
+						"1", "Risal Falah", "risal@live.com", "085860141146",
+					},
+					[]driver.Value{
+						"2", "Rifki Muhammad", "rifkirifkigue@gmail.com", "085860141146",
+					},
+					[]driver.Value{
+						"3", "Asep Nur Muhammad Iskandar Yusuf", "asepasepgue@gmail.com", "085860141146",
+					},
+				},
+				err: nil,
+			},
+			want: []User{
+				User{
+					ID:    1,
+					Name:  "Risal Falah",
+					Email: "risal@live.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+				User{
+					ID:    2,
+					Name:  "Rifki Muhammad",
+					Email: "rifkirifkigue@gmail.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+				User{
+					ID:    3,
+					Name:  "Asep Nur Muhammad Iskandar Yusuf",
+					Email: "asepasepgue@gmail.com",
+					Phone: sql.NullString{Valid: true, String: "085860141146"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Select with sort",
+			args: args{
+				id:     []int64{1, 2, 3},
+				column: []string{ColID, ColName, ColEmail, ColPhone},
+				isSort: true,
+			},
+			mock: mock{
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\)\s*ORDER BY identity_code ASC;$`,
 				column: []string{"id", "name", "email", "phone"},
 				result: [][]driver.Value{
 					[]driver.Value{
@@ -1315,7 +1361,7 @@ func TestSelectByID(t *testing.T) {
 				column: []string{},
 			},
 			mock: mock{
-				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\)\s*;$`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: [][]driver.Value{
 					[]driver.Value{"1", "Risal Falah", "risal@live.com", "1", "", "2", "140810140016", nil, nil, nil},
@@ -1345,7 +1391,7 @@ func TestSelectByID(t *testing.T) {
 				column: []string{},
 			},
 			mock: mock{
-				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\);$`,
+				query:  `^\s*SELECT\s*(.+)\s*FROM\s*users\s*WHERE\s*id\s*IN\s*\(([\d, ]*)\)\s*;$`,
 				column: []string{"id", "name", "email", "gender", "note", "status", "identity_code", "line_id", "phone", "rolegroups_id"},
 				result: nil,
 				err:    fmt.Errorf("Error connection"),
@@ -1368,7 +1414,7 @@ func TestSelectByID(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := SelectByID(tt.args.id, tt.args.column...)
+			got, err := SelectByID(tt.args.id, tt.args.isSort, tt.args.column...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SelectByID() error = %v, wantErr %v", err, tt.wantErr)
 				return
