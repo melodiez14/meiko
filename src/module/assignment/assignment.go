@@ -127,38 +127,6 @@ func IsFileIDExist(ID string) bool {
 	return true
 }
 
-// UpdateFiles func ...
-func UpdateFiles(FilesID, AssignmentID string, tx ...*sqlx.Tx) error {
-
-	TableName := "assignments"
-	query := fmt.Sprintf(`
-		UPDATE
-			files
-		SET 
-			table_name = ('%s'),
-			table_id = ('%s')
-		WHERE
-			id = ('%s')
-		;
-		`, TableName, AssignmentID, FilesID)
-	var result sql.Result
-	var err error
-	if len(tx) == 1 {
-		result, err = tx[0].Exec(query)
-	} else {
-		result, err = conn.DB.Exec(query)
-	}
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("No rows affected")
-	}
-
-	return nil
-}
-
 // SelectByPage func ...
 func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 	var assignment []FileAssignment
@@ -268,4 +236,24 @@ func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 			Percentage: percentage,
 		},
 	}, nil
+}
+
+// IsAssignmentExist func ...
+func IsAssignmentExist(AssignmentID int64) bool {
+
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			assignments
+		WHERE
+			id = (%d)
+		LIMIT 1;`, AssignmentID)
+	fmt.Println(query)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
 }

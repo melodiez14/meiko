@@ -55,6 +55,62 @@ func (params createParams) validate() (createArgs, error) {
 	}, nil
 
 }
+func (params updatePrams) validate() (updateArgs, error) {
+	var args updateArgs
+	params = updatePrams{
+		ID:                params.ID,
+		FilesID:           params.FilesID,
+		GradeParametersID: params.GradeParametersID,
+		Name:              html.EscapeString(helper.Trim(params.Name)),
+		Description:       html.EscapeString(helper.Trim(params.Description)),
+		Status:            params.Status,
+		DueDate:           params.DueDate,
+	}
+	// ID
+	if helper.IsEmpty(params.ID) {
+		return args, fmt.Errorf("ID can not be empty")
+	}
+	id, err := strconv.ParseInt(params.ID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("id error parsing")
+	}
+	// GradeParameter validation
+	if helper.IsEmpty(params.GradeParametersID) {
+		return args, fmt.Errorf("grade_parameters can not be empty")
+	}
+	GradeParametersID, err := strconv.ParseInt(params.GradeParametersID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("grade_parameters error parsing")
+	}
+	// Name
+	if helper.IsEmpty(params.Name) {
+		return args, fmt.Errorf("Name can not be empty")
+	}
+
+	// Status validation
+	if helper.IsEmpty(params.Status) {
+		return args, fmt.Errorf("status can not be empty")
+	}
+	// Description validation
+	var description sql.NullString
+	if !helper.IsEmpty(params.Description) {
+		description = sql.NullString{Valid: true, String: params.Description}
+	}
+	//DueDate validation
+	if helper.IsEmpty(params.DueDate) {
+		return args, fmt.Errorf("due_date can not be empty")
+	}
+	return updateArgs{
+		ID:                id,
+		FilesID:           params.FilesID,
+		GradeParametersID: GradeParametersID,
+		Name:              params.Name,
+		Description:       description,
+		Status:            params.Status,
+		DueDate:           params.DueDate,
+	}, nil
+
+}
 func (params readParams) validate() (readArgs, error) {
 	var args readArgs
 	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {

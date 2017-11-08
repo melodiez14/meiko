@@ -33,10 +33,20 @@ type createArgs struct {
 	DueDate           string
 }
 type updatePrams struct {
+	ID                string
+	FilesID           string
+	GradeParametersID string
+	Name              string
+	Description       string
+	Status            string
+	DueDate           string
+}
+type updateArgs struct {
+	ID                int64
 	FilesID           string
 	GradeParametersID int64
 	Name              string
-	Description       string
+	Description       sql.NullString
 	Status            string
 	DueDate           string
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	as "github.com/melodiez14/meiko/src/module/assignment"
+	fs "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -22,8 +23,8 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	params := createParams{
-		FilesID:           r.FormValue("id"),
-		GradeParametersID: r.FormValue("grade_parameter"),
+		FilesID:           r.FormValue("file_id"),
+		GradeParametersID: r.FormValue("grade_parameter_id"),
 		Name:              r.FormValue("name"),
 		Description:       r.FormValue("description"),
 		Status:            r.FormValue("status"),
@@ -70,9 +71,10 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	// Split files id if possible
 	filesID := strings.Split(args.FilesID, "~")
-	for i := 0; i < len(filesID); i++ {
+	tableName := "assignments"
+	for _, fileID := range filesID {
 		// Wrong file code
-		if !as.IsFileIDExist(filesID[i]) {
+		if !as.IsFileIDExist(fileID) {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusBadRequest).
@@ -80,7 +82,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 		// Update files
-		err = as.UpdateFiles(filesID[i], TableID, tx)
+		err = fs.UpdateRelation(fileID, tableName, TableID, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
@@ -213,15 +215,21 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 // UpdateHandler func is ...
 func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
-	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleUpdate, rg.RoleXRead) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("You don't have privilege"))
 		return
 	}
 
-	params := detailParams{
-		IdentityCode: ps.ByName("id"),
+	params := updatePrams{
+		ID:                ps.ByName("id"),
+		FilesID:           r.FormValue("file_id"),
+		GradeParametersID: r.FormValue("grade_parameter_id"),
+		Name:              r.FormValue("name"),
+		Description:       r.FormValue("description"),
+		Status:            r.FormValue("status"),
+		DueDate:           r.FormValue("due_date"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -230,7 +238,14 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
+	// useless
 	_ = args
+	// Params ID is exist
+	if !as.IsAssignmentExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
 
 }
 
