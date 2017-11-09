@@ -108,6 +108,43 @@ func Insert(GradeParameters int64, Name, Status, DueDate string, Description sql
 	return ID, nil
 }
 
+// Update func ...
+func Update(GradeParameters, id int64, Name, Status, DueDate string, Description sql.NullString, tx *sqlx.Tx) error {
+
+	var result sql.Result
+	var err error
+	queryDescription := fmt.Sprintf("NULL")
+	if Description.Valid {
+		queryDescription = fmt.Sprintf(Description.String)
+	}
+	query := fmt.Sprintf(`
+		UPDATE 
+			assignments
+		SET
+				name = ('%s'),
+				status = ('%s'),
+				due_date = ('%s'),
+				grade_parameters_id = (%d),
+				description = ('%s'),
+				updated_at = NOW()
+		WHERE
+			id = (%d);
+		`, Name, Status, DueDate, GradeParameters, queryDescription, id)
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
 // IsFileIDExist func ...
 func IsFileIDExist(ID string) bool {
 	var x string
@@ -214,7 +251,6 @@ func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 
 	err := rows.Scan(&id, &status, &name, &gradeParameterID, &description, &dueDate, &nameFile, &mime, &Type, &percentage)
 	if err != nil {
-		fmt.Println(err.Error())
 		return assignment, err
 	}
 
@@ -250,7 +286,6 @@ func IsAssignmentExist(AssignmentID int64) bool {
 		WHERE
 			id = (%d)
 		LIMIT 1;`, AssignmentID)
-	fmt.Println(query)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false

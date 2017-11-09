@@ -14,6 +14,9 @@ import "database/sql"
 // 	Complete   int8   `json:"complete"`
 // 	Incomplete int8   `json:"incomplete"`
 // }
+const (
+	TableName = "assignment"
+)
 
 type createParams struct {
 	FilesID           string

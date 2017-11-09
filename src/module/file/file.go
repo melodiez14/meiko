@@ -161,3 +161,79 @@ func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 	}
 	return nil
 }
+
+// UpdateStatusFiles func ...
+func UpdateStatusFiles(id string, status int, tx *sqlx.Tx) error {
+
+	var result sql.Result
+	var err error
+	query := fmt.Sprintf(`
+		UPDATE 
+			files
+		SET
+			status = (%d)
+		WHERE
+			id = ('%s')
+		;`, status, id)
+
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+func GetByStatus(status int, tableID int64) ([]string, error) {
+
+	var files []string
+	query := fmt.Sprintf(`
+		SELECT 
+			id
+		FROM
+			files
+		WHERE
+			status = (%d) AND table_id = (%d) 
+		;`, status, tableID)
+
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return files, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return files, err
+		}
+		files = append(files, id)
+	}
+	return files, nil
+}
+
+// IsIDActive func ...
+func IsIDActive(status int, filesID, tableID string) bool {
+
+	var x string
+	query := fmt.Sprintf(`
+		SELECT 
+			id
+		FROM
+			files
+		WHERE
+			status = (%d) AND id = ('%s') AND table_id =('%s')
+		;`, status, filesID, tableID)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}

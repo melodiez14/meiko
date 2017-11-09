@@ -2,6 +2,7 @@ package assignment
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
@@ -238,14 +239,89 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-	// useless
-	_ = args
 	// Params ID is exist
 	if !as.IsAssignmentExist(args.ID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusNotFound))
 		return
 	}
+	// is grade_parameter exist
+	if !as.IsExistByGradeParameterID(args.GradeParametersID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Grade parameters id does not exist!"))
+		return
+	}
+
+	// Insert to table assignments
+	tx := conn.DB.MustBegin()
+	err = as.Update(
+		args.GradeParametersID,
+		args.ID,
+		args.Name,
+		args.Status,
+		args.DueDate,
+		args.Description,
+		tx,
+	)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var filesIDUser = strings.Split(args.FilesID, "~")
+	var tableID = strconv.FormatInt(args.ID, 10)
+	// Get All relations with
+	filesIDDB, err := fs.GetByStatus(fs.StatusExist, args.ID)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	// Add new file
+	for _, fileID := range filesIDUser {
+		if !fs.IsIDActive(fs.StatusExist, fileID, tableID) {
+			filesIDDB = append(filesIDDB, fileID)
+			// Update relation
+			err := fs.UpdateRelation(fileID, TableName, tableID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	for _, fileIDDB := range filesIDDB {
+		isSame := 0
+		for _, fileIDUser := range filesIDUser {
+			if fileIDUser == fileIDDB {
+				isSame = 1
+			}
+		}
+		if isSame == 0 {
+			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Update Assigment Success!"))
+	return
 
 }
 
