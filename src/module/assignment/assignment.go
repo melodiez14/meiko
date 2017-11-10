@@ -280,7 +280,7 @@ func IsAssignmentExist(AssignmentID int64) bool {
 	var x string
 	query := fmt.Sprintf(`
 		SELECT
-			id
+			'x'
 		FROM
 			assignments
 		WHERE
@@ -291,4 +291,46 @@ func IsAssignmentExist(AssignmentID int64) bool {
 		return false
 	}
 	return true
+}
+
+// UploadAssignment func ...
+func UploadAssignment(assignmentID, userID int64, description sql.NullString, tx *sqlx.Tx) error {
+
+	var result sql.Result
+	var err error
+
+	queryDescription := fmt.Sprintf("NULL")
+	if description.Valid {
+		queryDescription = fmt.Sprintf(description.String)
+	}
+	query := fmt.Sprintf(`
+		INSERT INTO 
+			p_users_assignments (
+				assignments_id,
+				users_id,
+				description,
+				created_at,
+				updated_at
+			)
+		VALUES(
+				(%d),
+				(%d),
+				('%s'),
+				NOW(),
+				NOW()
+			)
+		;`, assignmentID, userID, queryDescription)
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
 }

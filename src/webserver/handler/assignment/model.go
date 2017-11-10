@@ -15,7 +15,8 @@ import "database/sql"
 // 	Incomplete int8   `json:"incomplete"`
 // }
 const (
-	TableName = "assignment"
+	TableNameAssignments     = "assignments"
+	TableNameUserAssignments = "p_users_assignments"
 )
 
 type createParams struct {
@@ -92,4 +93,18 @@ type detailResponse struct {
 	Mime             sql.NullString `json:"mime"`
 	Type             string         `json:"type"`
 	Percentage       float32        `json:"percentage"`
+}
+type uploadAssignmentParams struct {
+	FileID       string
+	AssignmentID string
+	UserID       int64
+	Subject      string
+	Description  string
+}
+type uploadAssignmentArgs struct {
+	FileID       string
+	AssignmentID int64
+	UserID       int64
+	Subject      sql.NullString
+	Description  sql.NullString
 }

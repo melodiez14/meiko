@@ -151,3 +151,40 @@ func (params detailParams) validate() (detailArgs, error) {
 	}
 	return args, nil
 }
+func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
+
+	var args uploadAssignmentArgs
+	params = uploadAssignmentParams{
+		FileID:       params.FileID,
+		AssignmentID: params.AssignmentID,
+		UserID:       params.UserID,
+		Description:  html.EscapeString(helper.Trim(params.Description)),
+		Subject:      html.EscapeString(helper.Trim(params.Subject)),
+	}
+	// AssigmentID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error convert AssigmentID")
+	}
+	// Subject validation
+	var subject sql.NullString
+	if !helper.IsEmpty(params.Subject) {
+		subject = sql.NullString{Valid: true, String: params.Subject}
+	}
+	// Description validation
+	var description sql.NullString
+	if !helper.IsEmpty(params.Description) {
+		description = sql.NullString{Valid: true, String: params.Description}
+	}
+	return uploadAssignmentArgs{
+		FileID:       params.FileID,
+		AssignmentID: assignmentID,
+		UserID:       params.UserID,
+		Subject:      subject,
+		Description:  description,
+	}, nil
+
+}

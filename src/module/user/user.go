@@ -656,3 +656,40 @@ func Create(identityCode int64, name, email string) error {
 	}
 	return nil
 }
+
+// IsUserExist func ...
+func IsUserExist(UserID int64) bool {
+
+	var x string
+	query := fmt.Sprintf(`
+			SELECT
+				'x'
+			FROM
+				users
+			WHERE
+				identity_code = (%d)
+			LIMIT 1;`, UserID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// IsUserTakeSchedule func ...
+func IsUserTakeSchedule(UserID, ScheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+			SELECT
+				'x'
+			FROM
+				p_users_schedules pus
+			WHERE
+				pus.users_id = (%d) AND schedules_id = (%d)
+			LIMIT 1;`, UserID, ScheduleID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}

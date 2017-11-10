@@ -1,14 +1,17 @@
 package assignment
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	as "github.com/melodiez14/meiko/src/module/assignment"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	fs "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	usr "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/webserver/template"
@@ -286,7 +289,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		if !fs.IsIDActive(fs.StatusExist, fileID, tableID) {
 			filesIDDB = append(filesIDDB, fileID)
 			// Update relation
-			err := fs.UpdateRelation(fileID, TableName, tableID, tx)
+			err := fs.UpdateRelation(fileID, TableNameAssignments, tableID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).
@@ -323,6 +326,71 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetMessage("Update Assigment Success!"))
 	return
 
+}
+
+// CreateHandlerByUser func ...
+func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := uploadAssignmentParams{
+		FileID:       r.FormValue("file_id"),
+		AssignmentID: r.FormValue("assignment_id"),
+		UserID:       sess.ID,
+		Subject:      r.FormValue("subject"),
+		Description:  r.FormValue("description"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	scheduleID := cs.GetScheduleID(gradeParameterID)
+	isValidAssignment := usr.IsUserTakeSchedule(args.UserID, scheduleID)
+	if !isValidAssignment {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Assignment ID"))
+		return
+	}
+	// Insert
+	tx := conn.DB.MustBegin()
+	err = as.UploadAssignment(args.AssignmentID, args.UserID, args.Description, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	var filesID = strings.Split(args.FileID, "~")
+	tableID := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
+
+	//Update Relations
+	if args.FileID != "" {
+		for _, fileID := range filesID {
+			err := fs.UpdateRelation(fileID, TableNameUserAssignments, tableID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusBadRequest).
+					AddError("Wrong File ID"))
+				return
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Insert Assignment Success!"))
+	return
 }
 
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
