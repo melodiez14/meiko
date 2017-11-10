@@ -130,3 +130,10 @@ type readUploadedAssignmentArgs struct {
 	DueDate      string
 	PathFile     []fs.File
 }
+
+type deleteParams struct {
+	ID string
+}
+type deleteArgs struct {
+	ID int64
+}

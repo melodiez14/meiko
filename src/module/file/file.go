@@ -270,3 +270,30 @@ func GetByTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
 	}
 	return files, nil
 }
+
+// UpdateStatusFilesByNameID func ...
+func UpdateStatusFilesByNameID(TableName string, Status, TableID int64, tx *sqlx.Tx) error {
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET
+			status=(%d)
+		WHERE
+			table_name=('%s') AND table_id=(%d)
+		;`, Status, TableName, TableID)
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}

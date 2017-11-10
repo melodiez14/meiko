@@ -445,6 +445,57 @@ func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, 
 
 }
 
+// DeleteAssignmentHandler func ...
+func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+	params := deleteParams{
+		ID: pr.ByName("assignment_id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	if !as.IsAssignmentExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Wrong Assignment ID"))
+		return
+	}
+	if as.IsUserHaveUploadedAsssignment(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Forbiden to delete this assignments"))
+		return
+	}
+	tx := conn.DB.MustBegin()
+	err = as.DeleteAssignment(args.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	err = fs.UpdateStatusFilesByNameID(TableNameAssignments, fs.StatusDeleted, args.ID, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK))
+	return
+}
+
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 // 	u := r.Context().Value("User").(*auth.User)

@@ -79,6 +79,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
 	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
 	r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
+	r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
 	r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))
 	r.GET("/api/v1/assignment/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByUserHandler))
 

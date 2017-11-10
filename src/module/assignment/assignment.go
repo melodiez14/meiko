@@ -375,3 +375,48 @@ func GetUploadedAssignmentByID(AssignmentID, UserID int64) (DetailUploadedAssign
 		DueDate:               dueDate,
 	}, nil
 }
+
+// IsUserHaveUploadedAsssignment func ...
+func IsUserHaveUploadedAsssignment(AssignmentID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT 
+			'x'
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		LIMIT 1;
+		`, AssignmentID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// DeleteAssignment func ...
+func DeleteAssignment(AssignmentID int64, tx *sqlx.Tx) error {
+	query := fmt.Sprintf(`
+		DELETE FROM
+			assignments
+		WHERE
+			id=(%d)
+		;`, AssignmentID)
+
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
