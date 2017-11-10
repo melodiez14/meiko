@@ -113,6 +113,8 @@ type uploadAssignmentArgs struct {
 	Description  sql.NullString
 }
 type readUploadedAssignmentParams struct {
+	Page         string
+	Total        string
 	ScheudleID   string
 	AssignmentID string
 	Name         string
@@ -122,6 +124,8 @@ type readUploadedAssignmentParams struct {
 	PathFile     string
 }
 type readUploadedAssignmentArgs struct {
+	Page         int64
+	Total        int64
 	ScheudleID   int64
 	AssignmentID int64
 	Name         string

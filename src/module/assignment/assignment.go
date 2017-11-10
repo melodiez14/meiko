@@ -10,6 +10,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
+// GetByCourseID func ...
 func GetByCourseID(courseID int64) ([]Assignment, error) {
 	var assignments []Assignment
 	query := fmt.Sprintf(queryGetByCourseID, courseID)
@@ -20,6 +21,7 @@ func GetByCourseID(courseID int64) ([]Assignment, error) {
 	return assignments, nil
 }
 
+// GetIncompleteByUserID func ...
 func GetIncompleteByUserID(userID int64) ([]Assignment, error) {
 	var assignments []Assignment
 	query := fmt.Sprintf(queryGetIncompleteByUserID, userID, userID)
@@ -30,6 +32,7 @@ func GetIncompleteByUserID(userID int64) ([]Assignment, error) {
 	return assignments, nil
 }
 
+// GetCompleteByUserID func ...
 func GetCompleteByUserID(userID int64) ([]int64, error) {
 	var assignmentsID []int64
 	query := fmt.Sprintf(queryGetCompleteByUserID, userID)
@@ -40,6 +43,7 @@ func GetCompleteByUserID(userID int64) ([]int64, error) {
 	return assignmentsID, nil
 }
 
+// IsExistByGradeParameterID func ...
 func IsExistByGradeParameterID(gpID int64) bool {
 	var x string
 	query := fmt.Sprintf(`
@@ -362,7 +366,6 @@ func GetUploadedAssignmentByID(AssignmentID, UserID int64) (DetailUploadedAssign
 
 	err := rows.Scan(&assignmentID, &score, &descriptionUser, &name, &descriptionAssignnment, &dueDate)
 	if err != nil {
-		fmt.Println(err.Error())
 		return assignment, err
 	}
 
@@ -419,4 +422,54 @@ func DeleteAssignment(AssignmentID int64, tx *sqlx.Tx) error {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+// GetAllUserAssignmentByAssignmentID func ...
+func GetAllUserAssignmentByAssignmentID(AssignmentID, limit, offset int64) ([]DetailUploadedAssignment, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			pus.assignments_id,
+			pus.score,
+			pus.description,
+			asg.name,
+			asg.description,
+			asg.due_date
+			FROM
+			p_users_assignments pus
+		INNER JOIN
+			assignments asg
+		ON
+			asg.id=pus.assignments_id
+		WHERE
+			pus.assignments_id = (%d)
+		LIMIT %d OFFSET %d;
+			`, AssignmentID, limit, offset)
+
+	var assignment []DetailUploadedAssignment
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return assignment, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var assignmentID int64
+		var name, dueDate string
+		var descriptionAssignnment, score, descriptionUser sql.NullString
+
+		err := rows.Scan(&assignmentID, &score, &descriptionUser, &name, &descriptionAssignnment, &dueDate)
+		if err != nil {
+			return assignment, err
+		}
+		assignment = append(assignment, DetailUploadedAssignment{
+			AssignmentID: assignmentID,
+			Name:         name,
+			DescriptionAssignment: descriptionAssignnment,
+			DescriptionUser:       descriptionUser,
+			Score:                 score,
+			DueDate:               dueDate,
+		})
+	}
+
+	return assignment, nil
+
 }

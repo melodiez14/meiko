@@ -190,10 +190,25 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 }
 
 func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArgs, error) {
+
 	var args readUploadedAssignmentArgs
-	params = readUploadedAssignmentParams{
-		ScheudleID:   params.ScheudleID,
-		AssignmentID: params.AssignmentID,
+	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
+		return args, fmt.Errorf("page or total is empty")
+	}
+
+	page, err := strconv.ParseInt(params.Page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
+
+	total, err := strconv.ParseInt(params.Total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
+
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
 	}
 	// Schedule ID validation
 	if helper.IsEmpty(params.ScheudleID) {
@@ -214,6 +229,8 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 	return readUploadedAssignmentArgs{
 		ScheudleID:   scheduleID,
 		AssignmentID: assignmentID,
+		Total:        total,
+		Page:         page,
 	}, nil
 
 }

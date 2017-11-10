@@ -424,7 +424,7 @@ func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, 
 	}
 
 	// Get File
-	files, err := fs.GetByTableIDName(sess.ID, tableID, TableNameUserAssignments)
+	files, err := fs.GetByUserIDTableIDName(sess.ID, tableID, TableNameUserAssignments)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -445,8 +445,66 @@ func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, 
 
 }
 
+// GetUploadedAssignmentByAdminHandler func ...
+func GetUploadedAssignmentByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := readUploadedAssignmentParams{
+		ScheudleID:   ps.ByName("id"),
+		AssignmentID: ps.ByName("assignment_id"),
+		Page:         r.FormValue("pg"),
+		Total:        r.FormValue("ttl"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	offset := (args.Page - 1) * args.Total
+	// Check schedule id
+	if !cs.IsExistScheduleID(args.ScheudleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Schdule ID does not exist"))
+		return
+	}
+	// Check assignment id
+	if !as.IsAssignmentExist(args.AssignmentID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Assignment ID does not exist"))
+		return
+	}
+	// Get all data p_users_assignment
+	assignments, err := as.GetAllUserAssignmentByAssignmentID(args.AssignmentID, args.Total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	//files, err := fs.GetByTableIDName(args.AssignmentID, TableNameUserAssignments)
+	// get all data files relations
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).SetData(assignments))
+	// serve json
+}
+
 // DeleteAssignmentHandler func ...
 func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleDelete, rg.RoleXDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
 	params := deleteParams{
 		ID: pr.ByName("assignment_id"),
 	}

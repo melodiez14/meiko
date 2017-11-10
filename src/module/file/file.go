@@ -239,8 +239,8 @@ func IsIDActive(status int, filesID, tableID string) bool {
 	return true
 }
 
-// GetByTableIDName func ...
-func GetByTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
+// GetByUserIDTableIDName func ...
+func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
 	var files []File
 	query := fmt.Sprintf(`
 		SELECT 
@@ -296,4 +296,37 @@ func UpdateStatusFilesByNameID(TableName string, Status, TableID int64, tx *sqlx
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+// GetByTableIDName func ...
+func GetByTableIDName(TableID int64, TableName string) ([]File, error) {
+	var files []File
+	query := fmt.Sprintf(`
+		SELECT 
+			id,
+			extension
+		FROM
+			files
+		WHERE
+			table_name=('%s') AND table_id LIKE ('%d%%')
+		`, TableName, TableID)
+
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return files, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id, extension string
+		err := rows.Scan(&id, &extension)
+		if err != nil {
+			return files, err
+		}
+		files = append(files, File{
+			ID:        id,
+			Extension: extension,
+		})
+	}
+	return files, nil
 }
