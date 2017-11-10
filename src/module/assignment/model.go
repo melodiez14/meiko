@@ -54,3 +54,15 @@ type DetailAssignment struct {
 	File           File
 	GradeParameter GradeParameter
 }
+
+// DetailUploadedAssignment struct ...
+type DetailUploadedAssignment struct {
+	ScheudleID            int64          `json:"schdule_id"`
+	AssignmentID          int64          `json:"assignment_id"`
+	Name                  string         `json:"name"`
+	DescriptionUser       sql.NullString `json:"description_user"`
+	DescriptionAssignment sql.NullString `json:"description_assignment"`
+	Score                 sql.NullString `json:"score"`
+	DueDate               string         `json:"due_date"`
+	PathFile              sql.NullString `json:"path"`
+}

@@ -362,12 +362,12 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
+			SetCode(http.StatusBadRequest).
+			AddError("You can only submit one time for Assignment"))
 		return
 	}
 	var filesID = strings.Split(args.FileID, "~")
 	tableID := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
-
 	//Update Relations
 	if args.FileID != "" {
 		for _, fileID := range filesID {
@@ -391,6 +391,58 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		SetCode(http.StatusOK).
 		SetMessage("Insert Assignment Success!"))
 	return
+}
+
+// GetUploadedAssignmentByUserHandler func ...
+func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := readUploadedAssignmentParams{
+		ScheudleID:   ps.ByName("schedule_id"),
+		AssignmentID: ps.ByName("assignment_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	if !usr.IsUserTakeSchedule(sess.ID, args.ScheudleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("Wrong Schedule ID"))
+		return
+	}
+	// Get Assignments Detail
+	assignment, err := as.GetUploadedAssignmentByID(args.AssignmentID, sess.ID)
+	key := fmt.Sprintf("%d%d", args.AssignmentID, sess.ID)
+	tableID, err := strconv.ParseInt(key, 10, 64)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+
+	// Get File
+	files, err := fs.GetByTableIDName(sess.ID, tableID, TableNameUserAssignments)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	res := readUploadedAssignmentArgs{
+		ScheudleID:   args.ScheudleID,
+		AssignmentID: args.AssignmentID,
+		Name:         assignment.Name,
+		Description:  assignment.DescriptionAssignment,
+		PathFile:     files,
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+
 }
 
 // func GetIncompleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

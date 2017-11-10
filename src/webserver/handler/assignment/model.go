@@ -1,7 +1,11 @@
 package assignment
 
-import "time"
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+
+	fs "github.com/melodiez14/meiko/src/module/file"
+)
 
 // type summaryResponse struct {
 // 	ID     int64  `json:"id"`
@@ -107,4 +111,22 @@ type uploadAssignmentArgs struct {
 	UserID       int64
 	Subject      sql.NullString
 	Description  sql.NullString
+}
+type readUploadedAssignmentParams struct {
+	ScheudleID   string
+	AssignmentID string
+	Name         string
+	Description  string
+	Score        string
+	DueDate      string
+	PathFile     string
+}
+type readUploadedAssignmentArgs struct {
+	ScheudleID   int64
+	AssignmentID int64
+	Name         string
+	Description  sql.NullString
+	Score        string
+	DueDate      string
+	PathFile     []fs.File
 }

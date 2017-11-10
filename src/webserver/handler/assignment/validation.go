@@ -188,3 +188,32 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 	}, nil
 
 }
+
+func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArgs, error) {
+	var args readUploadedAssignmentArgs
+	params = readUploadedAssignmentParams{
+		ScheudleID:   params.ScheudleID,
+		AssignmentID: params.AssignmentID,
+	}
+	// Schedule ID validation
+	if helper.IsEmpty(params.ScheudleID) {
+		return args, fmt.Errorf("Schedule ID cannot be empty")
+	}
+	scheduleID, err := strconv.ParseInt(params.ScheudleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert schedule ID to int64")
+	}
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID cannto be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert assignment ID to int64")
+	}
+	return readUploadedAssignmentArgs{
+		ScheudleID:   scheduleID,
+		AssignmentID: assignmentID,
+	}, nil
+
+}

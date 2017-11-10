@@ -334,3 +334,44 @@ func UploadAssignment(assignmentID, userID int64, description sql.NullString, tx
 	}
 	return nil
 }
+
+// GetUploadedAssignmentByID func ...
+func GetUploadedAssignmentByID(AssignmentID, UserID int64) (DetailUploadedAssignment, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			pus.assignments_id,
+			pus.score,
+			pus.description,
+			asg.name,
+			asg.description,
+			asg.due_date
+		FROM
+			p_users_assignments pus
+		INNER JOIN
+			assignments asg
+		ON
+			asg.id=pus.assignments_id
+		WHERE
+			pus.assignments_id = (%d) AND pus.users_id = (%d)`, AssignmentID, UserID)
+
+	rows := conn.DB.QueryRowx(query)
+	var assignment DetailUploadedAssignment
+	var assignmentID int64
+	var name, dueDate string
+	var descriptionAssignnment, score, descriptionUser sql.NullString
+
+	err := rows.Scan(&assignmentID, &score, &descriptionUser, &name, &descriptionAssignnment, &dueDate)
+	if err != nil {
+		fmt.Println(err.Error())
+		return assignment, err
+	}
+
+	return DetailUploadedAssignment{
+		AssignmentID: assignmentID,
+		Name:         name,
+		DescriptionAssignment: descriptionAssignnment,
+		DescriptionUser:       descriptionUser,
+		Score:                 score,
+		DueDate:               dueDate,
+	}, nil
+}
