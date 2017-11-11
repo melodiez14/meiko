@@ -528,3 +528,17 @@ func (params readScheduleParameterParams) validate() (readScheduleParameterArgs,
 		ScheduleID: scheduleID,
 	}, nil
 }
+
+func (params listStudentParams) validate() (listStudentArgs, error) {
+	var args listStudentArgs
+	if helper.IsEmpty(params.scheduleID) {
+		return args, fmt.Errorf("Schedule id cannot be empty")
+	}
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return listStudentArgs{scheduleID: scheduleID}, nil
+}

@@ -29,7 +29,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// get text intent
-	intent, err := getIntent(args.NormalizedText)
+	intent, _ := getIntent(args.NormalizedText)
 
 	// convert intent into assistant
 	var data interface{}
@@ -41,17 +41,13 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	case intentAssignment:
 		break
 	case intentInformation:
-		break
+		data, err = handleInformation(args.NormalizedText, sess.ID)
 	case intentSchedule:
+		break
+	case intentUnknown:
 		break
 	default:
 		break
-	}
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusOK).
-			SetMessage(err.Error()))
-		return
 	}
 
 	// intent and entity
@@ -60,36 +56,33 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		"entity": data,
 	}
 
+	// log message into database
+	jsn, _ := json.Marshal(respData)
+	jsnStr := string(jsn)
+
+	tx, err := conn.DB.Beginx()
+	if err != nil {
+		return
+	}
+
+	_, err = log.Insert(args.Text, sess.ID, bot.StatusUser, tx)
+	if err != nil {
+		return
+	}
+
+	lastInsertID, err := log.Insert(jsnStr, sess.ID, bot.StatusBot, tx)
+	if err != nil {
+		return
+	}
+
 	// prepare for response
+	respData["id"] = lastInsertID
 	resp := messageResponse{
 		Status:    bot.StatusBot,
 		Text:      args.Text,
 		TimeStamp: time.Now().Unix(),
 		Response:  respData,
 	}
-
-	// log message into database
-	go func() {
-
-		jsn, _ := json.Marshal(respData)
-		jsnStr := string(jsn)
-
-		tx, err := conn.DB.Beginx()
-		if err != nil {
-			return
-		}
-
-		err = log.Insert(args.Text, sess.ID, bot.StatusUser, tx)
-		if err != nil {
-			return
-		}
-
-		err = log.Insert(jsnStr, sess.ID, bot.StatusBot, tx)
-		if err != nil {
-			return
-		}
-		tx.Commit()
-	}()
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
@@ -101,8 +94,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	sess := r.Context().Value("User").(*auth.User)
 	params := loadHistoryParams{
-		Time:     r.FormValue("time"),
-		Position: r.FormValue("position"),
+		id: r.FormValue("id"),
 	}
 
 	args, err := params.validate()
@@ -113,7 +105,13 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	log, err := bot.LoadByTime(args.Time, args.IsAfter, sess.ID)
+	var log []bot.Log
+	if args.id.Valid {
+		log, err = bot.LoadByID(args.id.Int64, sess.ID)
+	} else {
+		log, err = bot.LoadByUserID(sess.ID)
+	}
+
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -126,7 +124,8 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 			resp = append(resp, map[string]interface{}{
 				"status": bot.StatusUser,
 				"time":   val.CreatedAt.Unix(),
-				"response": map[string]interface{}{
+				"message": map[string]interface{}{
+					"id":   val.ID,
 					"text": val.Message,
 				},
 			})
@@ -135,10 +134,11 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 		jsnMap := map[string]interface{}{}
 		json.Unmarshal([]byte(val.Message), &jsnMap)
+		jsnMap["id"] = val.ID
 		resp = append(resp, map[string]interface{}{
-			"status":   bot.StatusBot,
-			"time":     val.CreatedAt.Unix(),
-			"response": jsnMap,
+			"status":  bot.StatusBot,
+			"time":    val.CreatedAt.Unix(),
+			"message": jsnMap,
 		})
 	}
 
