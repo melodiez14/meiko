@@ -141,18 +141,18 @@ func GetAllAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	var res []readResponse
 	for _, val := range assignments {
 
-		if val.Assignment.Status == as.StatusAssignmentActive {
+		if val.Status == as.StatusAssignmentActive {
 			status = "active"
 		} else {
 			status = "inactive"
 		}
 
 		res = append(res, readResponse{
-			Name:             val.Assignment.Name,
-			Description:      val.Assignment.Description,
+			Name:             val.Name,
+			Description:      val.Description,
 			Status:           status,
-			DueDate:          val.Assignment.DueDate,
-			GradeParameterID: val.Assignment.GradeParameterID,
+			DueDate:          val.DueDate,
+			GradeParameterID: val.GradeParameterID,
 		})
 	}
 	template.RenderJSONResponse(w, new(template.Response).
@@ -714,7 +714,7 @@ func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprout
 
 // 	u := r.Context().Value("User").(*auth.User)
 
-// 	a, err := assignment.GetIncompleteByUserID(u.ID)
+// 	a, err := assignment.SelectIncompleteByUserID(u.ID)
 // 	if err != nil {
 // 		template.RenderJSONResponse(w, new(template.Response).
 // 			SetCode(http.StatusInternalServerError).
@@ -758,7 +758,7 @@ func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprout
 // 	}
 
 // 	// get completed assignments have been posted in all courses
-// 	ca, err := assignment.GetCompleteByUserID(u.ID)
+// 	ca, err := assignment.SelectCompleteByUserID(u.ID)
 // 	if err != nil {
 // 		template.RenderJSONResponse(w, new(template.Response).
 // 			SetCode(http.StatusInternalServerError).
@@ -776,7 +776,7 @@ func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprout
 // 		}
 
 // 		// get all assignments per courses
-// 		assignments, err := assignment.GetByCourseID(v.ID)
+// 		assignments, err := assignment.SelectByCourseID(v.ID)
 // 		if err != nil {
 // 			template.RenderJSONResponse(w, new(template.Response).
 // 				SetCode(http.StatusInternalServerError).

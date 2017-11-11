@@ -43,9 +43,9 @@ type FileAssignment struct {
 
 // GradeParameter struct ...
 type GradeParameter struct {
-	Type         string  `json:"type"`
-	Percentage   float32 `json:"percentage"`
-	StatusChange uint8   `json:"status_change"`
+	Type         string
+	Percentage   float32
+	StatusChange uint8
 }
 
 //DetailAssignment struct ...
@@ -57,14 +57,14 @@ type DetailAssignment struct {
 
 // DetailUploadedAssignment struct ...
 type DetailUploadedAssignment struct {
-	ScheudleID            int64          `json:"schdule_id"`
-	AssignmentID          int64          `json:"assignment_id"`
-	Name                  string         `json:"name"`
-	DescriptionUser       sql.NullString `json:"description_user"`
-	DescriptionAssignment sql.NullString `json:"description_assignment"`
-	Score                 sql.NullString `json:"score"`
-	DueDate               string         `json:"due_date"`
-	PathFile              sql.NullString `json:"path"`
+	ScheduleID            int64
+	AssignmentID          int64
+	Name                  string
+	DescriptionUser       sql.NullString
+	DescriptionAssignment sql.NullString
+	Score                 sql.NullString
+	DueDate               string
+	PathFile              sql.NullString
 }
 
 // ListAssignments struct ...

@@ -113,13 +113,13 @@ func Insert(GradeParameters int64, Name, Status, DueDate string, Description sql
 }
 
 // Update func ...
-func Update(GradeParameters, id int64, Name, Status, DueDate string, Description sql.NullString, tx *sqlx.Tx) error {
+func Update(gradeParameters, id int64, name, status, dueDate string, description sql.NullString, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
 	queryDescription := fmt.Sprintf("NULL")
-	if Description.Valid {
-		queryDescription = fmt.Sprintf(Description.String)
+	if description.Valid {
+		queryDescription = fmt.Sprintf(description.String)
 	}
 	query := fmt.Sprintf(`
 		UPDATE 
@@ -133,7 +133,7 @@ func Update(GradeParameters, id int64, Name, Status, DueDate string, Description
 				updated_at = NOW()
 		WHERE
 			id = (%d);
-		`, Name, Status, DueDate, GradeParameters, queryDescription, id)
+		`, name, status, dueDate, gradeParameters, queryDescription, id)
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -169,8 +169,8 @@ func IsFileIDExist(ID string) bool {
 }
 
 // SelectByPage func ...
-func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
-	var assignment []FileAssignment
+func SelectByPage(limit, offset uint16) ([]Assignment, error) {
+	var assignment []Assignment
 	query := fmt.Sprintf(`
 			SELECT
 				asg.grade_parameters_id,
@@ -199,15 +199,15 @@ func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 		if err != nil {
 			return assignment, err
 		}
-		assignment = append(assignment, FileAssignment{
-			Assignment: Assignment{
+		assignment = append(assignment,
+			Assignment{
 				Name:             name,
 				Status:           status,
 				Description:      description,
 				GradeParameterID: gradeParameterID,
 				DueDate:          dueDate,
 			},
-		})
+		)
 	}
 	return assignment, nil
 }
