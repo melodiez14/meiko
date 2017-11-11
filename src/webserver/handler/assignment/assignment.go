@@ -33,6 +33,8 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Description:       r.FormValue("description"),
 		Status:            r.FormValue("status"),
 		DueDate:           r.FormValue("due_date"),
+		Type:              r.FormValue("type"),
+		Size:              r.FormValue("size"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -393,11 +395,158 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	return
 }
 
-// GetUploadedAssignmentByUserHandler func ...
-func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// UpdateHandlerByUser func ...
+func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
-	params := readUploadedAssignmentParams{
+	params := uploadAssignmentParams{
+		FileID:       r.FormValue("file_id"),
+		AssignmentID: ps.ByName("id"),
+		UserID:       sess.ID,
+		Subject:      r.FormValue("subject"),
+		Description:  r.FormValue("description"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// Get grade parameters id
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	scheduleID := cs.GetScheduleID(gradeParameterID)
+	isValidAssignment := usr.IsUserTakeSchedule(args.UserID, scheduleID)
+	if !isValidAssignment {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Assignment ID"))
+		return
+	}
+	// Update
+	tx := conn.DB.MustBegin()
+	err = as.UpdateUploadAssignment(args.AssignmentID, args.UserID, args.Description, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Update Failed"))
+		return
+	}
+	key := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
+	tableID, err := strconv.ParseInt(key, 10, 64)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Can not convert to int64"))
+		return
+	}
+	var filesIDUser = strings.Split(args.FileID, "~")
+	// Get All relations with
+	filesIDDB, err := fs.GetByStatus(fs.StatusExist, tableID)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	// Add new file
+	for _, fileID := range filesIDUser {
+		if !fs.IsIDActive(fs.StatusExist, fileID, key) {
+			filesIDDB = append(filesIDDB, fileID)
+			// Update relation
+			err := fs.UpdateRelation(fileID, TableNameUserAssignments, key, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	for _, fileIDDB := range filesIDDB {
+		isSame := 0
+		for _, fileIDUser := range filesIDUser {
+			if fileIDUser == fileIDDB {
+				isSame = 1
+			}
+		}
+		if isSame == 0 {
+			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Update Assignment Success!"))
+	return
+}
+
+// GetAssignmentByScheduleHandler func ...
+func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	params := listAssignmentsParams{
+		Page:       r.FormValue("pg"),
+		Total:      r.FormValue("ttl"),
+		ScheduleID: ps.ByName("schedule_id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+	// is correct schedule id
+	if !cs.IsExistScheduleID(args.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("You do not took this course"))
+		return
+	}
+	gradeParamsID, err := cs.GetGradeParametersIDByScheduleID(args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Error"))
+		return
+	}
+	offset := (args.Page - 1) * args.Total
+	res, err := as.GetByGradeParametersID(gradeParamsID, args.Total, offset)
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).SetData(res))
+	return
+
+	// get all assignment by schedule join with p_users_assignment
+	// serve
+}
+
+// GetAssignmentHandler func ...
+func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Get assignment ID
+	// Check ngambi assignment lewat schedule
+	// //get grade Id from schedule
+	// //get schedule
+	//
+}
+
+// GetUploadedDetailHandler func ...
+func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := readUploadedDetailParams{
+		UserID:       ps.ByName("id"),
 		ScheudleID:   ps.ByName("schedule_id"),
 		AssignmentID: ps.ByName("assignment_id"),
 	}
@@ -406,6 +555,12 @@ func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, 
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	// Is Valid User ID
+	if sess.ID != args.UserID {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("Wrong User ID"))
 		return
 	}
 	if !usr.IsUserTakeSchedule(sess.ID, args.ScheudleID) {
@@ -431,7 +586,8 @@ func GetUploadedAssignmentByUserHandler(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	res := readUploadedAssignmentArgs{
+	res := readUploadedDetailArgs{
+		UserID:       args.UserID,
 		ScheudleID:   args.ScheudleID,
 		AssignmentID: args.AssignmentID,
 		Name:         assignment.Name,

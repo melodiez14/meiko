@@ -66,3 +66,9 @@ type DetailUploadedAssignment struct {
 	DueDate               string         `json:"due_date"`
 	PathFile              sql.NullString `json:"path"`
 }
+
+// ListAssignments struct ...
+type ListAssignments struct {
+	Assignment Assignment
+	Score      sql.NullFloat64
+}

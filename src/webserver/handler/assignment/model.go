@@ -30,6 +30,8 @@ type createParams struct {
 	Description       string
 	Status            string
 	DueDate           string
+	Size              string
+	Type              string
 }
 
 type createArgs struct {
@@ -39,6 +41,8 @@ type createArgs struct {
 	Description       sql.NullString
 	Status            string
 	DueDate           string
+	Size              int64
+	Type              string
 }
 type updatePrams struct {
 	ID                string
@@ -113,6 +117,7 @@ type uploadAssignmentArgs struct {
 	Description  sql.NullString
 }
 type readUploadedAssignmentParams struct {
+	UserID       string
 	Page         string
 	Total        string
 	ScheudleID   string
@@ -124,8 +129,29 @@ type readUploadedAssignmentParams struct {
 	PathFile     string
 }
 type readUploadedAssignmentArgs struct {
+	UserID       int64
 	Page         int64
 	Total        int64
+	ScheudleID   int64
+	AssignmentID int64
+	Name         string
+	Description  sql.NullString
+	Score        string
+	DueDate      string
+	PathFile     []fs.File
+}
+type readUploadedDetailParams struct {
+	UserID       string
+	ScheudleID   string
+	AssignmentID string
+	Name         string
+	Description  string
+	Score        string
+	DueDate      string
+	PathFile     string
+}
+type readUploadedDetailArgs struct {
+	UserID       int64
 	ScheudleID   int64
 	AssignmentID int64
 	Name         string
@@ -140,4 +166,22 @@ type deleteParams struct {
 }
 type deleteArgs struct {
 	ID int64
+}
+type listAssignmentsParams struct {
+	Page         string
+	Total        string
+	ScheduleID   string
+	AssignmentID string
+	DueDate      string
+	Name         string
+	Description  string
+}
+type listAssignmentsArgs struct {
+	Page         uint16
+	Total        uint16
+	ScheduleID   int64
+	AssignmentID int64
+	DueDate      string
+	Name         string
+	Description  string
 }

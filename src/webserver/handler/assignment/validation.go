@@ -210,9 +210,17 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 	if page < 0 || total < 0 {
 		return args, fmt.Errorf("page or total must be positive number")
 	}
+	// User ID validation
+	if helper.IsEmpty(params.UserID) {
+		return args, fmt.Errorf("User ID cannot be empty")
+	}
 	// Schedule ID validation
 	if helper.IsEmpty(params.ScheudleID) {
 		return args, fmt.Errorf("Schedule ID cannot be empty")
+	}
+	userID, err := strconv.ParseInt(params.UserID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert user ID to int64")
 	}
 	scheduleID, err := strconv.ParseInt(params.ScheudleID, 10, 64)
 	if err != nil {
@@ -227,6 +235,7 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 		return args, fmt.Errorf("Can not convert assignment ID to int64")
 	}
 	return readUploadedAssignmentArgs{
+		UserID:       userID,
 		ScheudleID:   scheduleID,
 		AssignmentID: assignmentID,
 		Total:        total,
@@ -234,7 +243,39 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 	}, nil
 
 }
+func (params readUploadedDetailParams) validate() (readUploadedDetailArgs, error) {
+	var args readUploadedDetailArgs
+	// User ID validation
+	if helper.IsEmpty(params.UserID) {
+		return args, fmt.Errorf("User ID cannot be empty")
+	}
+	// Schedule ID validation
+	if helper.IsEmpty(params.ScheudleID) {
+		return args, fmt.Errorf("Schedule ID cannot be empty")
+	}
+	userID, err := strconv.ParseInt(params.UserID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert user ID to int64")
+	}
+	scheduleID, err := strconv.ParseInt(params.ScheudleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert schedule ID to int64")
+	}
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID cannto be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Can not convert assignment ID to int64")
+	}
+	return readUploadedDetailArgs{
+		UserID:       userID,
+		ScheudleID:   scheduleID,
+		AssignmentID: assignmentID,
+	}, nil
 
+}
 func (params deleteParams) validate() (deleteArgs, error) {
 	var args deleteArgs
 	params = deleteParams{
@@ -249,5 +290,37 @@ func (params deleteParams) validate() (deleteArgs, error) {
 	}
 	return deleteArgs{
 		ID: id,
+	}, nil
+}
+func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
+	var args listAssignmentsArgs
+	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
+		return args, fmt.Errorf("page or total is empty")
+	}
+
+	page, err := strconv.ParseInt(params.Page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
+
+	total, err := strconv.ParseInt(params.Total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
+	}
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be emrpty")
+	}
+	id, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return listAssignmentsArgs{
+		ScheduleID: id,
+		Page:       uint16(page),
+		Total:      uint16(total),
 	}, nil
 }

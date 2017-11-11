@@ -212,6 +212,65 @@ func SelectByPage(limit, offset uint16) ([]FileAssignment, error) {
 	return assignment, nil
 }
 
+// GetByGradeParametersID func ...
+func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]ListAssignments, error) {
+	var gradeParametersQuery string
+	for i, value := range gradeParametersID {
+		if i+1 == len(gradeParametersID) {
+			gradeParametersQuery = fmt.Sprintf("%s%d", gradeParametersQuery, value)
+		} else {
+			gradeParametersQuery = fmt.Sprintf("%s%d, ", gradeParametersQuery, value)
+		}
+	}
+	query := fmt.Sprintf(`
+		SELECT
+			asg.id,
+			asg.due_date,
+			asg.name,
+			asg.description,
+			asg.status,
+			pua.score
+		FROM
+			assignments asg
+		RIGHT JOIN
+			p_users_assignments pua
+		ON
+			asg.id = pua.assignments_id
+		WHERE
+			grade_parameters_id IN (%s)
+		LIMIT %d OFFSET %d		
+		;`, gradeParametersQuery, limit, offset)
+	var result []ListAssignments
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var score sql.NullFloat64
+		var status int8
+		var name string
+		var dueDate time.Time
+		var description sql.NullString
+		err := rows.Scan(&id, &dueDate, &name, &description, &status, &score)
+		if err != nil {
+			fmt.Println(err.Error())
+			return result, err
+		}
+		result = append(result, ListAssignments{
+			Assignment: Assignment{
+				ID:          id,
+				Name:        name,
+				Status:      status,
+				Description: description,
+				DueDate:     dueDate,
+			}, Score: score,
+		})
+	}
+	return result, nil
+}
+
 // GetByAssignementID func ...
 func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 
@@ -295,6 +354,39 @@ func IsAssignmentExist(AssignmentID int64) bool {
 		return false
 	}
 	return true
+}
+
+// UpdateUploadAssignment func ...
+func UpdateUploadAssignment(assignmentID, userID int64, description sql.NullString, tx *sqlx.Tx) error {
+	var result sql.Result
+	var err error
+
+	queryDescription := fmt.Sprintf("NULL")
+	if description.Valid {
+		queryDescription = fmt.Sprintf(description.String)
+	}
+	query := fmt.Sprintf(`
+		UPDATE  
+			p_users_assignments 
+		SET
+				description = ('%s'),
+				updated_at = NOW()
+		WHERE
+			assignments_id = (%d) AND users_id = (%d)
+		;`, queryDescription, assignmentID, userID)
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
 }
 
 // UploadAssignment func ...

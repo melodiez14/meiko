@@ -839,3 +839,30 @@ func GetGradeParametersID(AssignmentID int64) int64 {
 
 	return assignmentid
 }
+
+// GetGradeParametersIDByScheduleID func ...
+func GetGradeParametersIDByScheduleID(ScheduleID int64) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			grade_parameters
+		WHERE
+			schedules_id = (%d)
+		;`, ScheduleID)
+
+	rows, err := conn.DB.Query(query)
+	var gradeParamsID []int64
+	if err != nil {
+		return gradeParamsID, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return gradeParamsID, err
+		}
+		gradeParamsID = append(gradeParamsID, id)
+	}
+	return gradeParamsID, nil
+}
