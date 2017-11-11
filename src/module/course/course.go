@@ -2,6 +2,7 @@ package course
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -319,7 +320,6 @@ func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
 		ON
 			cs.id = sc.courses_id
 		LIMIT %d OFFSET %d;`, limit, offset)
-
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()
 	if err != nil {
@@ -809,4 +809,77 @@ func UpdateGradeParameter(typ string, percentage float32, statusChange uint8, sc
 	}
 
 	return nil
+}
+
+// GetScheduleID func ...
+func GetScheduleID(gradeParametersID int64) int64 {
+	query := fmt.Sprintf(`
+		SELECT 
+			gp.schedules_id
+		FROM
+			grade_parameters gp
+		WHERE
+			id = (%d)
+		`, gradeParametersID)
+	var scheduleID string
+	err := conn.DB.QueryRow(query).Scan(&scheduleID)
+	if err != nil {
+		return 0
+	}
+	scheduleid, err := strconv.ParseInt(scheduleID, 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	return scheduleid
+}
+
+// GetGradeParametersID func ...
+func GetGradeParametersID(AssignmentID int64) int64 {
+	query := fmt.Sprintf(`
+		SELECT 
+			asg.grade_parameters_id
+		FROM
+			assignments asg
+		WHERE
+			id = (%d)
+		`, AssignmentID)
+	var assignmentID string
+	err := conn.DB.QueryRow(query).Scan(&assignmentID)
+	if err != nil {
+		return 0
+	}
+	assignmentid, err := strconv.ParseInt(assignmentID, 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	return assignmentid
+}
+
+// GetGradeParametersIDByScheduleID func ...
+func GetGradeParametersIDByScheduleID(ScheduleID int64) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			grade_parameters
+		WHERE
+			schedules_id = (%d)
+		;`, ScheduleID)
+
+	rows, err := conn.DB.Query(query)
+	var gradeParamsID []int64
+	if err != nil {
+		return gradeParamsID, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return gradeParamsID, err
+		}
+		gradeParamsID = append(gradeParamsID, id)
+	}
+	return gradeParamsID, nil
 }

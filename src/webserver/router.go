@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/handler"
+	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
 	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
@@ -80,10 +81,21 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/v1/bot", auth.MustAuthorize(bot.BotHandler))
 	// ========================= End Bot Handler ========================
 
-	// Assignment Handler
-	// r.GET("/api/v1/assignment/incomplete", auth.MustAuthorize(assignment.GetIncompleteHandler))
-	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
+	// ========================= Assignment Handler ========================
+	r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
+	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
+	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
+	r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
+	r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
+	r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
+	r.POST("/api/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                          // update upload by users
+	r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))                              // create upload by user
+	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
+	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                 // read detail assignments definitions
+	r.GET("/api/v1/course/assignment/:schedule_id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))       // List assignments
 
+	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
+	// ========================= End Assignment Handler ========================
 	// // Attendance Handler
 	// r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
 	// r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
