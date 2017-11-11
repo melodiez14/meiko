@@ -25,6 +25,7 @@ const (
 	GradeParameterStatusChange   = 1
 )
 
+// Course struct user detail information to get course that will be send to server in database
 type Course struct {
 	ID          string         `db:"id"`
 	Name        string         `db:"name"`
