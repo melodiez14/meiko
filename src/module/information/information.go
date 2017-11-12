@@ -205,3 +205,22 @@ func IsInformationIDExist(informationID int64) bool {
 	}
 	return true
 }
+
+// Delete func ...
+func Delete(informationID int64) error {
+	query := fmt.Sprintf(`
+		DELETE FROM
+			informations
+		WHERE
+			id = (%d)
+		;`, informationID)
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	row, err := result.RowsAffected()
+	if row == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}

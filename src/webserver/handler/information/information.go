@@ -159,6 +159,47 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// DeleteHandler func ...
+func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleDelete, rg.RoleXDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := deleteParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	// delete query
+	err = inf.Delete(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Delete failed"))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Delete information successfully"))
+	return
+
+}
+
 // GetDetailHandler func ..
 func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 

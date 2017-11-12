@@ -39,3 +39,9 @@ type upadateArgs struct {
 	Description string
 	ScheduleID  int64
 }
+type deleteParams struct {
+	ID string
+}
+type deleteArgs struct {
+	ID int64
+}

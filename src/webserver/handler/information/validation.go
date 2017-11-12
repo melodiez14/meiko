@@ -104,3 +104,19 @@ func (params updateParams) validate() (upadateArgs, error) {
 	}, nil
 
 }
+
+func (params deleteParams) validate() (deleteArgs, error) {
+
+	var args deleteArgs
+	// Information ID validation
+	if helper.IsEmpty(params.ID) {
+		return args, fmt.Errorf("Information ID can not be empty")
+	}
+	informationID, err := strconv.ParseInt(params.ID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error convert information id to int64")
+	}
+	return deleteArgs{
+		ID: informationID,
+	}, nil
+}
