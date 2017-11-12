@@ -159,6 +159,96 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// GetDetailByAdminHandler func ...
+func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := detailInfromationParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	res, err := inf.GetByID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	id := res.ScheduleID.Int64
+	if id != 0 {
+		if !cs.IsEnrolled(sess.ID, id) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("You does not have permission"))
+			return
+		}
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusBadRequest).
+		SetData(res))
+	return
+
+}
+
+// GetListHandler func ...
+func GetListHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := readListParams{
+		Total: r.FormValue("ttl"),
+		Page:  r.FormValue("pg"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	offset := (args.Page - 1) * args.Total
+	result, err := inf.SelectByPage(scheduleID, args.Total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(result))
+	return
+}
+
 // DeleteHandler func ...
 func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)

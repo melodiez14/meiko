@@ -96,11 +96,13 @@ func loadRouter(r *httprouter.Router) {
 
 	// ======================= Information Handler ======================
 	// User section
-	r.POST("/api/admin/v1/information/create", auth.MustAuthorize(information.CreateHandler))     // create infomation by admin
-	r.POST("/api/admin/v1/information/update/:id", auth.MustAuthorize(information.UpdateHandler)) // update infomation by admin
-	r.POST("/api/admin/v1/information/delete/:id", auth.MustAuthorize(information.DeleteHandler)) // delete information
-	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))               // list informations
-	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler))            // detail information
+	r.POST("/api/admin/v1/information/create", auth.MustAuthorize(information.CreateHandler))       // create infomation by admin
+	r.POST("/api/admin/v1/information/update/:id", auth.MustAuthorize(information.UpdateHandler))   // update infomation by admin
+	r.POST("/api/admin/v1/information/delete/:id", auth.MustAuthorize(information.DeleteHandler))   // delete information by admin
+	r.GET("/api/admin/v1/information", auth.MustAuthorize(information.GetListHandler))              // read list information by admin
+	r.GET("/api/admin/v1/information/:id", auth.MustAuthorize(information.GetDetailByAdminHandler)) // read detail information by admin
+	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))                 // list informations
+	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler))              // detail information
 
 	// ===================== End Information Handler ====================
 

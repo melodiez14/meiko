@@ -120,3 +120,31 @@ func (params deleteParams) validate() (deleteArgs, error) {
 		ID: informationID,
 	}, nil
 }
+
+func (params readListParams) validate() (readListArgs, error) {
+	var args readListArgs
+	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
+		return args, fmt.Errorf("page or total is empty")
+	}
+
+	page, err := strconv.ParseInt(params.Page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
+
+	total, err := strconv.ParseInt(params.Total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
+
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
+	}
+
+	args = readListArgs{
+		Page:  uint16(page),
+		Total: uint16(total),
+	}
+	return args, nil
+}

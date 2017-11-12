@@ -224,3 +224,44 @@ func Delete(informationID int64) error {
 	}
 	return nil
 }
+
+//SelectByPage func ...
+func SelectByPage(scheduleID []int64, total, offset uint16, column ...string) ([]Information, error) {
+
+	var info []Information
+	var c []string
+	d := helper.Int64ToStringSlice(scheduleID)
+
+	if len(column) < 1 {
+		c = []string{
+			ColID,
+			ColTitle,
+			ColDescription,
+			ColScheduleID,
+			CreatedAt,
+			UpdatedAt,
+		}
+	} else {
+		for _, val := range column {
+			c = append(c, val)
+		}
+	}
+	ids := strings.Join(d, ", ")
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(`
+			SELECT
+				%s
+			FROM
+				informations
+			WHERE
+				schedules_id IS NULL
+			OR
+				schedules_id IN (%s)
+			ORDER BY created_at DESC
+			LIMIT %d OFFSET %d`, cols, ids, total, offset)
+	err := conn.DB.Select(&info, query)
+	if err != nil {
+		return info, err
+	}
+	return info, nil
+}

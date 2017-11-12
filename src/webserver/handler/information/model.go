@@ -33,15 +33,27 @@ type updateParams struct {
 	Description string
 	ScheduleID  string
 }
+
 type upadateArgs struct {
 	ID          int64
 	Title       string
 	Description string
 	ScheduleID  int64
 }
+
 type deleteParams struct {
 	ID string
 }
+
 type deleteArgs struct {
 	ID int64
+}
+
+type readListParams struct {
+	Total string
+	Page  string
+}
+type readListArgs struct {
+	Total uint16
+	Page  uint16
 }
