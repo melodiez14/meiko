@@ -10,3 +10,9 @@ type getSummaryResponse struct {
 	Last   []informationResponse `json:"last"`
 	Recent []informationResponse `json:"recent"`
 }
+type detailInfromationParams struct {
+	ID string
+}
+type detailInfromationArgs struct {
+	ID int64
+}

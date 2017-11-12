@@ -96,7 +96,8 @@ func loadRouter(r *httprouter.Router) {
 
 	// ======================= Information Handler ======================
 	// User section
-	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))
+	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))    // list informations
+	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler)) // detail information
 	// ===================== End Information Handler ====================
 
 	// ========================== Place Handler =========================

@@ -14,6 +14,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/auth"
 )
 
+// GetSummaryHandler func ...
 func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -62,6 +63,41 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 	}
 
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// GetDetailHandler func ..
+func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := detailInfromationParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	scheduleID := inf.GetScheduleIDByID(args.ID)
+	if scheduleID != 0 {
+		if !course.IsEnrolled(sess.ID, scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("you do not have permission to this informations"))
+			return
+		}
+	}
+	res, err := inf.GetByID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information does not exist"))
+		return
+	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))
