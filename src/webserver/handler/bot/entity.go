@@ -9,7 +9,7 @@ import (
 	nw "github.com/jinzhu/now"
 )
 
-func (params *sEntity) getTime() ([]time.Time, error) {
+func (params *sEntity) getTime() []time.Time {
 
 	date := []time.Time{}
 	now := time.Now()
@@ -158,7 +158,7 @@ func (params *sEntity) getTime() ([]time.Time, error) {
 		date = []time.Time{startDate, endDate}
 	}
 
-	return date, nil
+	return date
 }
 
 func (params *sEntity) getDay() []int8 {

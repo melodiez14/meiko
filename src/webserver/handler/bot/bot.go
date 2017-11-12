@@ -32,7 +32,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	intent, _ := getIntent(args.NormalizedText)
 
 	// convert intent into assistant
-	var data interface{}
+	var data []map[string]interface{}
 	switch intent {
 	case intentAssistant:
 		data, err = handleAssistant(args.NormalizedText, sess.ID)
@@ -67,13 +67,21 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	_, err = log.Insert(args.Text, sess.ID, bot.StatusUser, tx)
 	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
 		return
 	}
 
 	lastInsertID, err := log.Insert(jsnStr, sess.ID, bot.StatusBot, tx)
 	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
 		return
 	}
+
+	tx.Commit()
 
 	// prepare for response
 	respData["id"] = lastInsertID

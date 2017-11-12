@@ -16,3 +16,12 @@ type Log struct {
 	Status    uint8     `db:"status"`
 	CreatedAt time.Time `db:"created_at"`
 }
+
+type Assistant struct {
+	IdentityCode int64  `db:"identity_code"`
+	Name         string `db:"name"`
+	Phone        string `db:"phone"`
+	LineID       string `db:"line_id"`
+	CourseID     string `db:"courses_id"`
+	CourseName   string `db:"courses_name"`
+}
