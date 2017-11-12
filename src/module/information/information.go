@@ -104,3 +104,49 @@ func GetScheduleIDByID(informationID int64) int64 {
 	}
 	return id
 }
+
+// Insert func ...
+func Insert(title, description string, scheduleID int64) error {
+	var c []string
+	var data string
+	if scheduleID == 0 {
+		c = []string{
+			ColTitle,
+			ColDescription,
+			CreatedAt,
+			UpdatedAt,
+		}
+		data = fmt.Sprintf(`'%s','%s', NOW(), NOW()`, title, description)
+	} else {
+		c = []string{
+			ColTitle,
+			ColDescription,
+			ColScheduleID,
+			CreatedAt,
+			UpdatedAt,
+		}
+		data = fmt.Sprintf(`'%s','%s',(%d), NOW(), NOW()`, title, description, scheduleID)
+	}
+	cols := strings.Join(c, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			informations
+			(
+				%s
+			)
+		VALUES
+			(
+				%s
+			)
+		;`, cols, data)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	row, err := result.RowsAffected()
+	if row == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}

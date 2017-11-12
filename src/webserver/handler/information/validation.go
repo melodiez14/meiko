@@ -2,6 +2,7 @@ package information
 
 import (
 	"fmt"
+	"html"
 	"strconv"
 
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -20,4 +21,40 @@ func (params detailInfromationParams) validate() (detailInfromationArgs, error) 
 	return detailInfromationArgs{
 		ID: id,
 	}, nil
+}
+func (params createParams) validate() (createArgs, error) {
+
+	var args createArgs
+	params = createParams{
+		Title:       html.EscapeString(params.Title),
+		Description: html.EscapeString(params.Description),
+		ScheduleID:  params.ScheduleID,
+	}
+
+	// Title validation
+	if helper.IsEmpty(params.Title) {
+		return args, fmt.Errorf("Title can not be empty")
+	}
+
+	// Description validation
+	if helper.IsEmpty(params.Description) {
+		return args, fmt.Errorf("Content can not be empty")
+	}
+
+	// Schedule ID validation
+	var scheduleID int64
+	var err error
+	if !helper.IsEmpty(params.ScheduleID) {
+		scheduleID, err = strconv.ParseInt(params.ScheduleID, 10, 64)
+		if err != nil {
+			return args, err
+		}
+	}
+
+	return createArgs{
+		Title:       params.Title,
+		Description: params.Description,
+		ScheduleID:  scheduleID,
+	}, nil
+
 }

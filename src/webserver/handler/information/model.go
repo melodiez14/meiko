@@ -16,3 +16,14 @@ type detailInfromationParams struct {
 type detailInfromationArgs struct {
 	ID int64
 }
+
+type createParams struct {
+	Title       string
+	Description string
+	ScheduleID  string
+}
+type createArgs struct {
+	Title       string
+	Description string
+	ScheduleID  int64
+}

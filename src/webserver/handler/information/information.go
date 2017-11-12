@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/course"
 	inf "github.com/melodiez14/meiko/src/module/information"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 )
@@ -67,6 +68,44 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		SetCode(http.StatusOK).
 		SetData(res))
 	return
+}
+
+// CreateHandler func ...
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := createParams{
+		Title:       r.FormValue("title"),
+		Description: r.FormValue("description"),
+		ScheduleID:  r.FormValue("schedule_did"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// Insert
+	err = inf.Insert(args.Title, args.Description, args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Information created successfully"))
+	return
+
 }
 
 // GetDetailHandler func ..
