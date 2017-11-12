@@ -27,3 +27,15 @@ type createArgs struct {
 	Description string
 	ScheduleID  int64
 }
+type updateParams struct {
+	ID          string
+	Title       string
+	Description string
+	ScheduleID  string
+}
+type upadateArgs struct {
+	ID          int64
+	Title       string
+	Description string
+	ScheduleID  int64
+}

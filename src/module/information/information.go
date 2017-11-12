@@ -150,3 +150,58 @@ func Insert(title, description string, scheduleID int64) error {
 	}
 	return nil
 }
+
+// Update func ...
+func Update(title, description string, scheduleID, informationID int64) error {
+	var data string
+	if scheduleID == 0 {
+		data = fmt.Sprintf(`
+			title = '%s',
+			description = '%s',
+			schedules_id = NULL,
+			updated_at = NOW()`, title, description)
+	} else {
+		data = fmt.Sprintf(`
+			title = '%s',
+			description = '%s',
+			schedules_id = %d,
+			updated_at = NOW()`, title, description, scheduleID)
+	}
+	query := fmt.Sprintf(`
+		UPDATE 
+			informations
+		SET
+			%s
+		WHERE
+			id = (%d)
+		;`, data, informationID)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+	row, err := result.RowsAffected()
+	if row == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+// IsInformationIDExist func ...
+func IsInformationIDExist(informationID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			informations
+		WHERE
+			id = (%d)
+		LIMIT 1
+		;`, informationID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}

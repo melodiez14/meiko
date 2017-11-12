@@ -9,6 +9,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/course"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	inf "github.com/melodiez14/meiko/src/module/information"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/alias"
@@ -106,6 +107,56 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetMessage("Information created successfully"))
 	return
 
+}
+
+// UpdateHandler func ...
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleUpdate, rg.RoleXUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := updateParams{
+		ID:          ps.ByName("id"),
+		Title:       r.FormValue("title"),
+		Description: r.FormValue("description"),
+		ScheduleID:  r.FormValue("schedule_id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	// check is shedule ID exit
+	if args.ScheduleID != 0 {
+		if !cs.IsExistScheduleID(args.ScheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Schedule ID does not exist"))
+			return
+		}
+	}
+	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Update information succesfully"))
+	return
 }
 
 // GetDetailHandler func ..
