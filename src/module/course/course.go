@@ -866,3 +866,21 @@ func GetGradeParametersIDByScheduleID(ScheduleID int64) ([]int64, error) {
 	}
 	return gradeParamsID, nil
 }
+
+// IsUserHasUploadedFile func ...
+func IsUserHasUploadedFile(assignmentID, userID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d) AND users_id =(%d)
+		LIMIT 1;`, assignmentID, userID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}

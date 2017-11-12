@@ -535,10 +535,36 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 // GetAssignmentHandler func ...
 func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Get assignment ID
-	// Check ngambi assignment lewat schedule
-	// //get grade Id from schedule
-	// //get schedule
-	//
+	params := readDetailParam{
+		AssignmentID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	if gradeParameterID == 0 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("Grade Parameter ID not found"))
+		return
+	}
+	scheduleID := cs.GetScheduleID(gradeParameterID)
+	if scheduleID == 0 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("You do not took this course"))
+		return
+	}
+	res, err := as.GetByAssignementID(args.AssignmentID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("Error"))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).SetData(res))
+	return
 }
 
 // GetUploadedDetailHandler func ...
@@ -547,7 +573,7 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	sess := r.Context().Value("User").(*auth.User)
 	params := readUploadedDetailParams{
 		UserID:       ps.ByName("id"),
-		ScheudleID:   ps.ByName("schedule_id"),
+		ScheduleID:   ps.ByName("schedule_id"),
 		AssignmentID: ps.ByName("assignment_id"),
 	}
 
@@ -563,7 +589,7 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 			SetCode(http.StatusBadRequest).AddError("Wrong User ID"))
 		return
 	}
-	if !usr.IsUserTakeSchedule(sess.ID, args.ScheudleID) {
+	if !usr.IsUserTakeSchedule(sess.ID, args.ScheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).AddError("Wrong Schedule ID"))
 		return
@@ -588,7 +614,7 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 	res := readUploadedDetailArgs{
 		UserID:       args.UserID,
-		ScheudleID:   args.ScheudleID,
+		ScheduleID:   args.ScheduleID,
 		AssignmentID: args.AssignmentID,
 		Name:         assignment.Name,
 		Description:  assignment.DescriptionAssignment,
@@ -601,6 +627,62 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 }
 
+//UpdateScoreByAdminHandler func ...
+func UpdateScoreByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	params := updateScoreParams{
+		ScheduleID:   ps.ByName("id"),
+		AssignmentID: ps.ByName("assignment_id"),
+		UserID:       r.FormValue("user_id"),
+		Score:        r.FormValue("score"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	if !as.IsAssignmentExistByGradeParameterID(args.AssignmentID, gradeParameterID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+	// User (Praktikan) took that course
+	if !cs.IsEnrolled(args.UserID, args.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("User do not took this course!"))
+		return
+	}
+	// check schedule have assignments
+	if !cs.IsUserHasUploadedFile(args.AssignmentID, args.UserID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("User has not uploaded yet assignment"))
+		return
+	}
+	tx := conn.DB.MustBegin()
+	err = as.UpdateScoreAssignment(args.AssignmentID, args.UserID, args.Score, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError("Can not update score"))
+		return
+	}
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Score Updated"))
+	return
+}
+
 // GetUploadedAssignmentByAdminHandler func ...
 func GetUploadedAssignmentByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
@@ -611,7 +693,7 @@ func GetUploadedAssignmentByAdminHandler(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	params := readUploadedAssignmentParams{
-		ScheudleID:   ps.ByName("id"),
+		ScheduleID:   ps.ByName("id"),
 		AssignmentID: ps.ByName("assignment_id"),
 		Page:         r.FormValue("pg"),
 		Total:        r.FormValue("ttl"),
@@ -624,7 +706,7 @@ func GetUploadedAssignmentByAdminHandler(w http.ResponseWriter, r *http.Request,
 	}
 	offset := (args.Page - 1) * args.Total
 	// Check schedule id
-	if !cs.IsExistScheduleID(args.ScheudleID) {
+	if !cs.IsExistScheduleID(args.ScheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Schdule ID does not exist"))

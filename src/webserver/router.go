@@ -81,11 +81,12 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
 	r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
-	r.POST("/api/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                          // update upload by users
-	r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))                              // create upload by user
-	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
-	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                 // read detail assignments definitions
-	r.GET("/api/v1/course/assignment/:schedule_id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))       // List assignments
+	r.POST("/api/admin/v1/assignment/score/:id/:assignment_id", auth.MustAuthorize(assignment.UpdateScoreByAdminHandler)) // update score
+	r.POST("/api/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                           // update upload by users
+	r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))                               // create upload by user
+	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler))  // detail user assignments
+	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                  // read detail assignments definitions
+	r.GET("/api/v1/course/assignment/:schedule_id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))        // List assignments
 
 	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
 	// ========================= End Assignment Handler ========================
