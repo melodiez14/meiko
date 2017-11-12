@@ -207,3 +207,16 @@ type readScheduleParameterResponse struct {
 	Percentage   float32 `json:"percentage"`
 	StatusChange uint8   `json:"status_change"`
 }
+
+type listStudentParams struct {
+	scheduleID string
+}
+
+type listStudentArgs struct {
+	scheduleID int64
+}
+
+type listStudentResponse struct {
+	UserIdentityCode int64  `json:"id"`
+	UserName         string `json:"name"`
+}

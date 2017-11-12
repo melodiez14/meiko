@@ -1,11 +1,11 @@
 package bot
 
 import (
+	"database/sql"
 	"fmt"
 	"html"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -31,20 +31,15 @@ func (params messageParams) validate() (messageArgs, error) {
 func (params loadHistoryParams) validate() (loadHistoryArgs, error) {
 
 	var args loadHistoryArgs
+	var id sql.NullInt64
 
-	timeInt, err := strconv.ParseInt(params.Time, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("Time must be unix format")
-	}
-	t := time.Unix(timeInt, 0)
-
-	isAfter := false
-	if params.Position == "after" {
-		isAfter = true
+	if !helper.IsEmpty(params.id) {
+		temp, err := strconv.ParseInt(params.id, 10, 64)
+		if err != nil {
+			return args, err
+		}
+		id = sql.NullInt64{Valid: true, Int64: temp}
 	}
 
-	return loadHistoryArgs{
-		Time:    t,
-		IsAfter: isAfter,
-	}, nil
+	return loadHistoryArgs{id: id}, nil
 }

@@ -90,6 +90,23 @@ func SelectAllAssistantID() ([]int64, error) {
 	return userIDs, nil
 }
 
+func SelectEnrolledStudentID(scheduleID int64) ([]int64, error) {
+	userIDs := []int64{}
+	query := fmt.Sprintf(`SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE 
+			status = (%d) AND
+			schedules_id = (%d);`, PStatusStudent, scheduleID)
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return userIDs, err
+	}
+
+	return userIDs, nil
+}
+
 func SelectAllName() ([]string, error) {
 
 	var names []string

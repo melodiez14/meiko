@@ -30,10 +30,16 @@ import (
 		Phone			= 082214467300
 		RoleGroupsID	= 0
 */
-func SelectByID(id []int64, column ...string) ([]User, error) {
+func SelectByID(id []int64, isSort bool, column ...string) ([]User, error) {
 	var user []User
 	var c []string
+	var sortQuery string
+
 	d := helper.Int64ToStringSlice(id)
+
+	if isSort {
+		sortQuery = "ORDER BY identity_code ASC"
+	}
 
 	if len(column) < 1 {
 		c = []string{
@@ -55,7 +61,13 @@ func SelectByID(id []int64, column ...string) ([]User, error) {
 	}
 	ids := strings.Join(d, ", ")
 	cols := strings.Join(c, ", ")
-	query := fmt.Sprintf(querySelectByID, cols, ids)
+	query := fmt.Sprintf(`
+		SELECT
+			%s
+		FROM
+			users
+		WHERE
+			id IN (%s) %s;`, cols, ids, sortQuery)
 	err := conn.DB.Select(&user, query)
 	if err != nil {
 		return user, err

@@ -1,6 +1,6 @@
 package bot
 
-import "time"
+import "database/sql"
 
 const (
 	intentAssistant   = "assistant"
@@ -46,20 +46,18 @@ type messageResponse struct {
 	Status    uint8       `json:"status"`
 	Text      string      `json:"original_text"`
 	TimeStamp int64       `json:"time"`
-	Response  interface{} `json:"response"`
+	Response  interface{} `json:"message"`
 }
 
 type loadHistoryParams struct {
-	Time     string
-	Position string
+	id string
 }
 
 type loadHistoryArgs struct {
-	Time    time.Time
-	IsAfter bool
+	id sql.NullInt64
 }
 
 type loadHistoryResponse struct {
 	TimeStamp int64       `json:"time"`
-	Response  interface{} `json:"response"`
+	Response  interface{} `json:"message"`
 }
