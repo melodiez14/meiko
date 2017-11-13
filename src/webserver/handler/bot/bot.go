@@ -126,7 +126,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	var resp []map[string]interface{}
+	resp := []map[string]interface{}{}
 	for _, val := range log {
 		if val.Status == bot.StatusUser {
 			resp = append(resp, map[string]interface{}{
