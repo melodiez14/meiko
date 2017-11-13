@@ -13,7 +13,7 @@ import (
 
 func handleAssistant(text string, userID int64) ([]map[string]interface{}, error) {
 
-	var args []map[string]interface{}
+	args := []map[string]interface{}{}
 	var filterCoursesRgx sql.NullString
 
 	params := sEntity{
@@ -81,7 +81,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 
 func handleInformation(text string, userID int64) ([]map[string]interface{}, error) {
 
-	var args []map[string]interface{}
+	args := []map[string]interface{}{}
 
 	params := sEntity{
 		text:   text,
