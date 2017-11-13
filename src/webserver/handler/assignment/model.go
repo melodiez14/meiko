@@ -120,7 +120,7 @@ type readUploadedAssignmentParams struct {
 	UserID       string
 	Page         string
 	Total        string
-	ScheudleID   string
+	ScheduleID   string
 	AssignmentID string
 	Name         string
 	Description  string
@@ -132,7 +132,7 @@ type readUploadedAssignmentArgs struct {
 	UserID       int64
 	Page         int64
 	Total        int64
-	ScheudleID   int64
+	ScheduleID   int64
 	AssignmentID int64
 	Name         string
 	Description  sql.NullString
@@ -142,7 +142,7 @@ type readUploadedAssignmentArgs struct {
 }
 type readUploadedDetailParams struct {
 	UserID       string
-	ScheudleID   string
+	ScheduleID   string
 	AssignmentID string
 	Name         string
 	Description  string
@@ -152,7 +152,7 @@ type readUploadedDetailParams struct {
 }
 type readUploadedDetailArgs struct {
 	UserID       int64
-	ScheudleID   int64
+	ScheduleID   int64
 	AssignmentID int64
 	Name         string
 	Description  sql.NullString
@@ -184,4 +184,23 @@ type listAssignmentsArgs struct {
 	DueDate      string
 	Name         string
 	Description  string
+}
+type readDetailParam struct {
+	AssignmentID string
+}
+type readDetailArgs struct {
+	AssignmentID int64
+}
+
+type updateScoreParams struct {
+	Score        string
+	UserID       string
+	ScheduleID   string
+	AssignmentID string
+}
+type updateScoreArgs struct {
+	Score        float32
+	UserID       int64
+	ScheduleID   int64
+	AssignmentID int64
 }

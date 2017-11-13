@@ -1,12 +1,13 @@
 package rolegroup
 
 const (
-	ModuleUser       = "users"
-	ModuleCourse     = "courses"
-	ModuleRole       = "roles"
-	ModuleAttendance = "attendances"
-	ModuleSchedule   = "schedules"
-	ModuleAssignment = "assignments"
+	ModuleUser        = "users"
+	ModuleCourse      = "courses"
+	ModuleRole        = "roles"
+	ModuleAttendance  = "attendances"
+	ModuleSchedule    = "schedules"
+	ModuleAssignment  = "assignments"
+	ModuleInformation = "informations"
 
 	RoleCreate  = "CREATE"
 	RoleRead    = "READ"

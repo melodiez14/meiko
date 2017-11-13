@@ -9,11 +9,14 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/course"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	inf "github.com/melodiez14/meiko/src/module/information"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 )
 
+// GetSummaryHandler func ...
 func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -62,6 +65,260 @@ func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 	}
 
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// CreateHandler func ...
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := createParams{
+		Title:       r.FormValue("title"),
+		Description: r.FormValue("description"),
+		ScheduleID:  r.FormValue("schedule_did"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// Insert
+	err = inf.Insert(args.Title, args.Description, args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Information created successfully"))
+	return
+
+}
+
+// UpdateHandler func ...
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleUpdate, rg.RoleXUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := updateParams{
+		ID:          ps.ByName("id"),
+		Title:       r.FormValue("title"),
+		Description: r.FormValue("description"),
+		ScheduleID:  r.FormValue("schedule_id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	// check is shedule ID exit
+	if args.ScheduleID != 0 {
+		if !cs.IsExistScheduleID(args.ScheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Schedule ID does not exist"))
+			return
+		}
+	}
+	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Update information succesfully"))
+	return
+}
+
+// GetDetailByAdminHandler func ...
+func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := detailInfromationParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	res, err := inf.GetByID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	id := res.ScheduleID.Int64
+	if id != 0 {
+		if !cs.IsEnrolled(sess.ID, id) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("You does not have permission"))
+			return
+		}
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusBadRequest).
+		SetData(res))
+	return
+
+}
+
+// GetListHandler func ...
+func GetListHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := readListParams{
+		Total: r.FormValue("ttl"),
+		Page:  r.FormValue("pg"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	offset := (args.Page - 1) * args.Total
+	result, err := inf.SelectByPage(scheduleID, args.Total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(result))
+	return
+}
+
+// DeleteHandler func ...
+func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleDelete, rg.RoleXDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := deleteParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// check is information id exist?
+	if !inf.IsInformationIDExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information ID does not exist"))
+		return
+	}
+	// delete query
+	err = inf.Delete(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Delete failed"))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Delete information successfully"))
+	return
+
+}
+
+// GetDetailHandler func ..
+func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := detailInfromationParams{
+		ID: ps.ByName("id"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).AddError(err.Error()))
+		return
+	}
+	scheduleID := inf.GetScheduleIDByID(args.ID)
+	if scheduleID != 0 {
+		if !course.IsEnrolled(sess.ID, scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("you do not have permission to this informations"))
+			return
+		}
+	}
+	res, err := inf.GetByID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Information does not exist"))
+		return
+	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))

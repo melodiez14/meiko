@@ -215,14 +215,14 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 		return args, fmt.Errorf("User ID cannot be empty")
 	}
 	// Schedule ID validation
-	if helper.IsEmpty(params.ScheudleID) {
+	if helper.IsEmpty(params.ScheduleID) {
 		return args, fmt.Errorf("Schedule ID cannot be empty")
 	}
 	userID, err := strconv.ParseInt(params.UserID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Can not convert user ID to int64")
 	}
-	scheduleID, err := strconv.ParseInt(params.ScheudleID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Can not convert schedule ID to int64")
 	}
@@ -236,7 +236,7 @@ func (params readUploadedAssignmentParams) validate() (readUploadedAssignmentArg
 	}
 	return readUploadedAssignmentArgs{
 		UserID:       userID,
-		ScheudleID:   scheduleID,
+		ScheduleID:   scheduleID,
 		AssignmentID: assignmentID,
 		Total:        total,
 		Page:         page,
@@ -250,14 +250,14 @@ func (params readUploadedDetailParams) validate() (readUploadedDetailArgs, error
 		return args, fmt.Errorf("User ID cannot be empty")
 	}
 	// Schedule ID validation
-	if helper.IsEmpty(params.ScheudleID) {
+	if helper.IsEmpty(params.ScheduleID) {
 		return args, fmt.Errorf("Schedule ID cannot be empty")
 	}
 	userID, err := strconv.ParseInt(params.UserID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Can not convert user ID to int64")
 	}
-	scheduleID, err := strconv.ParseInt(params.ScheudleID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Can not convert schedule ID to int64")
 	}
@@ -271,7 +271,7 @@ func (params readUploadedDetailParams) validate() (readUploadedDetailArgs, error
 	}
 	return readUploadedDetailArgs{
 		UserID:       userID,
-		ScheudleID:   scheduleID,
+		ScheduleID:   scheduleID,
 		AssignmentID: assignmentID,
 	}, nil
 
@@ -322,5 +322,61 @@ func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 		ScheduleID: id,
 		Page:       uint16(page),
 		Total:      uint16(total),
+	}, nil
+}
+func (params readDetailParam) validate() (readDetailArgs, error) {
+
+	var args readDetailArgs
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	id, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return readDetailArgs{
+		AssignmentID: id,
+	}, nil
+}
+func (params updateScoreParams) validate() (updateScoreArgs, error) {
+	var args updateScoreArgs
+	//Schedule ID validation
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Users ID validation
+	if helper.IsEmpty(params.UserID) {
+		return args, fmt.Errorf("User ID can not be empty")
+	}
+	userID, err := strconv.ParseInt(params.UserID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Score Validation
+	if helper.IsEmpty(params.Score) {
+		return args, fmt.Errorf("Score can not be empty")
+	}
+	score, err := strconv.ParseFloat(params.Score, 64)
+	if err != nil {
+		return args, err
+	}
+	return updateScoreArgs{
+		ScheduleID:   scheduleID,
+		AssignmentID: assignmentID,
+		UserID:       userID,
+		Score:        float32(score),
 	}, nil
 }
