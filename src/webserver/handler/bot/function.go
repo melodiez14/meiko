@@ -28,7 +28,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 
 	// get course entity
 	filterCourses := params.getCourse()
-	if len(filterCourses) > 1 {
+	if len(filterCourses) > 0 {
 		filterCoursesRgx = sql.NullString{
 			Valid:  true,
 			String: strings.Join(filterCourses, "|"),
