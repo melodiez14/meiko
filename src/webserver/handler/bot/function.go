@@ -52,6 +52,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 				"phone":   val.Phone,
 				"line_id": val.LineID,
 				"courses": []string{val.CourseName},
+				"image":   "/api/v1/files/error/not-found.png",
 			}
 			continue
 		}
@@ -67,6 +68,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 			"phone":   val.Phone,
 			"line_id": val.LineID,
 			"courses": courses,
+			"image":   "/api/v1/files/error/not-found.png",
 		}
 	}
 
