@@ -32,7 +32,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	intent, _ := getIntent(args.NormalizedText)
 
 	// convert intent into assistant
-	var data []map[string]interface{}
+	data := []map[string]interface{}{}
 	switch intent {
 	case intentAssistant:
 		data, err = handleAssistant(args.NormalizedText, sess.ID)
