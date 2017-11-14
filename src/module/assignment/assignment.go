@@ -544,7 +544,7 @@ func GetAllUserAssignmentByAssignmentID(AssignmentID, limit, offset int64) ([]De
 			asg.name,
 			asg.description,
 			asg.due_date
-			FROM
+		FROM
 			p_users_assignments pus
 		INNER JOIN
 			assignments asg

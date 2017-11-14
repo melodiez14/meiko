@@ -81,7 +81,7 @@ func (params signUpParams) validate() (signUpArgs, error) {
 // Function to validate email verification parameter to be used
 /*
 	@params:
-		Code			= required if resend is empty, numeric, characters=4	
+		Code			= required if resend is empty, numeric, characters=4
 		Email			= required, email format, 0<characters<45
 		IsResendCode	= optional, value=true or empty
 	@example:
@@ -157,12 +157,12 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	page, err := strconv.ParseInt(params.Page, 10, 64)
+	page, err := strconv.ParseUint(params.Page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	total, err := strconv.ParseInt(params.Total, 10, 64)
+	total, err := strconv.ParseUint(params.Total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}

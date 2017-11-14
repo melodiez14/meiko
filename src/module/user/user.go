@@ -705,3 +705,22 @@ func IsUserTakeSchedule(UserID, ScheduleID int64) bool {
 	}
 	return true
 }
+
+// SelectIDByIdentityCode ...
+func SelectIDByIdentityCode(identityCode []int64) ([]int64, error) {
+	var ids []int64
+	queryIdentity := strings.Join(helper.Int64ToStringSlice(identityCode), ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			users
+		WHERE
+			identity_code IN (%s)
+		;`, queryIdentity)
+	err := conn.DB.Select(&ids, query)
+	if err != nil {
+		return ids, err
+	}
+	return ids, nil
+}
