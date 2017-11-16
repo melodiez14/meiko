@@ -42,8 +42,10 @@ func loadRouter(r *httprouter.Router) {
 	// ======================== End User Handler ========================
 
 	// ======================== Rolegroup Handler =======================
+	// User Section
+	r.GET("/api/v1/role", auth.OptionalAuthorize(rolegroup.GetPrivilege))
 	// Admin section
-	r.GET("/api/v1/role", auth.OptionalAuthorize(auth.OptionalAuthorize(rolegroup.GetPrivilege)))
+	r.POST("/api/admin/v1/role", auth.MustAuthorize(rolegroup.CreateHandler))
 	// ====================== End Rolegroup Handler =====================
 
 	// ========================== File Handler ==========================

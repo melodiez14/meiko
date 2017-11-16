@@ -311,7 +311,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
-			roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+			roles = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 		}
 
 		sess = &auth.User{
@@ -399,7 +399,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 	}
 
 	sess = &auth.User{
@@ -690,7 +690,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 	}
 
 	sess = &auth.User{
@@ -961,7 +961,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 	}
 
 	sess = &auth.User{

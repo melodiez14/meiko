@@ -11,20 +11,6 @@ const (
 		OFFSET %d
 	`
 
-	insertQuery = `
-		INSERT INTO
-			rolegroups(
-				name,
-				created_at,
-				updated_at
-			)
-		VALUES (
-			('%s'),
-			NOW(),
-			NOW()
-		)
-	`
-
 	updateQuery = `
 		UPDATE
 			rolegroups
@@ -32,15 +18,5 @@ const (
 			name = ('%s')
 		WHERE
 			id = (%d)
-	`
-
-	queryGetModuleAccess = `
-		SELECT
-			modules,
-			ability
-		FROM
-			rolegroups_modules
-		WHERE
-			rolegroups_id = (%d)
 	`
 )
