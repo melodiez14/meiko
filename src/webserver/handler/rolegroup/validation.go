@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"strconv"
 	"strings"
 
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
@@ -55,4 +56,50 @@ func (params createParams) validate() (createArgs, error) {
 	}
 
 	return createArgs{name: name, modules: modules}, nil
+}
+
+func (params readParams) validate() (readArgs, error) {
+	var args readArgs
+
+	page, err := strconv.ParseUint(params.page, 10, 8)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	total, err := strconv.ParseUint(params.total, 10, 8)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	// should be positive number
+	if page < 1 || total < 1 {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	return readArgs{
+		page:  uint8(page),
+		total: uint8(total),
+	}, nil
+}
+
+func (params readDetailParams) validate() (readDetailArgs, error) {
+
+	var args readDetailArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return readDetailArgs{id: id}, nil
+}
+
+func (params deleteParams) validate() (deleteArgs, error) {
+
+	var args deleteArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return deleteArgs{id: id}, nil
 }

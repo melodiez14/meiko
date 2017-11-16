@@ -11,9 +11,39 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetByPage(page, offset uint16) ([]RoleGroup, error) {
+// GetByID ...
+func GetByID(id int64) (RoleGroup, error) {
+	var rolegroup RoleGroup
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name
+		FROM
+			rolegroups
+		WHERE
+			id = (%d)
+		LIMIT 1;
+	`, id)
+	err := conn.DB.Get(&rolegroup, query)
+	if err != nil {
+		return rolegroup, err
+	}
+
+	return rolegroup, nil
+}
+
+// SelectByPage ...
+func SelectByPage(limit, offset uint8) ([]RoleGroup, error) {
 	rolegroups := []RoleGroup{}
-	query := fmt.Sprintf(getQuery, page, offset)
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name
+		FROM
+			rolegroups
+		LIMIT %d
+		OFFSET %d;
+	`, limit, offset)
 	err := conn.DB.Select(&rolegroups, query)
 	if err != nil {
 		return nil, err
@@ -56,7 +86,7 @@ func GetAbilityList() []string {
 	}
 }
 
-func SelectModuleAccess(id int64) map[string][]string {
+func SelectModuleAccess(id int64) (map[string][]string, error) {
 
 	var module string
 	var ability string
@@ -73,7 +103,7 @@ func SelectModuleAccess(id int64) map[string][]string {
 	`, id)
 	rows, err := conn.DB.Query(query)
 	if err != nil {
-		return privilege
+		return privilege, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -83,7 +113,7 @@ func SelectModuleAccess(id int64) map[string][]string {
 		privilege[module] = append(privilege[module], ability)
 	}
 
-	return privilege
+	return privilege, nil
 }
 
 // IsExistName ...
@@ -166,6 +196,48 @@ func InsertModuleAccess(rolegroupsID int64, privileges map[string][]string, tx *
 			)
 			VALUES %s;
 	`, queryValue)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteModuleAccess(rolegroupID int64, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		DELETE FROM
+			rolegroups_modules
+		WHERE rolegroups_id = (%d);
+	`, rolegroupID)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Delete(rolegroupID int64, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		DELETE FROM
+			rolegroups
+		WHERE id = (%d);
+	`, rolegroupID)
 
 	var err error
 	if tx != nil {

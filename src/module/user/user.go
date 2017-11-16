@@ -724,3 +724,24 @@ func SelectIDByIdentityCode(identityCode []int64) ([]int64, error) {
 	}
 	return ids, nil
 }
+
+// IsExistRolegroupID ...
+func IsExistRolegroupID(rolegroupID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			users
+		WHERE
+			rolegroups_id = (%d)
+		LIMIT 1;
+	`, rolegroupID)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+
+	return true
+}

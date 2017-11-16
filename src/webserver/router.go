@@ -45,7 +45,10 @@ func loadRouter(r *httprouter.Router) {
 	// User Section
 	r.GET("/api/v1/role", auth.OptionalAuthorize(rolegroup.GetPrivilege))
 	// Admin section
+	r.GET("/api/admin/v1/role", auth.MustAuthorize(rolegroup.ReadHandler))
 	r.POST("/api/admin/v1/role", auth.MustAuthorize(rolegroup.CreateHandler))
+	r.GET("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.ReadDetailHandler))
+	r.POST("/api/admin/v1/role/:rolegroup_id/delete", auth.MustAuthorize(rolegroup.DeleteHandler))
 	// ====================== End Rolegroup Handler =====================
 
 	// ========================== File Handler ==========================
