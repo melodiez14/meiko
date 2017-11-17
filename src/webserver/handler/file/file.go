@@ -208,13 +208,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	file, err := fl.GetByTypeUserID(sess.ID, typ, fl.ColID, fl.ColExtension)
+	file, err := fl.GetByTypeUserID(sess.ID, typ, fl.ColID)
 	if err != nil {
 		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 
-	url := fmt.Sprintf("/api/v1/files/profile/%s.%s", file.ID, file.Extension)
+	url := fmt.Sprintf("/api/v1/files/profile/%s.jpg", file.ID)
 	http.Redirect(w, r, url, http.StatusSeeOther)
 	return
 }

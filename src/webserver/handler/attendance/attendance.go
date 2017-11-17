@@ -484,7 +484,7 @@ func ReadMeetingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	offset := (args.page - 1) * args.total
+	offset := uint64((args.page - 1)) * uint64(args.total)
 	meetings, err := atd.SelectMeetingByPage(args.scheduleID, args.total, offset)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).

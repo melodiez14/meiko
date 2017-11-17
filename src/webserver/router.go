@@ -54,7 +54,7 @@ func loadRouter(r *httprouter.Router) {
 
 	// ========================== File Handler ==========================
 	// User section
-	r.GET("/api/v1/files/:payload/:filename", file.GetFileHandler)
+	r.GET("/api/v1/file/:payload/:filename", file.GetFileHandler)
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfileHandler))
 	r.POST("/api/v1/image/profile", auth.MustAuthorize(file.UploadProfileImageHandler))
 	r.POST("/api/v1/file/assignment", auth.MustAuthorize(file.UploadAssignmentHandler))
@@ -65,8 +65,8 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
 	r.GET("/api/v1/course/assistant", auth.MustAuthorize(course.GetAssistantHandler))
 	// Admin section
-	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
+	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.ReadDetailHandler))                      //read
 	r.GET("/api/admin/v1/course/:schedule_id/parameter", auth.MustAuthorize(course.ReadScheduleParameterHandler)) //read
 	r.POST("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))                         //patch
@@ -74,6 +74,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
 	r.GET("/api/admin/v1/list/course/student", auth.MustAuthorize(course.ListEnrolledHandler))
+	r.GET("/api/admin/v1/coursefile/:schedule_id", auth.MustAuthorize(course.ReadScheduleFileHandler))
 	// ======================== End Course Handler ======================
 
 	// ======================= Attendance Handler =======================
