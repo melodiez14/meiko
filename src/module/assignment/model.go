@@ -72,3 +72,12 @@ type ListAssignments struct {
 	Assignment Assignment
 	Score      sql.NullFloat64
 }
+
+// UserAssignmentDetail struct ...
+type UserAssignmentDetail struct {
+	UserID      int64          `db:"identity_code"`
+	Name        string         `db:"name"`
+	Score       float32        `db:"score"`
+	Description sql.NullString `db:"description"`
+	CreatedAt   time.Time      `db:"updated_at"`
+}

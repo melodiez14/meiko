@@ -627,8 +627,106 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 }
 
-//UpdateScoreByAdminHandler func ...
-func UpdateScoreByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// GetDetailAssignmentByAdmin func ...
+func GetDetailAssignmentByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	// get schedule, assignment
+	params := detailAssignmentParams{
+		ScheduleID:   ps.ByName("id"),
+		AssignmentID: ps.ByName("assignment_id"),
+	}
+	// validate
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// is schedule_id match with assignments_id?
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	if !as.IsAssignmentExistByGradeParameterID(args.AssignmentID, gradeParameterID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+
+	// is user (Praktikan) took that course?
+	if !cs.IsEnrolled(sess.ID, args.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("you do not took this course!"))
+		return
+	}
+
+	// get assignment detail
+	assignments, err := as.GetAssignmentByID(args.AssignmentID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	res := detailAssignmentResponse{}
+	userList := []userAssignment{}
+	// is assingment must upload or not?
+	if as.IsAssignmentMustUpload(args.AssignmentID) {
+		userAssignments, err := as.SelectUserAssignmentsByStatusID(args.AssignmentID)
+		if err != nil {
+			fmt.Println(err.Error())
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		for _, value := range userAssignments {
+			userList = append(userList, userAssignment{
+				UserID: value.UserID,
+				Name:   value.Name,
+				Grade:  0,
+			})
+		}
+		res = detailAssignmentResponse{
+			Name:          assignments.Name,
+			Description:   assignments.Description,
+			DueDate:       assignments.DueDate,
+			IsCreateScore: false,
+			Praktikan:     userList,
+		}
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(res))
+		return
+	}
+	userAssignments, err := usr.SelectUserByScheduleID(args.ScheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	for _, value := range userAssignments {
+		userList = append(userList, userAssignment{
+			UserID: value.UserID,
+			Name:   value.Name,
+			Grade:  0,
+		})
+	}
+	res = detailAssignmentResponse{
+		Name:          assignments.Name,
+		Description:   assignments.Description,
+		DueDate:       assignments.DueDate,
+		IsCreateScore: true,
+		Praktikan:     userList,
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+
+}
+
+//ScoreHandler func ...
+func ScoreHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	params := updateScoreParams{
 		ScheduleID:   ps.ByName("id"),
 		AssignmentID: ps.ByName("assignment_id"),

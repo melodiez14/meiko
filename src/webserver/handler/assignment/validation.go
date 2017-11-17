@@ -380,3 +380,27 @@ func (params updateScoreParams) validate() (updateScoreArgs, error) {
 		Score:        float32(score),
 	}, nil
 }
+
+func (params detailAssignmentParams) validate() (detailAssignmentArgs, error) {
+	var args detailAssignmentArgs
+	//Schedule ID validation
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return detailAssignmentArgs{
+		ScheduleID:   scheduleID,
+		AssignmentID: assignmentID,
+	}, nil
+}

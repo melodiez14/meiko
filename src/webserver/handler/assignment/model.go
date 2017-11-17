@@ -204,3 +204,25 @@ type updateScoreArgs struct {
 	ScheduleID   int64
 	AssignmentID int64
 }
+type detailAssignmentParams struct {
+	ScheduleID   string
+	AssignmentID string
+}
+type detailAssignmentArgs struct {
+	ScheduleID   int64
+	AssignmentID int64
+}
+
+type userAssignment struct {
+	UserID int64   `json:"user_id"`
+	Name   string  `json:"name"`
+	Grade  float32 `json:"grade"`
+}
+
+type detailAssignmentResponse struct {
+	Name          string         `json:"name"`
+	Description   sql.NullString `json:"description"`
+	DueDate       time.Time      `json:"due_date"`
+	IsCreateScore bool           `json:"is_create_score"`
+	Praktikan     []userAssignment
+}

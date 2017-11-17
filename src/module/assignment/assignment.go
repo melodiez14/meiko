@@ -271,6 +271,30 @@ func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]
 	return result, nil
 }
 
+// GetAssignmentByID func ...
+func GetAssignmentByID(assignmentID int64) (Assignment, error) {
+	var assignment Assignment
+	query := fmt.Sprintf(`
+		SELECT
+			asg.id,
+			asg.name,
+			asg.status,
+			asg.description,
+			asg.grade_parameters_id,
+			asg.due_date
+		FROM
+			assignments asg
+		WHERE
+			asg.id = (%d)
+		LIMIT 1;`, assignmentID)
+
+	err := conn.DB.Get(&assignment, query)
+	if err != nil {
+		return assignment, err
+	}
+	return assignment, nil
+}
+
 // GetByAssignementID func ...
 func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
 
@@ -610,4 +634,50 @@ func UpdateScoreAssignment(assignmentID, userID int64, score float32, tx *sqlx.T
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+// IsAssignmentMustUpload func ...
+func IsAssignmentMustUpload(assingmentID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			assignments
+		WHERE
+			id=(%d) AND status=1
+		LIMIT 1;
+		`, assingmentID)
+
+	err := conn.DB.Get(&x, query)
+	if err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}
+
+// SelectUserAssignmentsByStatusID func ..
+func SelectUserAssignmentsByStatusID(assignmentID int64) ([]UserAssignmentDetail, error) {
+	var assignment []UserAssignmentDetail
+	query := fmt.Sprintf(`
+			SELECT
+				usr.identity_code,
+				usr.name,
+				pas.score,
+				pas.description,
+				pas.updated_at
+			FROM
+				p_users_assignments pas
+			INNER JOIN
+				users usr
+			ON
+				pas.users_id=usr.id
+			WHERE
+				pas.assignments_id = (%d)
+				`, assignmentID)
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return assignment, err
+	}
+	return assignment, nil
 }
