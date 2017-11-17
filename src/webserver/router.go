@@ -48,6 +48,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/role", auth.MustAuthorize(rolegroup.ReadHandler))
 	r.POST("/api/admin/v1/role", auth.MustAuthorize(rolegroup.CreateHandler))
 	r.GET("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.ReadDetailHandler))
+	r.POST("/api/admin/v1/role/:rolegroup_id/update", auth.MustAuthorize(rolegroup.UpdateHandler))
 	r.POST("/api/admin/v1/role/:rolegroup_id/delete", auth.MustAuthorize(rolegroup.DeleteHandler))
 	// ====================== End Rolegroup Handler =====================
 

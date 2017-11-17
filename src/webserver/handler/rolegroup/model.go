@@ -26,8 +26,9 @@ type readArgs struct {
 }
 
 type readResponse struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	IsDeleteAllow bool   `json:"is_delete_allow"`
 }
 
 type readDetailParams struct {
@@ -50,4 +51,16 @@ type deleteParams struct {
 
 type deleteArgs struct {
 	id int64
+}
+
+type updateParams struct {
+	id      string
+	name    string
+	modules string
+}
+
+type updateArgs struct {
+	id      int64
+	name    string
+	modules map[string][]string
 }

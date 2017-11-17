@@ -745,3 +745,21 @@ func IsExistRolegroupID(rolegroupID int64) bool {
 
 	return true
 }
+
+// SelectDistinctRolegroupID ...
+func SelectDistinctRolegroupID() ([]int64, error) {
+	var rolegroupsID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			DISTINCT rolegroups_id
+		FROM
+			users
+		WHERE rolegroups_id IS NOT NULL;
+	`)
+	err := conn.DB.Select(&rolegroupsID, query)
+	if err != nil {
+		return rolegroupsID, err
+	}
+
+	return rolegroupsID, nil
+}

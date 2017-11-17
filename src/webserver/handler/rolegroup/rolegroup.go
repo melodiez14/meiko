@@ -2,7 +2,6 @@ package rolegroup
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -103,7 +102,6 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	rolegroupID, err := rg.Insert(args.name, tx)
 	if err != nil {
-		fmt.Println(err.Error())
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -159,11 +157,24 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	rolegroupID, err := usr.SelectDistinctRolegroupID()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
 	resp := []readResponse{}
 	for _, val := range roles {
+		isDeleteAllow := true
+		if helper.Int64InSlice(val.ID, rolegroupID) {
+			isDeleteAllow = false
+		}
+
 		resp = append(resp, readResponse{
-			ID:   val.ID,
-			Name: val.Name,
+			ID:            val.ID,
+			Name:          val.Name,
+			IsDeleteAllow: isDeleteAllow,
 		})
 	}
 
@@ -200,8 +211,7 @@ func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		if err == sql.ErrNoRows {
 			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusNotFound).
-				AddError("Not Found"))
+				SetCode(http.StatusNoContent))
 			return
 		}
 
@@ -251,7 +261,13 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("Invalid Request"))
 		return
 	}
-	fmt.Println(1)
+
+	if !rg.IsExist(args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+
 	if usr.IsExistRolegroupID(args.id) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusConflict).
@@ -259,7 +275,6 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	fmt.Println(2)
 	tx := conn.DB.MustBegin()
 	err = rg.DeleteModuleAccess(args.id, tx)
 	if err != nil {
@@ -268,7 +283,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	fmt.Println(3)
+
 	err = rg.Delete(args.id, tx)
 	if err != nil {
 		tx.Rollback()
@@ -276,10 +291,76 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	fmt.Println(4)
+
 	tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Rolegroup successfully deleted"))
+	return
+}
+
+// UpdateHandler ...
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXUpdate, rg.RoleUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := updateParams{
+		id:      ps.ByName("rolegroup_id"),
+		name:    r.FormValue("name"),
+		modules: r.FormValue("modules"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if !rg.IsExist(args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+
+	tx := conn.DB.MustBegin()
+	err = rg.Update(args.id, args.name, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = rg.DeleteModuleAccess(args.id, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(args.modules) > 1 {
+		err = rg.InsertModuleAccess(args.id, args.modules, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Rolegroup has been updated"))
 	return
 }

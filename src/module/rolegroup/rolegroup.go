@@ -52,15 +52,33 @@ func SelectByPage(limit, offset uint8) ([]RoleGroup, error) {
 	return rolegroups, nil
 }
 
-func Update(id int64, name string) error {
-	query := fmt.Sprintf(updateQuery, name, id)
-	_, err := conn.DB.Exec(query)
+// Update ...
+func Update(id int64, name string, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE
+			rolegroups
+		SET
+			name = ('%s'),
+			updated_at = NOW()
+		WHERE
+			id = (%d)	
+	`, name, id)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
+// GetModuleList ...
 func GetModuleList() []string {
 	return []string{
 		ModuleUser,
@@ -73,6 +91,7 @@ func GetModuleList() []string {
 	}
 }
 
+// GetAbilityList ...
 func GetAbilityList() []string {
 	return []string{
 		RoleRead,
@@ -86,6 +105,7 @@ func GetAbilityList() []string {
 	}
 }
 
+// SelectModuleAccess ...
 func SelectModuleAccess(id int64) (map[string][]string, error) {
 
 	var module string
@@ -129,6 +149,27 @@ func IsExistName(name string) bool {
 			name = ('%s')
 		LIMIT 1;
 	`, name)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsExist ...
+func IsExist(rolegroupID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			rolegroups
+		WHERE
+			id = (%d)
+		LIMIT 1;
+	`, rolegroupID)
 
 	err := conn.DB.Get(&x, query)
 	if err != nil {
