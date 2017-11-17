@@ -12,6 +12,24 @@ import (
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
+// Function to validate signUp parameter to be used
+/*
+	@params:
+		IdentityCode= required, numeric, characters=12
+		Name	= required, alphaspace, 0<characters<50
+		Email	= required, email format, 0<characters<45
+		Password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		IdentityCode	= 140810140060
+		Name			= khairil azmi ashari
+		Email			= khairilazmiashari@gmail.com
+		Password		= Khairil14001
+	@return:
+		IdentityCode	= 140810140060
+		Name			= khairil azmi ashari
+		Email			= khairilazmiashari@gmail.com
+		Password		= Khairil14001
+*/
 func (params signUpParams) validate() (signUpArgs, error) {
 
 	var args signUpArgs
@@ -60,6 +78,21 @@ func (params signUpParams) validate() (signUpArgs, error) {
 	return args, nil
 }
 
+// Function to validate email verification parameter to be used
+/*
+	@params:
+		Code			= required if resend is empty, numeric, characters=4
+		Email			= required, email format, 0<characters<45
+		IsResendCode	= optional, value=true or empty
+	@example:
+		Code			= 123456
+		Email			= khairil_azmi_ashari@yahoo.com
+		IsresendCode	= true
+	@return:
+		Code			= 123456
+		Email			= khairil_azmi_ashari@yahoo.com
+		IsresendCode	= true
+*/
 func (params emailVerificationParams) validate() (emailVerificationArgs, error) {
 
 	var args emailVerificationArgs
@@ -105,6 +138,18 @@ func (params emailVerificationParams) validate() (emailVerificationArgs, error) 
 	return args, nil
 }
 
+// Function to validate verified parameter to be used.
+/*
+	@params:
+		Page	= required, positive numeric
+		Total	= required, positive numeric
+	@example:
+		Page	= 35
+		Total	= 60
+	@return:
+		Page	= 35
+		Total	= 60
+*/
 func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 
 	var args getVerifiedArgs
@@ -112,12 +157,12 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	page, err := strconv.ParseInt(params.Page, 10, 64)
+	page, err := strconv.ParseUint(params.Page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	total, err := strconv.ParseInt(params.Total, 10, 64)
+	total, err := strconv.ParseUint(params.Total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
@@ -134,6 +179,18 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 	return args, nil
 }
 
+// Function to validate activation paramater to be used
+/*
+	@params:
+		identity		= required, numeric, characters=12
+		status			= required, string
+	@example:
+		IdentityCode	= 140810140016
+		status			= active or inactive
+	@return:
+		IdentityCode	= 140810140060
+		Status			= actice or inactive
+*/
 func (params activationParams) validate() (activationArgs, error) {
 
 	var args activationArgs
@@ -165,6 +222,18 @@ func (params activationParams) validate() (activationArgs, error) {
 	return args, nil
 }
 
+// Function to validate sign in paramater to be used
+/*
+	@params:
+		Email	= required, email format, 0<characters<45
+		Password= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		Email	= risal.falah@gmail.com
+		Password= Qwerty123
+	@return:
+		Email	= risal.falah@gmail.com
+		Password= Qwerty123
+*/
 func (params signInParams) validate() (signInArgs, error) {
 
 	var args signInArgs
@@ -197,6 +266,33 @@ func (params signInParams) validate() (signInArgs, error) {
 	return args, nil
 }
 
+// Function to validate update profile parameter to be used
+/*
+	@params:
+		IdentityCode= required, numeric, characters=12
+		Email	= required, email format, 0<characters<45
+		Name	= required, alphaspace, 0<characters<50
+		Note	= optional, 0<character<100
+		Gender	= optional, male or female
+		Phone	= optional, numeric, 10<=characters<=12
+		Line_id	= optional, 0<characters<=45
+	@example:
+		IdentityCode	= 140810140060
+		Email			= khairilazmiashari@gmail.com
+		Name			= khairil azmi ashari
+		Note			= nothing is impossible
+		Gender			= male or female
+		Phone			= 082214467300
+		Lide_id			= khaazas
+	@return:
+		IdentityCode	= 140810140060
+		Email			= khairilazmiashari@gmail.com
+		Name			= khairil azmi ashari
+		Note			= nothing is impossible
+		Gender			= male or female
+		Phone			= 082214467300
+		Lide_id			= khaazas
+*/
 func (params updateProfileParams) validate() (updateProfileArgs, error) {
 
 	var args updateProfileArgs
@@ -279,6 +375,27 @@ func (params updateProfileParams) validate() (updateProfileArgs, error) {
 	return args, nil
 }
 
+// Function to validate change password parameter to be used
+/*
+	@params:
+		IdentityCode	= required, numeric, 10<=characters<=18
+		Email			= required, email format, 0<characters<45
+		OldPassword		= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+		Password		= required, minimum 1 uppercase, lowercase, numeric, characters>=6
+		ConfirmPassword	= required, should be same as password
+	@example:
+		IdentityCode	= 140810140016
+		Email			= khairilazmi@gmail.com
+		OldPassword		= Qwerty123
+		Password		= Qwerty321
+		ConfirmPassword	= Qwerty321
+	@return:
+		IdentityCode	= 140810140016
+		Email			= khairilazmi@gmail.com
+		OldPassword		= Qwerty123
+		Password		= Qwerty321
+		ConfirmPassword	= Qwerty321
+*/
 func (params changePasswordParams) validate() (changePasswordArgs, error) {
 
 	var args changePasswordArgs
@@ -337,6 +454,24 @@ func (params changePasswordParams) validate() (changePasswordArgs, error) {
 	return args, nil
 }
 
+// Function to validate forgot password parameter to be used
+/*
+	@params:
+		Email		= required, email format, 0<characters<45
+		IsSendCode	= optional, value=true or empty
+		Code		= required if resend is empty, numeric, characters=4
+		Password	= optional if code is empty, minimum 1 uppercase, lowercase, numeric, characters>=6
+	@example:
+		Email		= risal.falah@gmail.com
+		IsSendCode	= true
+		Code		= 1234 or empty if resend is true
+		Password	= Qwerty123
+	@return:
+		Email		= risal.falah@gmail.com
+		IsSendCode	= true
+		Code		= 1234 or empty if resend is true
+		Password	= Qwerty123
+*/
 func (params forgotParams) validate() (forgotArgs, error) {
 
 	var args forgotArgs
@@ -403,6 +538,15 @@ func (params forgotParams) validate() (forgotArgs, error) {
 	return args, nil
 }
 
+// Function to validate detail information parameter to be used
+/*
+	@params:
+		IdentityCode= required, numeric, characters=12
+	@example:
+		IdentityCode	= 140810140060
+	@return:
+		IdentityCode	= 140810140060
+*/
 func (params detailParams) validate() (detailArgs, error) {
 	var args detailArgs
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
@@ -416,6 +560,36 @@ func (params detailParams) validate() (detailArgs, error) {
 	return args, nil
 }
 
+// Function to validate update profile parameter to be used
+/*
+	@params:
+		IdentityCode	= required, numeric, characters=12
+		Email			= required, email format, 0<characters<45
+		Name			= required, alphaspace, 0<characters<50
+		Note			= optional, 0<character<100
+		Gender			= optional, male or female
+		Phone			= optional, numeric, 10<=characters<=12
+		Line_id			= optional, 0<characters<=45
+		Status			= required, actived or inactived
+	@example:
+		IdentityCode	= 140810140060
+		Name 			= Khairil Azmi Ashari
+		Note			= nothing is impossible
+		Email			= khairilazmiashari@gmail.com
+		Gender 			= male or female
+		Phone 			= 082214467300
+		Line_id 		= khaazas
+		Status			= actived
+	@return:
+		IdentityCode	= 140810140060
+		Name 			= Khairil Azmi Ashari
+		Note			= nothing is impossible
+		Email			= khairilazmiashari@gmail.com
+		Gender 			= male or female
+		Phone 			= 082214467300
+		Line_id 		= khaazas
+		Status			= actived
+*/
 func (params updateParams) validate() (updateArgs, error) {
 
 	var args updateArgs
@@ -511,6 +685,15 @@ func (params updateParams) validate() (updateArgs, error) {
 	return args, nil
 }
 
+// Function to validate delete profile parameter to be used
+/*
+	@params:
+		IdentityCode= required, numeric, characters=12
+	@example:
+		IdentityCode	= 140810140060
+	@return:
+		IdentityCode	= 140810140060
+*/
 func (params deleteParams) validate() (deleteArgs, error) {
 	var args deleteArgs
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)

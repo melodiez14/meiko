@@ -1,32 +1,28 @@
 package bot
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	nw "github.com/jinzhu/now"
 )
 
-func (params *sEntity) getTime() ([]time.Time, error) {
+func (params *sEntity) getTime() []time.Time {
 
 	date := []time.Time{}
 	now := time.Now()
-	// a go pattern
-	pattern := map[string]int64{
-		`\d\s*hari\s(yang|\s)*lalu`:      (-1) * int64(time.Hour) * 24,
-		`\d\s*minggu\s(yang|\s)*lalu`:    (-1) * int64(time.Hour) * 24 * 7,
-		`\d\s*bulan\s(yang|\s)*lalu`:     (-1) * int64(time.Hour) * 24 * 30,
-		`\d\s*hari\s(yang|\s)*kemarin`:   (-1) * int64(time.Hour) * 24,
-		`\d\s*minggu\s(yang|\s)*kemarin`: (-1) * int64(time.Hour) * 24 * 7,
-		`\d\s*bulan\s(yang|\s)*kemarin`:  (-1) * int64(time.Hour) * 24 * 30,
-		`\d\s*hari\s(yang|\s)*kemaren`:   (-1) * int64(time.Hour) * 24,
-		`\d\s*minggu\s(yang|\s)*kemaren`: (-1) * int64(time.Hour) * 24 * 7,
-		`\d\s*bulan\s(yang|\s)*kemaren`:  (-1) * int64(time.Hour) * 24 * 30,
+
+	// days 2 time pattern
+	patternDays2Time := []string{
+		`\d\s*hari\s(yang|\s)*lalu`,
+		`\d\s*hari\s(yang|\s)*kemarin`,
+		`\d\s*hari\s(yang|\s)*kemaren`,
 	}
 
-	for i, val := range pattern {
-		rgx := regexp.MustCompile(i)
+	for _, val := range patternDays2Time {
+		rgx := regexp.MustCompile(val)
 		if rgx.MatchString(params.text) {
 			// get the string
 			str := rgx.FindAllString(params.text, -1)
@@ -38,9 +34,78 @@ func (params *sEntity) getTime() ([]time.Time, error) {
 				// convert the string into integer
 				digit, _ := strconv.ParseInt(dt, 10, 64)
 				// times the matched integer with negative time duration
-				sub := digit * val
+				sub := digit * ((-1) * int64(time.Hour) * 24 * 1)
 				// substract datetime now with time duration
 				date = append(date, now.Add(time.Duration(sub)))
+				// replace the selected string from with (date)
+				params.text = strings.Replace(params.text, vall, "(date)", -1)
+			}
+		}
+	}
+
+	// week 2 time pattern
+	patternWeek2Time := []string{
+		`\d\s*minggu\s(yang|\s)*kemarin`,
+		`\d\s*minggu\s(yang|\s)*lalu`,
+		`\d\s*minggu\s(yang|\s)*kemaren`,
+	}
+
+	for _, val := range patternWeek2Time {
+		rgx := regexp.MustCompile(val)
+		if rgx.MatchString(params.text) {
+			// get the string
+			str := rgx.FindAllString(params.text, -1)
+			for _, vall := range str {
+				// change regex into \d
+				rgx = regexp.MustCompile(`\d`)
+				// find numeric in the selected pattern
+				dt := rgx.FindString(vall)
+				// convert the string into integer
+				digit, _ := strconv.ParseInt(dt, 10, 64)
+				// times the matched integer with negative time duration
+				sub := digit * ((-1) * int64(time.Hour) * 24 * 7)
+				// get time of last week
+				lastWeekTime := now.Add(time.Duration(sub))
+				// convert get isoweek starttime
+				startTime := nw.New(lastWeekTime).BeginningOfWeek()
+				endTime := nw.New(startTime).EndOfWeek()
+				// substract datetime now with time duration
+				date = append(date, startTime)
+				date = append(date, endTime)
+				// replace the selected string from with (date)
+				params.text = strings.Replace(params.text, vall, "(date)", -1)
+			}
+		}
+	}
+
+	patternMonth2Time := []string{
+		`\d\s*bulan\s(yang|\s)*lalu`,
+		`\d\s*bulan\s(yang|\s)*kemarin`,
+		`\d\s*bulan\s(yang|\s)*kemaren`,
+	}
+
+	for _, val := range patternMonth2Time {
+		rgx := regexp.MustCompile(val)
+		if rgx.MatchString(params.text) {
+			// get the string
+			str := rgx.FindAllString(params.text, -1)
+			for _, vall := range str {
+				// change regex into \d
+				rgx = regexp.MustCompile(`\d`)
+				// find numeric in the selected pattern
+				dt := rgx.FindString(vall)
+				// convert the string into integer
+				digit, _ := strconv.ParseInt(dt, 10, 64)
+				// times the matched integer with negative time duration
+				sub := digit * ((-1) * int64(time.Hour) * 24 * 30)
+				// get time of last week
+				lastMonthTime := now.Add(time.Duration(sub))
+				// convert get lastmonthtime starttime
+				startTime := nw.New(lastMonthTime).BeginningOfMonth()
+				endTime := nw.New(startTime).EndOfMonth()
+				// substract datetime now with time duration
+				date = append(date, startTime)
+				date = append(date, endTime)
 				// replace the selected string from with (date)
 				params.text = strings.Replace(params.text, vall, "(date)", -1)
 			}
@@ -80,19 +145,20 @@ func (params *sEntity) getTime() ([]time.Time, error) {
 		}
 	}
 
-	if len(date) > 2 {
-		return date, fmt.Errorf("Sorry this bot can only detect at least 2 date")
-	}
-
-	if len(date) == 2 {
-		if date[0].After(date[1]) {
-			temp := date[0]
-			date[0] = date[1]
-			date[1] = temp
+	if len(date) > 1 {
+		startDate := date[0]
+		endDate := date[0]
+		for _, val := range date {
+			if val.Before(startDate) {
+				startDate = val
+			} else if val.After(endDate) {
+				endDate = val
+			}
 		}
+		date = []time.Time{startDate, endDate}
 	}
 
-	return date, nil
+	return date
 }
 
 func (params *sEntity) getDay() []int8 {

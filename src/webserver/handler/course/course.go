@@ -705,7 +705,7 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 	var users []user.User
 	if len(uIDs) > 0 {
-		users, err = user.SelectByID(uIDs, user.ColEmail, user.ColPhone, user.ColName)
+		users, err = user.SelectByID(uIDs, false, user.ColEmail, user.ColPhone, user.ColName)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
@@ -872,6 +872,62 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 			Type:         val.Type,
 			Percentage:   val.Percentage,
 			StatusChange: val.StatusChange,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+func ListEnrolledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleSchedule, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := listStudentParams{
+		scheduleID: r.FormValue("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Bad Request"))
+		return
+	}
+
+	studentIDs, err := cs.SelectEnrolledStudentID(args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resp := []listStudentResponse{}
+	if len(studentIDs) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	users, err := user.SelectByID(studentIDs, true, user.ColIdentityCode, user.ColName)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	for _, val := range users {
+		resp = append(resp, listStudentResponse{
+			UserIdentityCode: val.IdentityCode,
+			UserName:         val.Name,
 		})
 	}
 

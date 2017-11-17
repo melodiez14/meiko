@@ -142,24 +142,47 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 
 	args, err := params.validate()
 	if err != nil {
-		w.WriteHeader(404)
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 
+	// get data from db for specific payload
+	var fn, ext string
+	var fileInfo fl.File
+	if args.payload == "assignment" {
+		fn, ext, err = helper.ExtractExtension(args.filename)
+		if err != nil {
+			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		}
+
+		fileInfo, err = fl.GetByIDExt(fn, ext, fl.ColName, fl.ColExtension, fl.ColMime)
+		if err != nil {
+			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+			return
+		}
+	}
+
+	// load file from disk
 	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", args.payload, args.filename)
 	file, err := os.Open(path)
 	if err != nil {
-		w.WriteHeader(404)
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 	defer file.Close()
 
-	// set header
+	// set header for response
 	switch args.payload {
 	case "profile":
 		w.Header().Set("Content-Type", "image/jpeg")
+	case "assignment":
+		cntDisposition := fmt.Sprintf(`attachment; filename="%s.%s"`, fileInfo.Name, fileInfo.Extension)
+		w.Header().Set("Content-Type", fileInfo.Mime)
+		w.Header().Set("Content-Disposition", cntDisposition)
+	case "error":
+		w.Header().Set("Content-Type", "image/jpeg")
 	default:
-		w.WriteHeader(404)
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 
@@ -181,13 +204,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	case "pl_t":
 		typ = fl.TypProfPictThumb
 	default:
-		w.WriteHeader(404)
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 
 	file, err := fl.GetByTypeUserID(sess.ID, typ, fl.ColID, fl.ColExtension)
 	if err != nil {
-		w.WriteHeader(404)
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 

@@ -45,9 +45,32 @@ func SelectScheduleIDByUserID(userID int64, status ...int8) ([]int64, error) {
 	return scheduleIDs, nil
 }
 
+// CountEnrolled ...
+func CountEnrolled(usersID []int64, scheduleID int64) (int, error) {
+	var count int
+	ids := helper.Int64ToStringSlice(usersID)
+	queryID := strings.Join(ids, ", ")
+	query := fmt.Sprintf("SELECT COUNT(*) FROM p_users_schedules WHERE users_id IN (%s) AND schedules_id = (%d) AND status = (%d) LIMIT 1", queryID, scheduleID, PStatusStudent)
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
 func IsEnrolled(userID, scheduleID int64) bool {
 	var x string
-	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) LIMIT 1", userID, scheduleID)
+	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) AND status = (%d) LIMIT 1", userID, scheduleID, PStatusStudent)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func IsAssistant(userID, scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) AND status = (%d) LIMIT 1;", userID, scheduleID, PStatusAssistant)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
@@ -82,6 +105,23 @@ func SelectAllAssistantID() ([]int64, error) {
 		p_users_schedules
 	WHERE 
 		status = (%d);`, PStatusAssistant)
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return userIDs, err
+	}
+
+	return userIDs, nil
+}
+
+func SelectEnrolledStudentID(scheduleID int64) ([]int64, error) {
+	userIDs := []int64{}
+	query := fmt.Sprintf(`SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE 
+			status = (%d) AND
+			schedules_id = (%d);`, PStatusStudent, scheduleID)
 	err := conn.DB.Select(&userIDs, query)
 	if err != nil && err != sql.ErrNoRows {
 		return userIDs, err
