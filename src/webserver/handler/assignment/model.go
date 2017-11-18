@@ -226,3 +226,23 @@ type detailAssignmentResponse struct {
 	IsCreateScore bool           `json:"is_create_score"`
 	Praktikan     []userAssignment
 }
+type createScoreParams struct {
+	ScheduleID   string
+	AssignmentID string
+	Name         string
+	Description  string
+	Users        string
+}
+type createScoreArgs struct {
+	ScheduleID   int64
+	AssignmentID int64
+	Name         string
+	Description  sql.NullString
+	IdentityCode []int64
+	Score        []float32
+}
+type student struct {
+	IdentityCode int64   `json:"identity_code"`
+	Name         string  `json:"name"`
+	Score        float32 `json:"score"`
+}

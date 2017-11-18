@@ -62,6 +62,7 @@ func IsEnrolled(userID, scheduleID int64) bool {
 	var x string
 	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) AND status = (%d) LIMIT 1", userID, scheduleID, PStatusStudent)
 	err := conn.DB.Get(&x, query)
+	fmt.Println(query)
 	if err != nil {
 		return false
 	}
@@ -920,6 +921,33 @@ func IsUserHasUploadedFile(assignmentID, userID int64) bool {
 		LIMIT 1;`, assignmentID, userID)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
+		return false
+	}
+	return true
+}
+
+// IsAllUsersEnrolled func ...
+func IsAllUsersEnrolled(scheduleID int64, usersID []int64) bool {
+	userIDs := []int64{}
+	var userList []string
+	for _, value := range usersID {
+		userList = append(userList, fmt.Sprintf("%d", value))
+	}
+	queryUserList := strings.Join(userList, ",")
+	query := fmt.Sprintf(`SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE 
+			status = (%d) AND
+			schedules_id = (%d) AND users_id IN(%s);`, PStatusStudent, scheduleID, queryUserList)
+
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return false
+	}
+
+	if len(userIDs) != len(usersID) {
 		return false
 	}
 	return true

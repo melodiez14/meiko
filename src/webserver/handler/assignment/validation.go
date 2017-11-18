@@ -2,6 +2,7 @@ package assignment
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html"
 	"strconv"
@@ -403,4 +404,55 @@ func (params detailAssignmentParams) validate() (detailAssignmentArgs, error) {
 		ScheduleID:   scheduleID,
 		AssignmentID: assignmentID,
 	}, nil
+}
+
+func (params createScoreParams) validate() (createScoreArgs, error) {
+	args := createScoreArgs{}
+	params = createScoreParams{
+		ScheduleID:   params.ScheduleID,
+		AssignmentID: params.AssignmentID,
+		Users:        params.Users,
+	}
+
+	//Schedule ID validation
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Users validation
+	var users []int64
+	var score []float32
+	if !helper.IsEmpty(params.Users) {
+		var std []student
+		err := json.Unmarshal([]byte(params.Users), &std)
+
+		if err != nil {
+			return args, err
+		}
+		for _, val := range std {
+			users = append(users, val.IdentityCode)
+			score = append(score, val.Score)
+		}
+	}
+
+	return createScoreArgs{
+		ScheduleID:   scheduleID,
+		AssignmentID: assignmentID,
+		IdentityCode: users,
+		Score:        score,
+	}, nil
+
 }

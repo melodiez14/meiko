@@ -134,6 +134,7 @@ func (params createMeetingParams) validate() (createMeetingArgs, error) {
 	if !helper.IsEmpty(params.users) {
 		var std []student
 		err = json.Unmarshal([]byte(params.users), &std)
+		fmt.Println(std)
 		if err != nil {
 			return args, err
 		}

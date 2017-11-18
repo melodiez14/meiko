@@ -627,13 +627,86 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 }
 
+// CreateScoreHandler func ...
+func CreateScoreHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	// get schedule, assignment
+	params := createScoreParams{
+		ScheduleID:   ps.ByName("schedule_id"),
+		AssignmentID: ps.ByName("assignment_id"),
+		Users:        r.FormValue("users"),
+	}
+	// validate
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// is schedule_id match with assignments_id?
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	if !as.IsAssignmentExistByGradeParameterID(args.AssignmentID, gradeParameterID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+
+	// is user (admin) took that course?
+	if !cs.IsAssistant(sess.ID, args.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("you do not took this course!"))
+		return
+	}
+	usersID, err := usr.SelectIDByIdentityCode(args.IdentityCode)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if len(usersID) != len(args.IdentityCode) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("There is invalid identity code"))
+		return
+	}
+	if !cs.IsAllUsersEnrolled(args.ScheduleID, usersID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("There is a invalid identity code"))
+		return
+	}
+	tx := conn.DB.MustBegin()
+	// Insert
+	err = as.CreateScore(args.AssignmentID, usersID, args.Score, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Add score assignment successfully"))
+	return
+
+}
+
 // GetDetailAssignmentByAdmin func ...
 func GetDetailAssignmentByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 	// get schedule, assignment
 	params := detailAssignmentParams{
-		ScheduleID:   ps.ByName("id"),
+		ScheduleID:   ps.ByName("schedule_id"),
 		AssignmentID: ps.ByName("assignment_id"),
 	}
 	// validate
@@ -652,8 +725,8 @@ func GetDetailAssignmentByAdmin(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
-	// is user (Praktikan) took that course?
-	if !cs.IsEnrolled(sess.ID, args.ScheduleID) {
+	// is user (admin) took that course?
+	if !cs.IsAssistant(sess.ID, args.ScheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("you do not took this course!"))
@@ -673,7 +746,6 @@ func GetDetailAssignmentByAdmin(w http.ResponseWriter, r *http.Request, ps httpr
 	if as.IsAssignmentMustUpload(args.AssignmentID) {
 		userAssignments, err := as.SelectUserAssignmentsByStatusID(args.AssignmentID)
 		if err != nil {
-			fmt.Println(err.Error())
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return
