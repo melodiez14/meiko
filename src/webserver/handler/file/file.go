@@ -335,7 +335,6 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	fmt.Println(1)
 	id := r.FormValue("id")
 	_, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -343,14 +342,12 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	fmt.Println(2)
 	file, err := fl.GetByRelation(tableName, id)
 	if err != nil {
 		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
 
-	fmt.Println(3)
 	url := fmt.Sprintf("/api/v1/file/%s/%s.%s", payload, file.ID, file.Extension)
 	http.Redirect(w, r, url, http.StatusSeeOther)
 	return

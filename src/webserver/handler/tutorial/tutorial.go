@@ -325,6 +325,15 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	if file.ID != args.fileID {
+
+		if fl.IsHasRelation(args.fileID) {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid File"))
+			return
+		}
+
 		err = fl.Delete(file.ID, tx)
 		if err != nil {
 			tx.Rollback()
