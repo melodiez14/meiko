@@ -103,18 +103,16 @@ type detailResponse struct {
 	Percentage       float32        `json:"percentage"`
 }
 type uploadAssignmentParams struct {
-	FileID       string
-	AssignmentID string
 	UserID       int64
-	Subject      string
+	AssignmentID string
 	Description  string
+	FileID       string
 }
 type uploadAssignmentArgs struct {
-	FileID       string
-	AssignmentID int64
 	UserID       int64
-	Subject      sql.NullString
+	AssignmentID int64
 	Description  sql.NullString
+	FileID       []string
 }
 type readUploadedAssignmentParams struct {
 	UserID       string

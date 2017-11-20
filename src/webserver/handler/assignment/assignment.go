@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	as "github.com/melodiez14/meiko/src/module/assignment"
@@ -335,11 +336,10 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 	sess := r.Context().Value("User").(*auth.User)
 	params := uploadAssignmentParams{
-		FileID:       r.FormValue("file_id"),
-		AssignmentID: r.FormValue("assignment_id"),
 		UserID:       sess.ID,
-		Subject:      r.FormValue("subject"),
+		AssignmentID: r.FormValue("assignment_id"),
 		Description:  r.FormValue("description"),
+		FileID:       r.FormValue("file_id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -358,6 +358,20 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			AddError("Invalid Assignment ID"))
 		return
 	}
+	// due date checking
+	dueDate, err := as.GetDueDateAssignment(args.AssignmentID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	overdue := !time.Now().Before(dueDate)
+	if overdue {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetMessage("Assignment has been overdue"))
+		return
+	}
 	// Insert
 	tx := conn.DB.MustBegin()
 	err = as.UploadAssignment(args.AssignmentID, args.UserID, args.Description, tx)
@@ -365,14 +379,14 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("You can only submit one time for Assignment"))
+			AddError("You can only submit once for this assignment"))
 		return
 	}
-	var filesID = strings.Split(args.FileID, "~")
+
 	tableID := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
 	//Update Relations
-	if args.FileID != "" {
-		for _, fileID := range filesID {
+	if args.FileID != nil {
+		for _, fileID := range args.FileID {
 			err := fs.UpdateRelation(fileID, TableNameUserAssignments, tableID, tx)
 			if err != nil {
 				tx.Rollback()
@@ -403,7 +417,6 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		FileID:       r.FormValue("file_id"),
 		AssignmentID: ps.ByName("id"),
 		UserID:       sess.ID,
-		Subject:      r.FormValue("subject"),
 		Description:  r.FormValue("description"),
 	}
 	args, err := params.validate()
@@ -442,7 +455,6 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			AddError("Can not convert to int64"))
 		return
 	}
-	var filesIDUser = strings.Split(args.FileID, "~")
 	// Get All relations with
 	filesIDDB, err := fs.GetByStatus(fs.StatusExist, tableID)
 	if err != nil {
@@ -452,7 +464,7 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		return
 	}
 	// Add new file
-	for _, fileID := range filesIDUser {
+	for _, fileID := range args.FileID {
 		if !fs.IsIDActive(fs.StatusExist, fileID, key) {
 			filesIDDB = append(filesIDDB, fileID)
 			// Update relation
@@ -467,7 +479,7 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 	for _, fileIDDB := range filesIDDB {
 		isSame := 0
-		for _, fileIDUser := range filesIDUser {
+		for _, fileIDUser := range args.FileID {
 			if fileIDUser == fileIDDB {
 				isSame = 1
 			}

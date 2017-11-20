@@ -24,7 +24,6 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	// get uploaded file
 	r.ParseMultipartForm(2 * MB)
 	file, header, err := r.FormFile("file")
-	fmt.Println(file)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).

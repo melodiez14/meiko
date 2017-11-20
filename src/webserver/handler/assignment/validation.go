@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"strconv"
+	"strings"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -160,7 +161,6 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 		AssignmentID: params.AssignmentID,
 		UserID:       params.UserID,
 		Description:  html.EscapeString(helper.Trim(params.Description)),
-		Subject:      html.EscapeString(helper.Trim(params.Subject)),
 	}
 	// AssigmentID validation
 	if helper.IsEmpty(params.AssignmentID) {
@@ -170,21 +170,20 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 	if err != nil {
 		return args, fmt.Errorf("Error convert AssigmentID")
 	}
-	// Subject validation
-	var subject sql.NullString
-	if !helper.IsEmpty(params.Subject) {
-		subject = sql.NullString{Valid: true, String: params.Subject}
-	}
 	// Description validation
 	var description sql.NullString
 	if !helper.IsEmpty(params.Description) {
 		description = sql.NullString{Valid: true, String: params.Description}
 	}
+	var filesID []string
+	// FilesID validation
+	if !helper.IsEmpty(params.FileID) {
+		filesID = strings.Split(params.FileID, "~")
+	}
 	return uploadAssignmentArgs{
-		FileID:       params.FileID,
+		FileID:       filesID,
 		AssignmentID: assignmentID,
 		UserID:       params.UserID,
-		Subject:      subject,
 		Description:  description,
 	}, nil
 

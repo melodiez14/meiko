@@ -718,3 +718,22 @@ func CreateScore(assignmentID int64, usersID []int64, score []float32, tx *sqlx.
 
 	return nil
 }
+
+// GetDueDateAssignment func ...
+func GetDueDateAssignment(assignmentID int64) (time.Time, error) {
+	query := fmt.Sprintf(`
+			SELECT
+				due_date
+			FROM
+				assignments
+			WHERE
+				id=(%d)
+			LIMIT 1;
+		`, assignmentID)
+	var dueDate time.Time
+	err := conn.DB.Get(&dueDate, query)
+	if err != nil {
+		return dueDate, err
+	}
+	return dueDate, nil
+}
