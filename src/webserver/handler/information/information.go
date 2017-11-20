@@ -4,12 +4,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/conn"
+
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/module/course"
 	cs "github.com/melodiez14/meiko/src/module/course"
+	fs "github.com/melodiez14/meiko/src/module/file"
 	inf "github.com/melodiez14/meiko/src/module/information"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/alias"
@@ -84,6 +87,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
 		ScheduleID:  r.FormValue("schedule_did"),
+		FilesID:     r.FormValue("file_id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -92,13 +96,31 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-
+	tx := conn.DB.MustBegin()
 	// Insert
-	err = inf.Insert(args.Title, args.Description, args.ScheduleID)
+	tableID, err := inf.Insert(args.Title, args.Description, args.ScheduleID, tx)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError(err.Error()))
+		return
+	}
+	if args.FilesID != nil {
+		for _, fileID := range args.FilesID {
+			err := fs.UpdateRelation(fileID, TableNameInformation, tableID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusBadRequest).
+					AddError("Wrong File ID"))
+				return
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
 		return
 	}
 

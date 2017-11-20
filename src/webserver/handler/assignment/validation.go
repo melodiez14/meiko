@@ -179,6 +179,11 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 	// FilesID validation
 	if !helper.IsEmpty(params.FileID) {
 		filesID = strings.Split(params.FileID, "~")
+		for _, value := range filesID {
+			if !helper.IsValidFileID(value) {
+				return args, fmt.Errorf("Wrong Files ID")
+			}
+		}
 	}
 	return uploadAssignmentArgs{
 		FileID:       filesID,
