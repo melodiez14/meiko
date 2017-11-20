@@ -737,3 +737,59 @@ func GetDueDateAssignment(assignmentID int64) (time.Time, error) {
 	}
 	return dueDate, nil
 }
+
+// SelectAssignmentIDByGradeParameter func ..
+func SelectAssignmentIDByGradeParameter(gradeParameterID int64) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+			id
+		FROM
+			assignments
+		WHERE
+			grade_parameters_id=(%d);
+		`, gradeParameterID)
+	var id []int64
+	err := conn.DB.Select(&id, query)
+	if err != nil {
+		return id, err
+	}
+	return id, nil
+}
+
+// SelectScore func ...
+func SelectScore(userID int64, assignmentsID []int64) ([]float32, error) {
+	var id []string
+	for _, value := range assignmentsID {
+		id = append(id, fmt.Sprintf("%d", value))
+	}
+	queryAssignmentsID := strings.Join(id, ",")
+	query := fmt.Sprintf(`
+		SELECT
+			score
+		FROM
+			p_users_assignments
+		WHERE
+			users_id=(%d) AND assignments_id IN (%s)
+		`, userID, queryAssignmentsID)
+	var scores []float64
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id sql.NullFloat64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		scores = append(scores, id.Float64)
+	}
+
+	var result []float32
+	for _, value := range scores {
+		result = append(result, float32(value))
+	}
+
+	return result, nil
+
+}

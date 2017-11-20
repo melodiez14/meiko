@@ -770,7 +770,6 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 	if err != nil && err != sql.ErrNoRows {
 		return gps, err
 	}
-
 	return gps, nil
 }
 

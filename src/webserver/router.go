@@ -67,6 +67,7 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteScheduleHandler))          //delete
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
+	r.GET("/api/v1/course/grade", auth.MustAuthorize(course.GetGradeSummery))
 	// ======================== End Course Handler ======================
 
 	// =========================== Bot Handler ==========================
