@@ -1,5 +1,7 @@
 package tutorial
 
+import "database/sql"
+
 type readParams struct {
 	scheduleID string
 	page       string
@@ -34,4 +36,42 @@ type readDetailResponse struct {
 	Description string `json:"description"`
 	URL         string `json:"file_url"`
 	Time        string `json:"time"`
+}
+
+type createParams struct {
+	name        string
+	description string
+	fileID      string
+	scheduleID  string
+}
+
+type createArgs struct {
+	name        string
+	description sql.NullString
+	fileID      string
+	scheduleID  int64
+}
+
+type deleteParams struct {
+	id string
+}
+
+type deleteArgs struct {
+	id int64
+}
+
+type updateParams struct {
+	id          string
+	name        string
+	description string
+	fileID      string
+	scheduleID  string
+}
+
+type updateArgs struct {
+	id          int64
+	name        string
+	description sql.NullString
+	fileID      string
+	scheduleID  int64
 }

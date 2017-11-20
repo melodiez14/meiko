@@ -70,7 +70,7 @@ func IsPhone(phone string) bool {
 	return valid
 }
 
-// IsEmail Check if given string is a email address 
+// IsEmail Check if given string is a email address
 /*
 	@params:
 		email	= string
@@ -109,7 +109,7 @@ func IsPassword(password string) bool {
 	@params:
 		text	= string
 	@example:
-		text	= 
+		text	=
 	@return
 		true/false
 */
@@ -166,7 +166,7 @@ func IsImageExtension(extension string) bool {
 		text	= This text would be normalize
 	@return
 		[]{text,true/false}
-*/ 
+*/
 func Normalize(text string, format func(string) bool) (string, error) {
 
 	if !format(text) {
@@ -185,7 +185,7 @@ func Normalize(text string, format func(string) bool) (string, error) {
 		text	= 140810140060
 	@return
 		[]{npm,error}
-*/ 
+*/
 func NormalizeNPM(str string) (int64, error) {
 	var npm int64
 	if len(str) < 1 {
@@ -209,7 +209,7 @@ func NormalizeNPM(str string) (int64, error) {
 		text	= 1207261801970005
 	@return
 		[]{identity,error}
-*/ 
+*/
 func NormalizeIdentity(str string) (int64, error) {
 	var identity int64
 	if len(str) < 1 {
@@ -233,7 +233,7 @@ func NormalizeIdentity(str string) (int64, error) {
 		text	= Khairil azmi ashari
 	@return
 		[]{name,error}
-*/ 
+*/
 func NormalizeName(name string) (string, error) {
 
 	splitted := strings.Fields(name)
@@ -261,7 +261,7 @@ func NormalizeName(name string) (string, error) {
 		college	= Universitas Padjadjaran
 	@return
 		[]{college,error}
-*/ 
+*/
 func NormalizeCollege(college string) (string, error) {
 	splitted := strings.Fields(college)
 	college = strings.Join(splitted, " ")
@@ -284,7 +284,7 @@ func NormalizeCollege(college string) (string, error) {
 		email	= khairil14001@gmail.com
 	@return
 		[]{email,error}
-*/ 
+*/
 func NormalizeEmail(email string) (string, error) {
 	if IsEmpty(email) {
 		return "", fmt.Errorf("Email can't be empty")
@@ -309,4 +309,10 @@ func NormalizeEmail(email string) (string, error) {
 func Trim(str string) string {
 	splitted := strings.Fields(str)
 	return strings.Join(splitted, " ")
+}
+
+// IsValidFileID ...
+func IsValidFileID(str string) bool {
+	valid, _ := regexp.MatchString(`^[0-9.]{26,32}$`, str)
+	return valid
 }

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -13,6 +14,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/julienschmidt/httprouter"
 	fl "github.com/melodiez14/meiko/src/module/file"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
@@ -24,7 +26,6 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	// get uploaded file
 	r.ParseMultipartForm(2 * MB)
 	file, header, err := r.FormFile("file")
-	fmt.Println(file)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -149,10 +150,11 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	// get data from db for specific payload
 	var fn, ext string
 	var fileInfo fl.File
-	if args.payload == "assignment" {
+	if args.payload == "assignment" || args.payload == "tutorial" {
 		fn, ext, err = helper.ExtractExtension(args.filename)
 		if err != nil {
 			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+			return
 		}
 
 		fileInfo, err = fl.GetByIDExt(fn, ext, fl.ColName, fl.ColExtension, fl.ColMime)
@@ -175,7 +177,7 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	switch args.payload {
 	case "profile":
 		w.Header().Set("Content-Type", "image/jpeg")
-	case "assignment":
+	case "assignment", "tutorial":
 		cntDisposition := fmt.Sprintf(`attachment; filename="%s.%s"`, fileInfo.Name, fileInfo.Extension)
 		w.Header().Set("Content-Type", fileInfo.Mime)
 		w.Header().Set("Content-Disposition", cntDisposition)
@@ -214,15 +216,37 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	url := fmt.Sprintf("/api/v1/files/profile/%s.jpg", file.ID)
+	url := fmt.Sprintf("/api/v1/file/profile/%s.jpg", file.ID)
 	http.Redirect(w, r, url, http.StatusSeeOther)
 	return
 }
 
-// not functional yet
-func UploadAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// UploadFileHandler ...
+func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
+
+	// access validation
+	var typ string
+	payload := r.FormValue("payload")
+	isHasAccess := false
+	switch payload {
+	case "assignment":
+		isHasAccess = sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		typ = fl.TypAssignment
+	case "tutorial":
+		isHasAccess = sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		typ = fl.TypTutorial
+	}
+
+	if !isHasAccess {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	// logic
 	r.ParseMultipartForm(2 * MB)
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -243,10 +267,10 @@ func UploadAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	// add mime validation
-	params := uploadAssignmentParams{
-		FileName:  fn,
-		Extension: ext,
-		Mime:      header.Header.Get("Content-Type"),
+	params := uploadFileParams{
+		fileName:  fn,
+		extension: ext,
+		mime:      header.Header.Get("Content-Type"),
 	}
 
 	args, err := params.validate()
@@ -264,20 +288,15 @@ func UploadAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprout
 
 	// save file
 	go func() {
-		path := fmt.Sprintf("files/var/www/meiko/data/%s/%s.%s", "assignment", id, args.Extension)
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError))
-			return
-		}
+		path := fmt.Sprintf("files/var/www/meiko/data/%s/%s.%s", payload, id, args.extension)
+		f, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
 		defer f.Close()
 
 		file.Seek(0, 0)
 		io.Copy(f, file)
 	}()
 
-	err = fl.Insert(id, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypAssignment, nil)
+	err = fl.Insert(id, args.fileName, args.mime, args.extension, sess.ID, typ, nil)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -285,6 +304,54 @@ func UploadAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusOK))
+		SetCode(http.StatusOK).
+		SetMessage(id))
+	return
+}
+
+// RouterFileHandler ...
+func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if sess == nil {
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	var tableName string
+	var isHasAccess bool
+	payload := r.FormValue("payload")
+	switch payload {
+	case "assignment":
+		isHasAccess = sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		tableName = fl.TableAssignment
+	case "tutorial":
+		isHasAccess = sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		tableName = fl.TableTutorial
+	}
+
+	if !isHasAccess {
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	fmt.Println(1)
+	id := r.FormValue("id")
+	_, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	fmt.Println(2)
+	file, err := fl.GetByRelation(tableName, id)
+	if err != nil {
+		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	fmt.Println(3)
+	url := fmt.Sprintf("/api/v1/file/%s/%s.%s", payload, file.ID, file.Extension)
+	http.Redirect(w, r, url, http.StatusSeeOther)
 	return
 }

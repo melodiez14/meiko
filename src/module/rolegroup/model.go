@@ -8,6 +8,7 @@ const (
 	ModuleSchedule    = "schedules"
 	ModuleAssignment  = "assignments"
 	ModuleInformation = "informations"
+	ModuleTutorial    = "tutorials"
 
 	RoleCreate  = "CREATE"
 	RoleRead    = "READ"
