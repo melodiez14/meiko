@@ -174,7 +174,7 @@ func Insert(title, description string, scheduleID int64, tx *sqlx.Tx) (string, e
 }
 
 // Update func ...
-func Update(title, description string, scheduleID, informationID int64) error {
+func Update(title, description string, scheduleID, informationID int64, tx *sqlx.Tx) error {
 	var data string
 	if scheduleID == 0 {
 		data = fmt.Sprintf(`
@@ -197,13 +197,18 @@ func Update(title, description string, scheduleID, informationID int64) error {
 		WHERE
 			id = (%d)
 		;`, data, informationID)
-
-	result, err := conn.DB.Exec(query)
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
 	if err != nil {
 		return err
 	}
-	row, err := result.RowsAffected()
-	if row == 0 {
+	rows, err := result.RowsAffected()
+	if rows == 0 {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil

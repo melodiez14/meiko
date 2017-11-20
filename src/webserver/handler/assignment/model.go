@@ -61,6 +61,7 @@ type updateArgs struct {
 	Description       sql.NullString
 	Status            string
 	DueDate           string
+	TableID           int64
 }
 
 type readParams struct {

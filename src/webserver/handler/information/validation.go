@@ -79,6 +79,7 @@ func (params updateParams) validate() (upadateArgs, error) {
 		Title:       html.EscapeString(params.Title),
 		Description: html.EscapeString(params.Description),
 		ScheduleID:  params.ScheduleID,
+		FilesID:     params.FilesID,
 	}
 	// Information ID validation
 	if helper.IsEmpty(params.ID) {
@@ -107,12 +108,22 @@ func (params updateParams) validate() (upadateArgs, error) {
 			return args, err
 		}
 	}
-
+	var filesID []string
+	// FilesID validation
+	if !helper.IsEmpty(params.FilesID) {
+		filesID = strings.Split(params.FilesID, "~")
+		for _, value := range filesID {
+			if !helper.IsValidFileID(value) {
+				return args, fmt.Errorf("Wrong Files ID")
+			}
+		}
+	}
 	return upadateArgs{
 		ID:          informationID,
 		Title:       params.Title,
 		Description: params.Description,
 		ScheduleID:  scheduleID,
+		FilesID:     filesID,
 	}, nil
 
 }

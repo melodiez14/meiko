@@ -2,6 +2,7 @@ package information
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -145,7 +146,9 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
 		ScheduleID:  r.FormValue("schedule_id"),
+		FilesID:     r.FormValue("file_id"),
 	}
+
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -160,7 +163,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("Information ID does not exist"))
 		return
 	}
-	// check is shedule ID exit
+	// check is shedule ID exist
 	if args.ScheduleID != 0 {
 		if !cs.IsExistScheduleID(args.ScheduleID) {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -169,12 +172,55 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 	}
-	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID)
+	tx := conn.DB.MustBegin()
+	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID, tx)
 	if err != nil {
+		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
+	// Get All relations with
+	filesIDDB, err := fs.GetByStatus(fs.StatusExist, args.ID)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	var tableID = strconv.FormatInt(args.ID, 10)
+	// Add new file
+	for _, fileID := range args.FilesID {
+		if !fs.IsIDActive(fs.StatusExist, fileID, tableID) {
+			filesIDDB = append(filesIDDB, fileID)
+			// Update relation
+			err := fs.UpdateRelation(fileID, TableNameInformation, tableID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	for _, fileIDDB := range filesIDDB {
+		isSame := 0
+		for _, fileIDUser := range args.FilesID {
+			if fileIDUser == fileIDDB {
+				isSame = 1
+			}
+		}
+		if isSame == 0 {
+			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	err = tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Update information succesfully"))
