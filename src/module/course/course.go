@@ -951,3 +951,41 @@ func IsAllUsersEnrolled(scheduleID int64, usersID []int64) bool {
 	}
 	return true
 }
+
+// GetCourseID func ...
+func GetCourseID(scheduleID int64) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			courses_id
+		FROM
+			schedules
+		WHERE
+			id=(%d)
+		LIMIT 1;
+		`, scheduleID)
+	var res string
+	err := conn.DB.Get(&res, query)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+// GetName func ...
+func GetName(courseID string) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			name
+		FROM
+			courses
+		WHERE
+			id=('%s')
+		LIMIT 1;
+		`, courseID)
+	var res string
+	err := conn.DB.Get(&res, query)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}

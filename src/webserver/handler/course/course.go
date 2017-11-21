@@ -953,10 +953,25 @@ func GetGradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			SetData(nil))
 		return
 	}
+
 	res := responseGradeSummery{
-		UsersID: sess.ID,
+		UsersID: sess.IdentityCode,
+		Type:    nil,
 	}
 	for _, scheduleID := range listSchedule {
+		courseID, err := cs.GetCourseID(scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		name, err := cs.GetName(courseID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
 		listGradeParams, err := cs.SelectGradeParameterByScheduleID(scheduleID)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -965,10 +980,24 @@ func GetGradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		}
 		schedule := scheduleGrade{
 			ScheduleID: scheduleID,
+			Name:       name,
 			Grade:      nil,
 		}
 		var final float32
 		for _, gradeParam := range listGradeParams {
+			if res.Type == nil {
+				res.Type = append(res.Type, gradeParam.Type)
+			} else {
+				var isSame bool
+				for _, typeRes := range res.Type {
+					if typeRes == gradeParam.Type {
+						isSame = true
+					}
+				}
+				if !isSame {
+					res.Type = append(res.Type, gradeParam.Type)
+				}
+			}
 			listAssignmentID, err := ag.SelectAssignmentIDByGradeParameter(gradeParam.ID)
 			if err != nil {
 				template.RenderJSONResponse(w, new(template.Response).

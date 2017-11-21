@@ -233,10 +233,12 @@ type gradeParameterResponse struct {
 }
 type scheduleGrade struct {
 	ScheduleID int64                    `json:"schedule_id"`
+	Name       string                   `json:"name"`
 	Total      float32                  `json:"total"`
 	Grade      []gradeParameterResponse `json:"grade"`
 }
 type responseGradeSummery struct {
 	UsersID  int64           `json:"npm"`
+	Type     []string        `json:"type"`
 	Schedule []scheduleGrade `json:"schedules"`
 }
