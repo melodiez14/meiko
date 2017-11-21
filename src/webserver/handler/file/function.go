@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	fl "github.com/melodiez14/meiko/src/module/file"
@@ -40,6 +41,12 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 	w.Header().Set("Content-Disposition", cntDisposition)
 	w.Header().Set("Cache-Control", "no-transform, max-age=2628000")
 
+	stat, err := file.Stat()
+	if err == nil {
+		size := strconv.FormatInt(stat.Size(), 10)
+		w.Header().Set("Content-Length", size)
+	}
+
 	io.Copy(w, file)
 
 	return nil
@@ -57,6 +64,12 @@ func handleJPEGWithoutMeta(payload, filename string, w http.ResponseWriter) erro
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "no-transform, max-age=2628000")
+
+	stat, err := file.Stat()
+	if err == nil {
+		size := strconv.FormatInt(stat.Size(), 10)
+		w.Header().Set("Content-Length", size)
+	}
 
 	io.Copy(w, file)
 

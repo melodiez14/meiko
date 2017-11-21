@@ -255,7 +255,6 @@ func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]
 		var description sql.NullString
 		err := rows.Scan(&id, &dueDate, &name, &description, &status, &score)
 		if err != nil {
-			fmt.Println(err.Error())
 			return result, err
 		}
 		result = append(result, ListAssignments{

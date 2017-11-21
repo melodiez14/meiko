@@ -35,10 +35,8 @@ func GetByIDExt(id, ext string, column ...string) (File, error) {
 	query := fmt.Sprintf(`SELECT %s FROM files WHERE id = ('%s') AND extension = ('%s') LIMIT 1;`, cols, id, ext)
 	err := conn.DB.Get(&file, query)
 	if err != nil {
-		fmt.Println(1, err.Error())
 		return file, err
 	}
-	fmt.Println(2, file)
 	return file, nil
 }
 
@@ -66,10 +64,8 @@ func GetByTypeUserID(userID int64, typ string, column ...string) (File, error) {
 	query := fmt.Sprintf(`SELECT %s FROM files WHERE users_id = (%d) AND type = ('%s') AND status = (%d) LIMIT 1;`, cols, userID, typ, StatusExist)
 	err := conn.DB.Get(&file, query)
 	if err != nil {
-		fmt.Println(1, err.Error())
 		return file, err
 	}
-	fmt.Println(2, file)
 	return file, nil
 }
 
