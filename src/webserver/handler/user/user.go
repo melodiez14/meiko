@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 
@@ -279,7 +280,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -300,7 +301,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if u.Status != oldStatus || u.ID == sess.ID {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -311,7 +312,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
-			roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+			roles, _ = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 		}
 
 		sess = &auth.User{
@@ -399,7 +400,12 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -651,7 +657,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -690,7 +696,12 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -753,7 +764,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -921,7 +932,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if sess.IdentityCode == args.IdentityCode {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			SetMessage("Bad Request"))
+			SetMessage("Invalid Request"))
 		return
 	}
 
@@ -961,7 +972,12 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -1018,7 +1034,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if sess.IdentityCode == args.IdentityCode {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -1125,6 +1141,20 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage("User successfully created").
+		SetCode(http.StatusOK))
+	return
+}
+
+// GetTimeHandler handles http request for serving the server time
+/*
+	@params:
+	@example:
+	@return:
+*/
+func GetTimeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	t := time.Now().Format(time.RFC1123)
+	template.RenderJSONResponse(w, new(template.Response).
+		SetData(t).
 		SetCode(http.StatusOK))
 	return
 }

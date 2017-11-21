@@ -1,11 +1,14 @@
 package rolegroup
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	usr "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
@@ -23,12 +26,12 @@ import (
 */
 func GetPrivilege(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	var res getPrivilegeResponse
+	var resp getPrivilegeResponse
 	sess := r.Context().Value("User").(*auth.User)
 	if sess == nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusOK).
-			SetData(res))
+			SetData(resp))
 		return
 	}
 
@@ -53,13 +56,311 @@ func GetPrivilege(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		}
 	}
 
-	res = getPrivilegeResponse{
+	resp = getPrivilegeResponse{
 		IsLoggedIn: true,
 		Modules:    roles,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetData(resp))
+	return
+}
+
+// CreateHandler ...
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXCreate, rg.RoleCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := createParams{
+		name:    r.FormValue("name"),
+		modules: r.FormValue("modules"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if rg.IsExistName(args.name) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusConflict).
+			AddError("Name already exist"))
+		return
+	}
+
+	tx := conn.DB.MustBegin()
+
+	rolegroupID, err := rg.Insert(args.name, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(args.modules) > 1 {
+		err = rg.InsertModuleAccess(rolegroupID, args.modules, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Roles sucessfully inserted"))
+	return
+}
+
+// ReadHandler ...
+func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readParams{
+		page:  r.FormValue("pg"),
+		total: r.FormValue("ttl"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	offset := (args.page - 1) * args.total
+	roles, err := rg.SelectByPage(args.total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	rolegroupID, err := usr.SelectDistinctRolegroupID()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resp := []readResponse{}
+	for _, val := range roles {
+		isDeleteAllow := true
+		if helper.Int64InSlice(val.ID, rolegroupID) {
+			isDeleteAllow = false
+		}
+
+		resp = append(resp, readResponse{
+			ID:            val.ID,
+			Name:          val.Name,
+			IsDeleteAllow: isDeleteAllow,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+// ReadDetailHandler ...
+func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readDetailParams{
+		id: ps.ByName("rolegroup_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	role, err := rg.GetByID(args.id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusNoContent))
+			return
+		}
+
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	moduleAccess, err := rg.SelectModuleAccess(role.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resp := readDetailResponse{
+		ID:      role.ID,
+		Name:    role.Name,
+		Modules: moduleAccess,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+// DeleteHandler ...
+func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXDelete, rg.RoleDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readDetailParams{
+		id: ps.ByName("rolegroup_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !rg.IsExist(args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+
+	if usr.IsExistRolegroupID(args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusConflict).
+			AddError("Error: this rolegroups has already used by user"))
+		return
+	}
+
+	tx := conn.DB.MustBegin()
+	err = rg.DeleteModuleAccess(args.id, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = rg.Delete(args.id, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	tx.Commit()
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Rolegroup successfully deleted"))
+	return
+}
+
+// UpdateHandler ...
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXUpdate, rg.RoleUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := updateParams{
+		id:      ps.ByName("rolegroup_id"),
+		name:    r.FormValue("name"),
+		modules: r.FormValue("modules"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if !rg.IsExist(args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+
+	tx := conn.DB.MustBegin()
+	err = rg.Update(args.id, args.name, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = rg.DeleteModuleAccess(args.id, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(args.modules) > 1 {
+		err = rg.InsertModuleAccess(args.id, args.modules, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Rolegroup has been updated"))
 	return
 }

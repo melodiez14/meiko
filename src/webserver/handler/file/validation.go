@@ -41,24 +41,24 @@ func (params uploadImageParams) validate() (uploadImageArgs, error) {
 	}, nil
 }
 
-func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
-	var args uploadAssignmentArgs
-	params = uploadAssignmentParams{
-		FileName:  html.EscapeString(params.FileName),
-		Extension: params.Extension,
-		Mime:      params.Mime,
+func (params uploadFileParams) validate() (uploadFileArgs, error) {
+	var args uploadFileArgs
+	params = uploadFileParams{
+		fileName:  html.EscapeString(params.fileName),
+		extension: params.extension,
+		mime:      params.mime,
 	}
 
-	if helper.IsEmpty(params.FileName) {
+	if helper.IsEmpty(params.fileName) {
 		return args, fmt.Errorf("Filename is empty")
 	}
 
 	// validate mime and extension
 
-	return uploadAssignmentArgs{
-		FileName:  params.FileName,
-		Extension: params.Extension,
-		Mime:      params.Mime,
+	return uploadFileArgs{
+		fileName:  params.fileName,
+		extension: params.extension,
+		mime:      params.mime,
 	}, nil
 }
 

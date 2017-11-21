@@ -671,7 +671,7 @@ func Create(identityCode int64, name, email string) error {
 }
 
 // IsUserExist func ...
-func IsUserExist(UserID int64) bool {
+func IsUserExist(identityCode int64) bool {
 
 	var x string
 	query := fmt.Sprintf(`
@@ -681,7 +681,7 @@ func IsUserExist(UserID int64) bool {
 				users
 			WHERE
 				identity_code = (%d)
-			LIMIT 1;`, UserID)
+			LIMIT 1;`, identityCode)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
@@ -750,4 +750,43 @@ func SelectIDByIdentityCode(identityCode []int64) ([]int64, error) {
 	}
 	return ids, nil
 
+}
+
+// IsExistRolegroupID ...
+func IsExistRolegroupID(rolegroupID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			users
+		WHERE
+			rolegroups_id = (%d)
+		LIMIT 1;
+	`, rolegroupID)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// SelectDistinctRolegroupID ...
+func SelectDistinctRolegroupID() ([]int64, error) {
+	var rolegroupsID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			DISTINCT rolegroups_id
+		FROM
+			users
+		WHERE rolegroups_id IS NOT NULL;
+	`)
+	err := conn.DB.Select(&rolegroupsID, query)
+	if err != nil {
+		return rolegroupsID, err
+	}
+
+	return rolegroupsID, nil
 }

@@ -170,11 +170,13 @@ type getResponse struct {
 }
 
 type getAssistantParams struct {
-	ScheduleID string
+	scheduleID string
+	payload    string
 }
 
 type getAssistantArgs struct {
-	ScheduleID int64
+	scheduleID int64
+	payload    string
 }
 
 type getAssistantResponse struct {
@@ -225,6 +227,7 @@ type listStudentResponse struct {
 	UserIdentityCode int64  `json:"id"`
 	UserName         string `json:"name"`
 }
+
 type gradeParameterResponse struct {
 	ID         int64   `json:"id"`
 	Type       string  `json:"type"`
@@ -241,4 +244,14 @@ type responseGradeSummery struct {
 	UsersID  int64           `json:"npm"`
 	Type     []string        `json:"type"`
 	Schedule []scheduleGrade `json:"schedules"`
+}
+
+type addAssistantParams struct {
+	assistentIdentityCodes string
+	scheduleID             string
+}
+
+type addAssistantArgs struct {
+	assistentIdentityCodes []int64
+	scheduleID             int64
 }

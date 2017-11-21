@@ -18,7 +18,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 

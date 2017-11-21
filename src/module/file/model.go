@@ -17,6 +17,10 @@ const (
 	TypProfPict      = "PL-IMG-M"
 	TypProfPictThumb = "PL-IMG-T"
 	TypAssignment    = "ASG-FILE"
+	TypTutorial      = "TT-FILE"
+
+	TableAssignment = "assignments"
+	TableTutorial   = "tutorials"
 
 	StatusDeleted = 0
 	StatusExist   = 1

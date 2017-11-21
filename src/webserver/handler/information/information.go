@@ -191,7 +191,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	var tableID = strconv.FormatInt(args.ID, 10)
 	// Add new file
 	for _, fileID := range args.FilesID {
-		if !fs.IsIDActive(fs.StatusExist, fileID, tableID) {
+		if !fs.IsExistID(fileID) {
 			filesIDDB = append(filesIDDB, fileID)
 			// Update relation
 			err := fs.UpdateRelation(fileID, TableNameInformation, tableID, tx)

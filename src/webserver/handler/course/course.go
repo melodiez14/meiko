@@ -338,7 +338,7 @@ func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -603,7 +603,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -631,7 +631,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -678,25 +678,35 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	sess := r.Context().Value("User").(*auth.User)
 
 	params := getAssistantParams{
-		ScheduleID: r.FormValue("id"),
+		payload:    r.FormValue("payload"),
+		scheduleID: r.FormValue("schedule_id"),
 	}
 
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
-	if !cs.IsEnrolled(sess.ID, args.ScheduleID) {
+	isHasAccess := false
+	switch args.payload {
+	case "assistant":
+		isHasAccess = cs.IsAssistant(sess.ID, args.scheduleID) &&
+			sess.IsHasRoles(rg.ModuleCourse, rg.RoleXRead, rg.RoleRead)
+	case "student":
+		isHasAccess = cs.IsEnrolled(sess.ID, args.scheduleID)
+	}
+
+	if !isHasAccess {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			SetCode(http.StatusForbidden).
+			AddError("You are not authorized"))
 		return
 	}
 
-	uIDs, err := cs.SelectAssistantID(args.ScheduleID)
+	uIDs, err := cs.SelectAssistantID(args.scheduleID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -760,7 +770,7 @@ func DeleteScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -855,7 +865,7 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -898,7 +908,7 @@ func ListEnrolledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -971,7 +981,6 @@ func GetGradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 				SetCode(http.StatusInternalServerError))
 			return
 		}
-
 		listGradeParams, err := cs.SelectGradeParameterByScheduleID(scheduleID)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -1041,5 +1050,113 @@ func GetGradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(res))
+	return
+}
+func AddAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleCourse, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	// assistant_id = user identity code
+	params := addAssistantParams{
+		assistentIdentityCodes: r.FormValue("assistant_id"),
+		scheduleID:             ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	// check if creator or assistant of specific schedule id
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		if !cs.IsCreator(sess.ID, args.scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("You are not authorized"))
+			return
+		}
+	}
+
+	newAssistant := []int64{}
+	if len(args.assistentIdentityCodes) > 0 {
+		newAssistant, err = user.SelectIDByIdentityCode(args.assistentIdentityCodes)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	// check if all user id is registered or valid
+	if len(newAssistant) != len(args.assistentIdentityCodes) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	oldAssistant, err := cs.SelectAssistantID(args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var insert []int64
+	for _, val := range newAssistant {
+		if !helper.Int64InSlice(val, oldAssistant) {
+			insert = append(insert, val)
+		}
+	}
+
+	var delete []int64
+	for _, val := range oldAssistant {
+		if !helper.Int64InSlice(val, newAssistant) {
+			delete = append(delete, val)
+		}
+	}
+
+	tx, err := conn.DB.Beginx()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(delete) > 0 {
+		err = cs.DeleteAssistant(delete, args.scheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		} //udah
+	}
+
+	if len(insert) > 0 {
+		err = cs.InsertAssistant(insert, args.scheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
 	return
 }

@@ -196,7 +196,7 @@ func (params activationParams) validate() (activationArgs, error) {
 	var args activationArgs
 	// Check is params empty
 	if helper.IsEmpty(params.IdentityCode) || helper.IsEmpty(params.Status) {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
@@ -309,13 +309,13 @@ func (params updateProfileParams) validate() (updateProfileArgs, error) {
 	// Identity code validation
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Email validation
 	email, err := helper.NormalizeEmail(params.Email)
 	if err != nil {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Name validation
@@ -410,13 +410,13 @@ func (params changePasswordParams) validate() (changePasswordArgs, error) {
 	// Identity Code validation
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Email validation
 	email, err := helper.NormalizeEmail(params.Email)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Old password validation

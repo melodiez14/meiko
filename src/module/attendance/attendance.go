@@ -286,7 +286,7 @@ func DeleteMeeting(id uint64, tx *sqlx.Tx) error {
 }
 
 // SelectMeetingByPage ...
-func SelectMeetingByPage(scheduleID int64, limit, offset uint8) ([]Meeting, error) {
+func SelectMeetingByPage(scheduleID int64, limit uint8, offset uint64) ([]Meeting, error) {
 
 	meetings := []Meeting{}
 	query := fmt.Sprintf(`

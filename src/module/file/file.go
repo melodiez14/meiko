@@ -96,6 +96,55 @@ func DeleteProfileImage(userID int64, tx *sqlx.Tx) error {
 	return nil
 }
 
+// DeleteByRelation ...
+func DeleteByRelation(tableName, tableID string, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET
+			status = (%d),
+			updated_at = NOW()
+		WHERE
+			table_name = ('%s') AND
+			table_id = ('%s');`, StatusDeleted, tableName, tableID)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete ...
+func Delete(id string, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE
+			files
+		SET
+			status = (%d),
+			updated_at = NOW()
+		WHERE
+			id = ('%s');`, StatusDeleted, id)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx.Tx) error {
 
 	var result sql.Result
@@ -149,7 +198,11 @@ func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 			table_id = ('%s'),
 			updated_at = NOW()
 		WHERE
-			id = ('%s');`, tableName, tableID, id)
+			status = (%d) AND
+			id = ('%s') AND
+			table_name IS NULL AND
+			table_id IS NULL;
+		`, tableName, tableID, StatusExist, id)
 
 	if tx != nil {
 		result, err = tx.Exec(query)
@@ -159,11 +212,33 @@ func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if rows == 0 {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+func IsHasRelation(id string) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			files
+		WHERE
+			id = ('%s') AND
+			table_name IS NOT NULL AND
+			table_id IS NOT NULL
+		LIMIT 1;	
+	`, id)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 // UpdateStatusFiles func ...
@@ -223,18 +298,20 @@ func GetByStatus(status int, tableID int64) ([]string, error) {
 	return files, nil
 }
 
-// IsIDActive func ...
-func IsIDActive(status int, filesID, tableID string) bool {
+// IsExistID func ...
+func IsExistID(fileID string) bool {
 
 	var x string
 	query := fmt.Sprintf(`
 		SELECT 
-			id
+			'x'
 		FROM
 			files
 		WHERE
-			status = (%d) AND id = ('%s') AND table_id =('%s')
-		;`, status, filesID, tableID)
+			id = ('%s') AND
+			status = (%d)
+		LIMIT 1;
+		`, fileID, StatusExist)
 
 	err := conn.DB.Get(&x, query)
 	if err != nil {
@@ -302,9 +379,10 @@ func UpdateStatusFilesByNameID(TableName string, Status, TableID int64, tx *sqlx
 	return nil
 }
 
-// GetByTableIDName func ...
-func GetByTableIDName(TableID int64, TableName string) ([]File, error) {
-	var files []File
+// GetByRelation ...
+func GetByRelation(tableName, tableID string) (File, error) {
+
+	var file File
 	query := fmt.Sprintf(`
 		SELECT 
 			id,
@@ -312,25 +390,15 @@ func GetByTableIDName(TableID int64, TableName string) ([]File, error) {
 		FROM
 			files
 		WHERE
-			table_name=('%s') AND table_id LIKE ('%d%%')
-		`, TableName, TableID)
+			status = (%d) AND
+			table_name = ('%s') AND
+			table_id = ('%s')
+		LIMIT 1;
+		`, StatusExist, tableName, tableID)
 
-	rows, err := conn.DB.Query(query)
+	err := conn.DB.Get(&file, query)
 	if err != nil {
-		return files, err
+		return file, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id, extension string
-		err := rows.Scan(&id, &extension)
-		if err != nil {
-			return files, err
-		}
-		files = append(files, File{
-			ID:        id,
-			Extension: extension,
-		})
-	}
-	return files, nil
+	return file, nil
 }

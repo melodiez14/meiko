@@ -71,7 +71,36 @@ func IsEnrolled(userID, scheduleID int64) bool {
 
 func IsAssistant(userID, scheduleID int64) bool {
 	var x string
-	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) AND status = (%d) LIMIT 1;", userID, scheduleID, PStatusAssistant)
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_schedules
+		WHERE
+			users_id = (%d) AND
+			schedules_id = (%d) AND
+			status = (%d)
+		LIMIT 1;
+	`, userID, scheduleID, PStatusAssistant)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func IsCreator(userID, scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			schedules
+		WHERE
+			id = (%d) AND
+			created_by = (%d)
+		LIMIT 1;
+	`, scheduleID, userID)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
@@ -988,4 +1017,64 @@ func GetName(courseID string) (string, error) {
 		return res, err
 	}
 	return res, nil
+}
+
+// InsertAssistant ...
+func InsertAssistant(usersID []int64, scheduleID int64, tx *sqlx.Tx) error {
+
+	var values []string
+	for _, val := range usersID {
+		value := fmt.Sprintf("(%d, %d, %d, NOW(), NOW())", val, scheduleID, PStatusAssistant)
+		values = append(values, value)
+	}
+
+	queryValue := strings.Join(values, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			p_users_schedules (
+				users_id,
+				schedules_id,
+				status,
+				created_at,
+				updated_at
+			) VALUES %s;
+	`, queryValue)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteAssistant(usersID []int64, scheduleID int64, tx *sqlx.Tx) error {
+
+	usersIDString := helper.Int64ToStringSlice(usersID)
+	queryUsersID := strings.Join(usersIDString, ", ")
+	query := fmt.Sprintf(`
+		DELETE FROM
+			p_users_schedules
+		WHERE
+			status = (%d) AND
+			schedules_id = (%d) AND
+			users_id IN (%s);
+	`, PStatusAssistant, scheduleID, queryUsersID)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
