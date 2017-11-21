@@ -21,14 +21,9 @@ import (
 func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
-	if !sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXRead, rg.RoleRead) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
 
 	params := readParams{
+		payload:    r.FormValue("payload"),
 		scheduleID: r.FormValue("schedule_id"),
 		page:       r.FormValue("pg"),
 		total:      r.FormValue("ttl"),
@@ -42,7 +37,16 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+	isHasAccess := false
+	switch args.payload {
+	case "assistant":
+		isHasAccess = cs.IsAssistant(sess.ID, args.scheduleID) &&
+			sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXRead, rg.RoleRead)
+	case "student":
+		isHasAccess = cs.IsEnrolled(sess.ID, args.scheduleID)
+	}
+
+	if !isHasAccess {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusForbidden).
 			AddError("You are not authorized"))

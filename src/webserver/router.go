@@ -39,6 +39,9 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))              // patch
 	r.POST("/api/admin/v1/user/:id/activate", auth.MustAuthorize(user.ActivationHandler)) // patch
 	r.POST("/api/admin/v1/user/:id/delete", auth.MustAuthorize(user.DeleteHandler))       // delete
+
+	// Public
+	r.GET("/api/v1/util/time", user.GetTimeHandler)
 	// ======================== End User Handler ========================
 
 	// ======================== Rolegroup Handler =======================
@@ -77,7 +80,7 @@ func loadRouter(r *httprouter.Router) {
 	// ======================== End Course Handler ======================
 
 	// ======================== Schedule Handler ========================
-	r.GET("/api/admin/v1/tutorial", auth.MustAuthorize(tutorial.ReadHandler))
+	r.GET("/api/v1/tutorial", auth.MustAuthorize(tutorial.ReadHandler)) // for admin and user
 	r.POST("/api/admin/v1/tutorial", auth.MustAuthorize(tutorial.CreateHandler))
 	r.GET("/api/admin/v1/tutorial/:tutorial_id", auth.MustAuthorize(tutorial.ReadDetailHandler))
 	r.POST("/api/admin/v1/tutorial/:tutorial_id/update", auth.MustAuthorize(tutorial.UpdateHandler))
@@ -126,7 +129,6 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/information/:id", auth.MustAuthorize(information.GetDetailByAdminHandler)) // read detail information by admin
 	r.GET("/api/v1/information", auth.MustAuthorize(information.GetSummaryHandler))                 // list informations
 	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler))              // detail information
-
 	// ===================== End Information Handler ====================
 
 	// ========================== Place Handler =========================

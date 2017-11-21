@@ -165,11 +165,13 @@ type getResponse struct {
 }
 
 type getAssistantParams struct {
-	ScheduleID string
+	scheduleID string
+	payload    string
 }
 
 type getAssistantArgs struct {
-	ScheduleID int64
+	scheduleID int64
+	payload    string
 }
 
 type getAssistantResponse struct {

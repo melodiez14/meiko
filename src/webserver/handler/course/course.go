@@ -338,7 +338,7 @@ func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -603,7 +603,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -631,7 +631,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -678,25 +678,35 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	sess := r.Context().Value("User").(*auth.User)
 
 	params := getAssistantParams{
-		ScheduleID: r.FormValue("id"),
+		payload:    r.FormValue("payload"),
+		scheduleID: r.FormValue("schedule_id"),
 	}
 
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
-	if !cs.IsEnrolled(sess.ID, args.ScheduleID) {
+	isHasAccess := false
+	switch args.payload {
+	case "assistant":
+		isHasAccess = cs.IsAssistant(sess.ID, args.scheduleID) &&
+			sess.IsHasRoles(rg.ModuleCourse, rg.RoleXRead, rg.RoleRead)
+	case "student":
+		isHasAccess = cs.IsEnrolled(sess.ID, args.scheduleID)
+	}
+
+	if !isHasAccess {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			SetCode(http.StatusForbidden).
+			AddError("You are not authorized"))
 		return
 	}
 
-	uIDs, err := cs.SelectAssistantID(args.ScheduleID)
+	uIDs, err := cs.SelectAssistantID(args.scheduleID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -760,7 +770,7 @@ func DeleteScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -855,7 +865,7 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -898,7 +908,7 @@ func ListEnrolledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 

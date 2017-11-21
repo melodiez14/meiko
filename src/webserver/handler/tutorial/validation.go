@@ -12,6 +12,7 @@ import (
 
 func (params readParams) validate() (readArgs, error) {
 	var args readArgs
+
 	if helper.IsEmpty(params.scheduleID) || helper.IsEmpty(params.page) || helper.IsEmpty(params.total) {
 		return args, fmt.Errorf("Invalid request")
 	}
@@ -37,6 +38,7 @@ func (params readParams) validate() (readArgs, error) {
 	}
 
 	return readArgs{
+		payload:    params.payload,
 		scheduleID: scheduleID,
 		page:       page,
 		total:      total,

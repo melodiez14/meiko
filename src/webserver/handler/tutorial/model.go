@@ -3,12 +3,14 @@ package tutorial
 import "database/sql"
 
 type readParams struct {
+	payload    string
 	scheduleID string
 	page       string
 	total      string
 }
 
 type readArgs struct {
+	payload    string
 	scheduleID int64
 	page       uint64
 	total      uint64

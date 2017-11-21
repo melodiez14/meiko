@@ -247,13 +247,14 @@ func (params getParams) validate() (getArgs, error) {
 func (params getAssistantParams) validate() (getAssistantArgs, error) {
 
 	var args getAssistantArgs
-	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	args = getAssistantArgs{
-		ScheduleID: scheduleID,
+		payload:    params.payload,
+		scheduleID: scheduleID,
 	}
 	return args, nil
 }
