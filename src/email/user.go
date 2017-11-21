@@ -1,5 +1,7 @@
 package email
 
+import "github.com/melodiez14/meiko/src/util/alias"
+
 // SendEmailValidation is used for sending an email validation
 func SendEmailValidation(name, email string, code uint16) {
 
@@ -8,7 +10,7 @@ func SendEmailValidation(name, email string, code uint16) {
 	}
 
 	NewRequest(email, "Email Validation").
-		SetTemplate("files/var/www/meiko/email/email_validation.html", data).
+		SetTemplate(alias.Dir["email"]+"/email_validation.html", data).
 		Deliver()
 }
 
@@ -20,7 +22,7 @@ func SendForgotPassword(name, email string, code uint16) {
 	}
 
 	NewRequest(email, "Forgot Password").
-		SetTemplate("files/var/www/meiko/email/forgot_password.html", data).
+		SetTemplate(alias.Dir["email"]+"/forgot_password.html", data).
 		Deliver()
 }
 
@@ -30,6 +32,6 @@ func SendAccountCreated(name, email string, code uint16) {
 	}
 
 	NewRequest(email, "Your account has been created").
-		SetTemplate("files/var/www/meiko/email/account_created.html", data).
+		SetTemplate(alias.Dir["email"]+"/account_created.html", data).
 		Deliver()
 }

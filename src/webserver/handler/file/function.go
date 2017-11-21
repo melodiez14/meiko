@@ -10,6 +10,7 @@ import (
 	"time"
 
 	fl "github.com/melodiez14/meiko/src/module/file"
+	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
@@ -18,7 +19,7 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 	var file *os.File
 
 	// load file from disk
-	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", payload, filename)
+	path := fmt.Sprintf("%s/%s/%s", alias.Dir["data"], payload, filename)
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -55,7 +56,7 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 func handleJPEGWithoutMeta(payload, filename string, w http.ResponseWriter) error {
 
 	// load file from disk
-	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", payload, filename)
+	path := fmt.Sprintf("%s/%s/%s", alias.Dir["data"], payload, filename)
 	file, err := os.Open(path)
 	if err != nil {
 		return err

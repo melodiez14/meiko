@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/alias"
+
 	"github.com/melodiez14/meiko/src/util/conn"
 
 	"github.com/disintegration/imaging"
@@ -82,8 +84,8 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 		tImg := imaging.Thumbnail(img, 128, 128, imaging.Lanczos)
 
 		// save image to storage
-		imaging.Save(mImg, "files/var/www/meiko/data/profile/"+mImgID+".jpg")
-		imaging.Save(tImg, "files/var/www/meiko/data/profile/"+tImgID+".jpg")
+		imaging.Save(mImg, alias.Dir["data"]+"/profile/"+mImgID+".jpg")
+		imaging.Save(tImg, alias.Dir["data"]+"/profile/"+tImgID+".jpg")
 	}()
 
 	// begin transaction to db
@@ -253,7 +255,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	// save file
 	go func() {
-		path := fmt.Sprintf("files/var/www/meiko/data/%s/%s.%s", payload, id, args.extension)
+		path := fmt.Sprintf("%s/%s/%s.%s", alias.Dir["data"], payload, id, args.extension)
 		f, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
 		defer f.Close()
 
