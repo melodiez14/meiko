@@ -1,6 +1,6 @@
 {
     "webserver": {
-        "port": ""
+        "port": "80"
     },
     "database": {
         "host": "us-cdbr-iron-east-05.cleardb.net",
