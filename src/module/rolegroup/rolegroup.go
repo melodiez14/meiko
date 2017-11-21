@@ -114,7 +114,7 @@ func SelectModuleAccess(id int64) (map[string][]string, error) {
 	privilege := make(map[string][]string)
 	query := fmt.Sprintf(`
 		SELECT
-			module,
+			modules,
 			ability
 		FROM
 			rolegroups_modules
