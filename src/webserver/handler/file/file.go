@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"math/rand"
 	"net/http"
@@ -136,61 +137,25 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 
 func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	params := getFileParams{
-		payload:  ps.ByName("payload"),
-		filename: ps.ByName("filename"),
-	}
+	var err error
+	payload := ps.ByName("payload")
+	filename := html.EscapeString(ps.ByName("filename"))
 
-	args, err := params.validate()
-	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-		return
-	}
-
-	// get data from db for specific payload
-	var fn, ext string
-	var fileInfo fl.File
-	if args.payload == "assignment" || args.payload == "tutorial" {
-		fn, ext, err = helper.ExtractExtension(args.filename)
-		if err != nil {
-			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-			return
-		}
-
-		fileInfo, err = fl.GetByIDExt(fn, ext, fl.ColName, fl.ColExtension, fl.ColMime)
-		if err != nil {
-			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-			return
-		}
-	}
-
-	// load file from disk
-	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", args.payload, args.filename)
-	file, err := os.Open(path)
-	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-		return
-	}
-	defer file.Close()
-
-	// set header for response
-	switch args.payload {
-	case "profile":
-		w.Header().Set("Content-Type", "image/jpeg")
+	switch payload {
 	case "assignment", "tutorial":
-		cntDisposition := fmt.Sprintf(`attachment; filename="%s.%s"`, fileInfo.Name, fileInfo.Extension)
-		w.Header().Set("Content-Type", fileInfo.Mime)
-		w.Header().Set("Content-Disposition", cntDisposition)
-	case "error":
-		w.Header().Set("Content-Type", "image/jpeg")
+		err = handleSingleWithMeta(payload, filename, w)
+	case "profile", "error":
+		err = handleJPEGWithoutMeta(payload, filename, w)
+	case "assignment-user":
+		err = handleUserAssignment(w) // change the parameter
 	default:
+		err = fmt.Errorf("Invalid")
+	}
+
+	if err != nil {
 		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
 		return
 	}
-
-	w.Header().Set("Cache-Control", "public, max-age=2628000")
-
-	io.Copy(w, file)
 }
 
 func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
