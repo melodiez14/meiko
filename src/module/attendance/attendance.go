@@ -329,3 +329,46 @@ func SelectUserIDByMeetingID(meetingID uint64) ([]int64, error) {
 	}
 	return usersID, nil
 }
+
+func SelectMeetingIDByScheduleID(userID, scheduleID int64) ([]int64, error) {
+
+	var meetingsID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			meetings
+		WHERE
+			schedules_id = (%d);
+	`, scheduleID)
+
+	err := conn.DB.Select(&meetingsID, query)
+	if err != nil {
+		return meetingsID, err
+	}
+
+	return meetingsID, nil
+}
+
+func CountByUserMeeting(userID int64, meetingsID []int64) (int, error) {
+
+	var count int
+	meetingsString := helper.Int64ToStringSlice(meetingsID)
+	queryMeetingsID := strings.Join(meetingsString, ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			attendances
+		WHERE
+			users_id = (%d) AND
+			meetings_id IN (%s);
+	`, userID, queryMeetingsID)
+
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+
+	return count, nil
+}

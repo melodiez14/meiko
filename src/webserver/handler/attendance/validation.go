@@ -298,3 +298,12 @@ func (params readMeetingDetailParams) validate() (readMeetingDetailArgs, error) 
 		meetingID: meetingID,
 	}, nil
 }
+
+func (params getAttendanceParams) validate() (getAttendanceArgs, error) {
+	var args getAttendanceArgs
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return getAttendanceArgs{scheduleID: scheduleID}, nil
+}

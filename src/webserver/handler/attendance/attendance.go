@@ -1,6 +1,7 @@
 package attendance
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -597,6 +598,71 @@ func ReadMeetingDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		MeetingNumber: meeting.Number,
 		Date:          meeting.Date.UnixNano(),
 		Student:       std,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+func GetAttendanceHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAttendance, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := getAttendanceParams{
+		scheduleID: r.FormValue("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsEnrolled(sess.ID, args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You are not authorized"))
+		return
+	}
+
+	var meetingsID []int64
+	var present, absent, totalMeeting int
+	var percentage float32
+
+	meetingsID, err = atd.SelectMeetingIDByScheduleID(sess.ID, args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	totalMeeting = len(meetingsID)
+	if totalMeeting > 0 {
+		present, err = atd.CountByUserMeeting(sess.ID, meetingsID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		absent = totalMeeting - present
+		percentage = float32(present) * 100 / float32(totalMeeting)
+	}
+
+	resp := getAttendanceResponse{
+		Absent:       absent,
+		Present:      present,
+		TotalMeeting: totalMeeting,
+		Percentage:   fmt.Sprintf("%.3g%%", percentage),
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
