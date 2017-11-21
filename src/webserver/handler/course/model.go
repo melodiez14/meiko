@@ -222,3 +222,13 @@ type listStudentResponse struct {
 	UserIdentityCode int64  `json:"id"`
 	UserName         string `json:"name"`
 }
+
+type addAssistantParams struct {
+	assistentIdentityCodes string
+	scheduleID             string
+}
+
+type addAssistantArgs struct {
+	assistentIdentityCodes []int64
+	scheduleID             int64
+}

@@ -670,7 +670,7 @@ func Create(identityCode int64, name, email string) error {
 }
 
 // IsUserExist func ...
-func IsUserExist(UserID int64) bool {
+func IsUserExist(identityCode int64) bool {
 
 	var x string
 	query := fmt.Sprintf(`
@@ -680,7 +680,7 @@ func IsUserExist(UserID int64) bool {
 				users
 			WHERE
 				identity_code = (%d)
-			LIMIT 1;`, UserID)
+			LIMIT 1;`, identityCode)
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false

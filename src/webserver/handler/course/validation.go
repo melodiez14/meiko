@@ -543,3 +543,30 @@ func (params listStudentParams) validate() (listStudentArgs, error) {
 
 	return listStudentArgs{scheduleID: scheduleID}, nil
 }
+
+func (params addAssistantParams) validate() (addAssistantArgs, error) {
+
+	var args addAssistantArgs
+	idInt64 := []int64{}
+
+	if !helper.IsEmpty(params.assistentIdentityCodes) {
+		idString := strings.Split(params.assistentIdentityCodes, "~")
+		for _, val := range idString {
+			id, err := strconv.ParseInt(val, 10, 64)
+			if err != nil {
+				return args, err
+			}
+			idInt64 = append(idInt64, id)
+		}
+	}
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return addAssistantArgs{
+		assistentIdentityCodes: idInt64,
+		scheduleID:             scheduleID,
+	}, nil
+}

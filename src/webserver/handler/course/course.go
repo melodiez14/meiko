@@ -946,3 +946,112 @@ func ListEnrolledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		SetData(resp))
 	return
 }
+
+func AddAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleCourse, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	// assistant_id = user identity code
+	params := addAssistantParams{
+		assistentIdentityCodes: r.FormValue("assistant_id"),
+		scheduleID:             ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	// check if creator or assistant of specific schedule id
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		if !cs.IsCreator(sess.ID, args.scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("You are not authorized"))
+			return
+		}
+	}
+
+	newAssistant := []int64{}
+	if len(args.assistentIdentityCodes) > 0 {
+		newAssistant, err = user.SelectIDByIdentityCode(args.assistentIdentityCodes)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	// check if all user id is registered or valid
+	if len(newAssistant) != len(args.assistentIdentityCodes) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	oldAssistant, err := cs.SelectAssistantID(args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var insert []int64
+	for _, val := range newAssistant {
+		if !helper.Int64InSlice(val, oldAssistant) {
+			insert = append(insert, val)
+		}
+	}
+
+	var delete []int64
+	for _, val := range oldAssistant {
+		if !helper.Int64InSlice(val, newAssistant) {
+			delete = append(delete, val)
+		}
+	}
+
+	tx, err := conn.DB.Beginx()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(delete) > 0 {
+		err = cs.DeleteAssistant(delete, args.scheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	if len(insert) > 0 {
+		err = cs.InsertAssistant(insert, args.scheduleID, tx)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
+	return
+}
