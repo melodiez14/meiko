@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/melodiez14/meiko/src/module/bot"
 	cs "github.com/melodiez14/meiko/src/module/course"
@@ -209,7 +208,7 @@ func handleAssignment(text string, userID int64) ([]map[string]interface{}, erro
 			"url":         "/api/v1/assignment/" + val.ID,
 			"name":        val.Name,
 			"description": val.Description,
-			"due_date":    val.DueDate.Format(time.RFC1123),
+			"due_date":    val.DueDate.Unix(),
 			"course_name": val.CourseName,
 		})
 	}
@@ -247,7 +246,7 @@ func handleGrade(text string, userID int64) ([]map[string]interface{}, error) {
 			"url":         "/api/v1/assignment/" + val.AssignmentID,
 			"name":        val.Name,
 			"score":       fmt.Sprintf("%.3g", val.Score),
-			"scored_time": val.UpdatedAt.Format(time.RFC1123),
+			"scored_time": val.UpdatedAt.Unix(),
 			"course_name": val.CourseName,
 		})
 	}

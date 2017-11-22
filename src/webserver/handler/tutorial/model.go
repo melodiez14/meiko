@@ -21,7 +21,7 @@ type readResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	URL         string `json:"file_url"`
-	Time        string `json:"time"`
+	Time        int64  `json:"time"`
 }
 
 type readDetailParams struct {
@@ -37,7 +37,7 @@ type readDetailResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	URL         string `json:"file_url"`
-	Time        string `json:"time"`
+	Time        int64  `json:"time"`
 }
 
 type createParams struct {

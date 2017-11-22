@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 	cs "github.com/melodiez14/meiko/src/module/course"
@@ -72,7 +71,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			ID:          val.ID,
 			Name:        val.Name,
 			Description: desc,
-			Time:        val.CreatedAt.Format(time.RFC1123),
+			Time:        val.CreatedAt.Unix(),
 			URL:         fmt.Sprintf("/api/v1/filerouter/?id=%d&payload=tutorial", val.ID),
 		})
 	}
@@ -122,7 +121,7 @@ func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		ID:          tutorial.ID,
 		Name:        tutorial.Name,
 		Description: tutorial.Description.String,
-		Time:        tutorial.CreatedAt.Format(time.RFC1123),
+		Time:        tutorial.CreatedAt.Unix(),
 		URL:         fmt.Sprintf("/api/v1/filerouter/?id=%d&payload=tutorial", tutorial.ID),
 	}
 

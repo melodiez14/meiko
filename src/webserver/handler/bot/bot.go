@@ -88,7 +88,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	resp := messageResponse{
 		Status:    bot.StatusBot,
 		Text:      args.Text,
-		TimeStamp: time.Now().Format(time.RFC1123),
+		TimeStamp: time.Now().Unix(),
 		Response:  respData,
 	}
 
@@ -131,7 +131,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		if val.Status == bot.StatusUser {
 			resp = append(resp, map[string]interface{}{
 				"status": bot.StatusUser,
-				"time":   val.CreatedAt.Format(time.RFC1123),
+				"time":   val.CreatedAt.Unix(),
 				"message": map[string]interface{}{
 					"id":   val.ID,
 					"text": val.Message,
@@ -145,7 +145,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		jsnMap["id"] = val.ID
 		resp = append(resp, map[string]interface{}{
 			"status":  bot.StatusBot,
-			"time":    val.CreatedAt.Format(time.RFC1123),
+			"time":    val.CreatedAt.Unix(),
 			"message": jsnMap,
 		})
 	}
