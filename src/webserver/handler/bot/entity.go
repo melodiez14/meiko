@@ -114,11 +114,11 @@ func (params *sEntity) getTime() []time.Time {
 
 	// word expression
 	patternWord := map[string]time.Time{
-		`kemaren\s*lusa`:  now.AddDate(0, 0, -1),
+		`kemaren\s*lusa`:  now.AddDate(0, 0, -2),
 		`pekan\s*kemarin`: now.AddDate(0, 0, -7),
-		`kemarin`:         now.AddDate(0, 0, -2),
-		`kemaren`:         now.AddDate(0, 0, -2),
-		`hari\s*ini`:      now.AddDate(0, 0, -1),
+		`kemarin`:         now.AddDate(0, 0, -1),
+		`kemaren`:         now.AddDate(0, 0, -1),
+		`hari\s*ini`:      now.AddDate(0, 0, 0),
 	}
 
 	for i, val := range patternWord {

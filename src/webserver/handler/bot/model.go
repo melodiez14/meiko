@@ -45,7 +45,7 @@ type messageArgs struct {
 type messageResponse struct {
 	Status    uint8       `json:"status"`
 	Text      string      `json:"original_text"`
-	TimeStamp int64       `json:"time"`
+	TimeStamp string      `json:"time"`
 	Response  interface{} `json:"message"`
 }
 
