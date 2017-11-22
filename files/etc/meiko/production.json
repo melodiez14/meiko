@@ -3,16 +3,16 @@
         "port": "80"
     },
     "database": {
-        "host": "us-cdbr-iron-east-05.cleardb.net",
+        "host": "localhost",
         "port": "3306",
-        "username": "b056cfdd1466e0",
-        "password": "b34f6efc",
+        "username": "meiko",
+        "password": "Meiko@123",
         "driver": "mysql",
-        "database": "heroku_f39d37ae8e8fe47"
+        "database": "meiko"
     },
     "redis": {
-        "address": "greeneye.redistogo.com:11420",
-        "password": "88be55fc4637e4a603b8a5ea2365f23c"
+        "address": "localhost:6379",
+        "password": ""
     },
     "email": {
         "username": "meikodevelopment@gmail.com",
