@@ -535,7 +535,26 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 		return
 	}
 	offset := (args.Page - 1) * args.Total
-	res, err := as.GetByGradeParametersID(gradeParamsID, args.Total, offset)
+	assignments, err := as.GetByGradeParametersID(gradeParamsID, args.Total, offset)
+	res := []listAssignmentResponse{}
+	for _, val := range assignments {
+		var status int8
+		status = 0
+		if val.Status == 0 {
+			status = 2
+		} else {
+			if as.IsUploaded(val.ID) {
+				status = 1
+			}
+		}
+		res = append(res, listAssignmentResponse{
+			ID:          val.ID,
+			Name:        val.Name,
+			Status:      status,
+			Description: val.Description,
+			DueDate:     val.DueDate,
+		})
+	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).SetData(res))
 	return

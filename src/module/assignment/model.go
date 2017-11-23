@@ -67,12 +67,6 @@ type DetailUploadedAssignment struct {
 	PathFile              sql.NullString
 }
 
-// ListAssignments struct ...
-type ListAssignments struct {
-	Assignment Assignment
-	Score      sql.NullFloat64
-}
-
 // UserAssignmentDetail struct ...
 type UserAssignmentDetail struct {
 	UserID      int64          `db:"identity_code"`

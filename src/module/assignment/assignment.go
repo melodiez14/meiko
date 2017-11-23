@@ -214,7 +214,7 @@ func SelectByPage(limit, offset uint16) ([]Assignment, error) {
 }
 
 // GetByGradeParametersID func ...
-func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]ListAssignments, error) {
+func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]Assignment, error) {
 	var gradeParametersQuery string
 	for i, value := range gradeParametersID {
 		if i+1 == len(gradeParametersID) {
@@ -229,47 +229,21 @@ func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]
 			asg.due_date,
 			asg.name,
 			asg.description,
-			asg.status,
-			pua.score
+			asg.status
 		FROM
 			assignments asg
-		RIGHT JOIN
-			p_users_assignments pua
-		ON
-			asg.id = pua.assignments_id
 		WHERE
 			grade_parameters_id IN (%s)
 		LIMIT %d OFFSET %d		
 		;`, gradeParametersQuery, limit, offset)
-	var result []ListAssignments
-	rows, err := conn.DB.Query(query)
+
+	var result []Assignment
+	err := conn.DB.Select(&result, query)
 	if err != nil {
 		return result, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int64
-		var score sql.NullFloat64
-		var status int8
-		var name string
-		var dueDate time.Time
-		var description sql.NullString
-		err := rows.Scan(&id, &dueDate, &name, &description, &status, &score)
-		if err != nil {
-			fmt.Println(err.Error())
-			return result, err
-		}
-		result = append(result, ListAssignments{
-			Assignment: Assignment{
-				ID:          id,
-				Name:        name,
-				Status:      status,
-				Description: description,
-				DueDate:     dueDate,
-			}, Score: score,
-		})
-	}
 	return result, nil
+
 }
 
 // GetAssignmentByID func ...
@@ -792,4 +766,23 @@ func SelectScore(userID int64, assignmentsID []int64) ([]float32, error) {
 
 	return result, nil
 
+}
+
+// IsUploaded func ...
+func IsUploaded(assignmentID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		LIMIT 1;
+		`, assignmentID)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
 }
