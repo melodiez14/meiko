@@ -246,9 +246,9 @@ type student struct {
 	Score        float32 `json:"score"`
 }
 type listAssignmentResponse struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	Status      int8           `json:"status"`
-	Description sql.NullString `json:"description"`
-	DueDate     time.Time      `json:"due_date"`
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Status      int8      `json:"status"`
+	Description string    `json:"description"`
+	DueDate     time.Time `json:"due_date"`
 }

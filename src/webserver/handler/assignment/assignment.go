@@ -547,11 +547,15 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 				status = 1
 			}
 		}
+		var description string
+		if val.Description.Valid {
+			description = fmt.Sprintf(val.Description.String)
+		}
 		res = append(res, listAssignmentResponse{
 			ID:          val.ID,
 			Name:        val.Name,
 			Status:      status,
-			Description: val.Description,
+			Description: description,
 			DueDate:     val.DueDate,
 		})
 	}
