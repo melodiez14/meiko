@@ -40,7 +40,7 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 	cntDisposition := fmt.Sprintf(`attachment; filename="%s.%s"`, fileInfo.Name, fileInfo.Extension)
 	w.Header().Set("Content-Type", fileInfo.Mime)
 	w.Header().Set("Content-Disposition", cntDisposition)
-	w.Header().Set("Cache-Control", "no-transform, max-age=2628000")
+	w.Header().Set("Cache-Control", "private, max-age=2628000")
 
 	stat, err := file.Stat()
 	if err == nil {
@@ -53,7 +53,7 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 	return nil
 }
 
-func handleJPEGWithoutMeta(payload, filename string, w http.ResponseWriter) error {
+func handleSingleWithoutMeta(payload, filename string, w http.ResponseWriter) error {
 
 	// load file from disk
 	path := fmt.Sprintf("%s/%s/%s", alias.Dir["data"], payload, filename)
@@ -63,8 +63,21 @@ func handleJPEGWithoutMeta(payload, filename string, w http.ResponseWriter) erro
 	}
 	defer file.Close()
 
-	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Cache-Control", "no-transform, max-age=2628000")
+	// Only the first 512 bytes are used to sniff the content type.
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		return err
+	}
+
+	// Reset the read pointer if necessary.
+	file.Seek(0, 0)
+
+	// Always returns a valid content-type and "application/octet-stream" if no others seemed to match.
+	contentType := http.DetectContentType(buffer)
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "private, max-age=2628000")
 
 	stat, err := file.Stat()
 	if err == nil {

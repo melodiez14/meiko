@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/helper"
+
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
@@ -84,7 +86,7 @@ func SelectAssistantWithCourse(userID int64, rgxCourse sql.NullString, days []in
 
 	// validate regex
 	if rgxCourse.Valid {
-		queryCourse = fmt.Sprintf(`LOWER(c.name) REGEXP '%s' AND`, rgxCourse.String)
+		queryCourse = fmt.Sprintf(`LOWER(c.name) REGEXP '%s'`, rgxCourse.String)
 	}
 
 	if len(days) > 0 {
@@ -95,6 +97,13 @@ func SelectAssistantWithCourse(userID int64, rgxCourse sql.NullString, days []in
 		queryDay = fmt.Sprintf(`s.day IN (%s)`, strings.Join(daysString, ", "))
 	}
 
+	var queryWhere string
+	if !helper.IsEmpty(queryCourse) && !helper.IsEmpty(queryDay) {
+		queryWhere = fmt.Sprintf("WHERE %s AND %s", queryCourse, queryDay)
+	} else if !helper.IsEmpty(queryCourse) != !helper.IsEmpty(queryDay) {
+		queryWhere = "WHERE " + queryCourse + queryDay
+	}
+
 	query := fmt.Sprintf(`
 		SELECT
 			u.identity_code,
@@ -102,32 +111,33 @@ func SelectAssistantWithCourse(userID int64, rgxCourse sql.NullString, days []in
 			COALESCE(u.phone, '-') as phone,
 			COALESCE(u.line_id, '-') as line_id,
 			c.id as courses_id,
-			c.name as courses_name
+			c.name as courses_name,
+			f.id as files_id
 		FROM
 			users u
-		INNER JOIN p_users_schedules pus ON u.id = pus.users_id
-		INNER JOIN schedules s ON pus.schedules_id = s.id
-		INNER JOIN courses c ON s.courses_id = c.id
-		WHERE
-			%s %s
-			pus.status = 2 AND
-			s.status = 1 AND
-			u.id IN (
-				SELECT
-					DISTINCT(users_id)
-				FROM p_users_schedules
-					WHERE schedules_id
-				IN (
+		RIGHT JOIN (
+			SELECT
+				users_id,
+				schedules_id
+			FROM
+				p_users_schedules
+			WHERE
+				status = 2 AND
+				schedules_id IN (
 					SELECT
-						DISTINCT(schedules_id)
+						schedules_id
 					FROM
 						p_users_schedules
 					WHERE
 						users_id = (%d) AND
 						status = 1
-				)	
-			);
-	`, queryCourse, queryDay, userID)
+				)
+		) as pus ON pus.users_id = u.id
+		LEFT JOIN schedules s ON pus.schedules_id = s.id AND s.status = 1
+		LEFT JOIN courses c ON s.courses_id = c.id
+		LEFT JOIN files f ON f.users_id = u.id AND f.status = 1 AND f.type = 'PL-IMG-T'
+		%s;
+	`, userID, queryWhere)
 
 	err := conn.DB.Select(&assistants, query)
 	if err != nil {
@@ -306,4 +316,49 @@ func SelectGradeWithCourse(userID int64, rgxCourse sql.NullString, t []time.Time
 	}
 
 	return grades, nil
+}
+
+// SelectInfoWithFile ...
+func SelectInfoWithFile(scheduleID []int64, t []time.Time) ([]Information, error) {
+
+	var info []Information
+	d := helper.Int64ToStringSlice(scheduleID)
+
+	if len(scheduleID) < 1 {
+		return info, nil
+	}
+
+	var queryTime string
+	if len(t) == 1 {
+		queryTime = fmt.Sprintf("AND date(created_at) = ('%s')", t[0].Format("2006-01-02"))
+	} else if len(t) == 2 {
+		queryTime = fmt.Sprintf("AND date(created_at) BETWEEN ('%s') AND ('%s')", t[0].Format("2006-01-02"), t[1].Format("2006-01-02"))
+	} else if len(t) > 2 {
+		return info, fmt.Errorf("date more than two")
+	}
+
+	ids := strings.Join(d, ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			i.id,
+			i.title,
+			i.description,
+			i.created_at,
+			f.id as files_id,
+			f.extension as files_ext
+		FROM
+			informations i
+		LEFT JOIN files f ON f.table_id = i.id AND f.type = 'INF-IMG-T' AND f.status = 1
+		WHERE
+			(
+				schedules_id IS NULL OR
+				schedules_id IN (%s)
+			) %s
+		ORDER BY i.created_at DESC
+		LIMIT 5`, ids, queryTime)
+	err := conn.DB.Select(&info, query)
+	if err != nil {
+		return info, err
+	}
+	return info, nil
 }

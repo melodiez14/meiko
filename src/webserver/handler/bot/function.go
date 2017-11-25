@@ -8,7 +8,7 @@ import (
 
 	"github.com/melodiez14/meiko/src/module/bot"
 	cs "github.com/melodiez14/meiko/src/module/course"
-	inf "github.com/melodiez14/meiko/src/module/information"
+	fl "github.com/melodiez14/meiko/src/module/file"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
@@ -47,13 +47,19 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 
 	mapAssistant := map[int64]map[string]interface{}{}
 	for _, val := range assistants {
+
+		image := fl.UsrNoPhotoURL
+		if val.FileID.Valid {
+			image = "/api/v1/file/profile/" + val.FileID.String + ".jpg"
+		}
+
 		if _, ok := mapAssistant[val.IdentityCode]; !ok {
 			mapAssistant[val.IdentityCode] = map[string]interface{}{
 				"name":    val.Name,
 				"phone":   val.Phone,
 				"line_id": val.LineID,
 				"courses": []string{val.CourseName},
-				"image":   "/api/v1/file/error/not-found.png",
+				"image":   image,
 			}
 			continue
 		}
@@ -69,7 +75,7 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 			"phone":   val.Phone,
 			"line_id": val.LineID,
 			"courses": courses,
-			"image":   "/api/v1/file/error/not-found.png",
+			"image":   image,
 		}
 	}
 
@@ -118,16 +124,22 @@ func handleInformation(text string, userID int64) ([]map[string]interface{}, err
 		activeScheduleID = append(activeScheduleID, val.Schedule.ID)
 	}
 
-	info, err := inf.SelectByScheduleIDAndTime(activeScheduleID, filterTime)
+	info, err := bot.SelectInfoWithFile(activeScheduleID, filterTime)
 	if err != nil {
 		return args, err
 	}
 
 	for _, val := range info {
+		image := fl.NotFoundURL
+		if val.FileID.Valid {
+			image = fmt.Sprintf("/api/v1/file/information/%s.%s", val.FileID.String, val.FileExt.String)
+		}
 		args = append(args, map[string]interface{}{
+			"id":          val.ID,
 			"title":       val.Title,
 			"description": val.Description.String,
-			"image":       "/api/v1/file/error/not-found.png", // need to change this one
+			"image":       image,
+			"posted_at":   val.CreatedAt.Unix(),
 		})
 	}
 

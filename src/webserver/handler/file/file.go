@@ -146,8 +146,8 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	switch payload {
 	case "assignment", "tutorial":
 		err = handleSingleWithMeta(payload, filename, w)
-	case "profile", "error":
-		err = handleJPEGWithoutMeta(payload, filename, w)
+	case "profile", "default", "information":
+		err = handleSingleWithoutMeta(payload, filename, w)
 	case "assignment-user":
 		err = handleUserAssignment(w) // change the parameter
 	default:
@@ -155,7 +155,7 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 }
@@ -173,13 +173,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	case "pl_t":
 		typ = fl.TypProfPictThumb
 	default:
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.UsrNoPhotoURL, http.StatusSeeOther)
 		return
 	}
 
 	file, err := fl.GetByTypeUserID(sess.ID, typ, fl.ColID)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.UsrNoPhotoURL, http.StatusSeeOther)
 		return
 	}
 
@@ -281,7 +281,7 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	sess := r.Context().Value("User").(*auth.User)
 	if sess == nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
@@ -298,20 +298,20 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	if !isHasAccess {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
 	id := r.FormValue("id")
 	_, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
 	file, err := fl.GetByRelation(tableName, id)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 

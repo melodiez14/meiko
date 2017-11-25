@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -18,12 +19,13 @@ type Log struct {
 }
 
 type Assistant struct {
-	IdentityCode int64  `db:"identity_code"`
-	Name         string `db:"name"`
-	Phone        string `db:"phone"`
-	LineID       string `db:"line_id"`
-	CourseID     string `db:"courses_id"`
-	CourseName   string `db:"courses_name"`
+	IdentityCode int64          `db:"identity_code"`
+	Name         string         `db:"name"`
+	Phone        string         `db:"phone"`
+	LineID       string         `db:"line_id"`
+	CourseID     string         `db:"courses_id"`
+	CourseName   string         `db:"courses_name"`
+	FileID       sql.NullString `db:"files_id"`
 }
 
 type Schedule struct {
@@ -48,4 +50,13 @@ type Grade struct {
 	Score        float32   `db:"score"`
 	CourseName   string    `db:"course_name"`
 	UpdatedAt    time.Time `db:"updated_at"`
+}
+
+type Information struct {
+	ID          int64          `db:"id"`
+	Title       string         `db:"title"`
+	Description sql.NullString `db:"description"`
+	CreatedAt   time.Time      `db:"created_at"`
+	FileID      sql.NullString `db:"files_id"`
+	FileExt     sql.NullString `db:"files_ext"`
 }
