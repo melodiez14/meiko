@@ -511,7 +511,7 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 	params := listAssignmentsParams{
 		Page:       r.FormValue("pg"),
 		Total:      r.FormValue("ttl"),
-		ScheduleID: ps.ByName("schedule_id"),
+		ScheduleID: r.FormValue("schedule_id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -607,8 +607,8 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 	sess := r.Context().Value("User").(*auth.User)
 	params := readUploadedDetailParams{
-		UserID:       ps.ByName("id"),
-		ScheduleID:   ps.ByName("schedule_id"),
+		UserID:       r.FormValue("id"),
+		ScheduleID:   r.FormValue("schedule_id"),
 		AssignmentID: ps.ByName("assignment_id"),
 	}
 

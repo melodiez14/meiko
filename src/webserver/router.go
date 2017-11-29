@@ -81,7 +81,6 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/course/:schedule_id/assistant", auth.MustAuthorize(course.AddAssistantHandler))
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
-	r.GET("/api/v1/course/grade", auth.MustAuthorize(course.GetGradeSummery))
 	// ======================== End Course Handler ======================
 
 	// ======================== Schedule Handler ========================
@@ -115,36 +114,15 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
 	r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
-
 	r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
 	r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
 
-	r.POST("/api/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                          // update upload by users
-	r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))                              // create upload by user
-	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
-	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                 // read detail assignments definitions
-	r.GET("/api/v1/course/assignment/:schedule_id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))       // List assignments
-
-	// r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
-	// ========================= End Assignment Handler ========================
-	// // Attendance Handler
-	//r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetSummaryHandler))
-	// r.GET("/api/v1/notification", auth.MustAuthorize(notification.GetHandler))
-	// // ======================= Assignment Handler =======================
-	// r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
-	// r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
-	// r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
-	// r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
-	// r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
-	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
-	// r.POST("/api/admin/v1/assignment/score/:id/:assignment_id", auth.MustAuthorize(assignment.UpdateScoreByAdminHandler)) // update score
-	// r.POST("/api/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                           // update upload by users
-	// r.POST("/api/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandlerByUser))                               // create upload by user
-	// r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler))  // detail user assignments
-	// r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                  // read detail assignments definitions
-	// r.GET("/api/v1/course/assignment/:schedule_id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))        // List assignments
-	// // r.GET("/api/v1/assignment/summary", auth.MustAuthorize(assignment.GetSummaryHandler))
-	// // ===================== End Assignment Handler =====================
+	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler)) // List assignments
+	r.GET("/api/v1/grade", auth.MustAuthorize(course.GetGradeSummery))
+	r.POST("/api/v1/assignment", auth.MustAuthorize(assignment.CreateHandlerByUser))                             // create upload by user
+	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                         // read detail assignments definitions
+	r.PUT("/api/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                          // update upload by users
+	r.GET("/api/v1/assignment-uploaded/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
 
 	// ======================= Information Handler ======================
 	// User section
