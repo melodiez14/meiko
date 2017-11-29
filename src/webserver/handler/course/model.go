@@ -255,3 +255,17 @@ type addAssistantArgs struct {
 	assistentIdentityCodes []int64
 	scheduleID             int64
 }
+
+type getTodayParams struct {
+	scheduleID string
+}
+
+type getTodayArgs struct {
+	scheduleID int64
+}
+
+type getTodayResponse struct {
+	Name  string `json:"name"`
+	Time  string `json:"time"`
+	Place string `json:"place"`
+}

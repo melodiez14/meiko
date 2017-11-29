@@ -570,3 +570,16 @@ func (params addAssistantParams) validate() (addAssistantArgs, error) {
 		scheduleID:             scheduleID,
 	}, nil
 }
+
+func (params getTodayParams) validate() (getTodayArgs, error) {
+	var args getTodayArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return getTodayArgs{
+		scheduleID: scheduleID,
+	}, nil
+}

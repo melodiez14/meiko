@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 
@@ -679,7 +680,7 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 	params := getAssistantParams{
 		payload:    r.FormValue("payload"),
-		scheduleID: r.FormValue("schedule_id"),
+		scheduleID: ps.ByName("schedule_id"),
 	}
 
 	args, err := params.validate()
@@ -1158,5 +1159,56 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Success"))
+	return
+}
+
+// GetTodayHandler ...
+func GetTodayHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := getTodayParams{
+		scheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsEnrolled(sess.ID, args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	dayNow := time.Now().Weekday()
+
+	courses, err := cs.SelectByDay(int8(dayNow))
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resp := []getTodayResponse{}
+	for _, val := range courses {
+		t1 := helper.MinutesToTimeString(val.Schedule.StartTime)
+		t2 := helper.MinutesToTimeString(val.Schedule.EndTime)
+		t := fmt.Sprintf("%s - %s", t1, t2)
+		resp = append(resp, getTodayResponse{
+			Name:  val.Course.Name,
+			Place: val.Schedule.PlaceID,
+			Time:  t,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
 	return
 }
