@@ -119,3 +119,18 @@ type deleteMeetingArgs struct {
 	id            uint64
 	isForceDelete bool
 }
+
+type getAttendanceParams struct {
+	scheduleID string
+}
+
+type getAttendanceArgs struct {
+	scheduleID int64
+}
+
+type getAttendanceResponse struct {
+	Percentage   string `json:"percentage"`
+	Absent       int    `json:"absent"`
+	Present      int    `json:"present"`
+	TotalMeeting int    `json:"total_meeting"`
+}

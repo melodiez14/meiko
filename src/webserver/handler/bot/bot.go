@@ -37,13 +37,13 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	case intentAssistant:
 		data, err = handleAssistant(args.NormalizedText, sess.ID)
 	case intentGrade:
-		break
+		data, err = handleGrade(args.NormalizedText, sess.ID)
 	case intentAssignment:
-		break
+		data, err = handleAssignment(args.NormalizedText, sess.ID)
 	case intentInformation:
 		data, err = handleInformation(args.NormalizedText, sess.ID)
 	case intentSchedule:
-		break
+		data, err = handleSchedule(args.NormalizedText, sess.ID)
 	case intentUnknown:
 		break
 	default:
@@ -88,7 +88,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	resp := messageResponse{
 		Status:    bot.StatusBot,
 		Text:      args.Text,
-		TimeStamp: time.Now().UnixNano() / 1000000, // javascript unix timestamp in ms
+		TimeStamp: time.Now().Unix(),
 		Response:  respData,
 	}
 
@@ -131,7 +131,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		if val.Status == bot.StatusUser {
 			resp = append(resp, map[string]interface{}{
 				"status": bot.StatusUser,
-				"time":   val.CreatedAt.UnixNano() / 1000000, // javascript unix time in ms
+				"time":   val.CreatedAt.Unix(),
 				"message": map[string]interface{}{
 					"id":   val.ID,
 					"text": val.Message,
@@ -145,7 +145,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		jsnMap["id"] = val.ID
 		resp = append(resp, map[string]interface{}{
 			"status":  bot.StatusBot,
-			"time":    val.CreatedAt.UnixNano() / 1000000, // javascript unix timestamp in ms
+			"time":    val.CreatedAt.Unix(),
 			"message": jsnMap,
 		})
 	}

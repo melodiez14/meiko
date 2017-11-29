@@ -1152,7 +1152,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	@return:
 */
 func GetTimeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	t := time.Now().Format(time.RFC1123)
+	t := time.Now().Unix()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetData(t).
 		SetCode(http.StatusOK))

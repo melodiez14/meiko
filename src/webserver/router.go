@@ -93,8 +93,8 @@ func loadRouter(r *httprouter.Router) {
 
 	// ======================= Attendance Handler =======================
 	// Admin section
-	// r.GET("/api/admin/v1/attendance", auth.MustAuthorize())
 	r.GET("/api/v1/attendance/list", auth.MustAuthorize(attendance.ListStudentHandler))
+	r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetAttendanceHandler))
 	r.GET("/api/admin/v1/attendance", auth.MustAuthorize(attendance.ReadMeetingHandler))
 	r.POST("/api/admin/v1/attendance", auth.MustAuthorize(attendance.CreateMeetingHandler))
 	r.GET("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.ReadMeetingDetailHandler))

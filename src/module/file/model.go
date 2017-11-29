@@ -18,12 +18,17 @@ const (
 	TypProfPictThumb = "PL-IMG-T"
 	TypAssignment    = "ASG-FILE"
 	TypTutorial      = "TT-FILE"
+	TypInfPict       = "INF-IMG-M"
+	TypInfPictThumb  = "INF-IMG-T"
 
 	TableAssignment = "assignments"
 	TableTutorial   = "tutorials"
 
 	StatusDeleted = 0
 	StatusExist   = 1
+
+	NotFoundURL   = "/api/v1/file/default/notfound.png"
+	UsrNoPhotoURL = "/api/v1/file/default/usrnophoto.png"
 )
 
 type File struct {

@@ -2,12 +2,15 @@ package file
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/melodiez14/meiko/src/util/alias"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 
@@ -81,8 +84,8 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 		tImg := imaging.Thumbnail(img, 128, 128, imaging.Lanczos)
 
 		// save image to storage
-		imaging.Save(mImg, "files/var/www/meiko/data/profile/"+mImgID+".jpg")
-		imaging.Save(tImg, "files/var/www/meiko/data/profile/"+tImgID+".jpg")
+		imaging.Save(mImg, alias.Dir["data"]+"/profile/"+mImgID+".jpg")
+		imaging.Save(tImg, alias.Dir["data"]+"/profile/"+tImgID+".jpg")
 	}()
 
 	// begin transaction to db
@@ -136,61 +139,25 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 
 func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	params := getFileParams{
-		payload:  ps.ByName("payload"),
-		filename: ps.ByName("filename"),
-	}
+	var err error
+	payload := ps.ByName("payload")
+	filename := html.EscapeString(ps.ByName("filename"))
 
-	args, err := params.validate()
-	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-		return
-	}
-
-	// get data from db for specific payload
-	var fn, ext string
-	var fileInfo fl.File
-	if args.payload == "assignment" || args.payload == "tutorial" {
-		fn, ext, err = helper.ExtractExtension(args.filename)
-		if err != nil {
-			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-			return
-		}
-
-		fileInfo, err = fl.GetByIDExt(fn, ext, fl.ColName, fl.ColExtension, fl.ColMime)
-		if err != nil {
-			http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-			return
-		}
-	}
-
-	// load file from disk
-	path := fmt.Sprintf("files/var/www/meiko/data/%s/%s", args.payload, args.filename)
-	file, err := os.Open(path)
-	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-		return
-	}
-	defer file.Close()
-
-	// set header for response
-	switch args.payload {
-	case "profile":
-		w.Header().Set("Content-Type", "image/jpeg")
+	switch payload {
 	case "assignment", "tutorial":
-		cntDisposition := fmt.Sprintf(`attachment; filename="%s.%s"`, fileInfo.Name, fileInfo.Extension)
-		w.Header().Set("Content-Type", fileInfo.Mime)
-		w.Header().Set("Content-Disposition", cntDisposition)
-	case "error":
-		w.Header().Set("Content-Type", "image/jpeg")
+		err = handleSingleWithMeta(payload, filename, w)
+	case "profile", "default", "information":
+		err = handleSingleWithoutMeta(payload, filename, w)
+	case "assignment-user":
+		err = handleUserAssignment(w) // change the parameter
 	default:
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
-		return
+		err = fmt.Errorf("Invalid")
 	}
 
-	w.Header().Set("Cache-Control", "public, max-age=2628000")
-
-	io.Copy(w, file)
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
 }
 
 func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -206,13 +173,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	case "pl_t":
 		typ = fl.TypProfPictThumb
 	default:
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.UsrNoPhotoURL, http.StatusSeeOther)
 		return
 	}
 
 	file, err := fl.GetByTypeUserID(sess.ID, typ, fl.ColID)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.UsrNoPhotoURL, http.StatusSeeOther)
 		return
 	}
 
@@ -288,7 +255,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	// save file
 	go func() {
-		path := fmt.Sprintf("files/var/www/meiko/data/%s/%s.%s", payload, id, args.extension)
+		path := fmt.Sprintf("%s/%s/%s.%s", alias.Dir["data"], payload, id, args.extension)
 		f, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
 		defer f.Close()
 
@@ -314,7 +281,7 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	sess := r.Context().Value("User").(*auth.User)
 	if sess == nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
@@ -331,20 +298,20 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	if !isHasAccess {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
 	id := r.FormValue("id")
 	_, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
 	file, err := fl.GetByRelation(tableName, id)
 	if err != nil {
-		http.Redirect(w, r, notFoundURL, http.StatusSeeOther)
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 

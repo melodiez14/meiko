@@ -225,13 +225,13 @@ func GetByGradeParametersID(gradeParametersID []int64, limit, offset uint16) ([]
 	}
 	query := fmt.Sprintf(`
 		SELECT
-			asg.id,
-			asg.due_date,
-			asg.name,
-			asg.description,
-			asg.status
+			id,
+			due_date,
+			name,
+			description,
+			status
 		FROM
-			assignments asg
+			assignments
 		WHERE
 			grade_parameters_id IN (%s)
 		LIMIT %d OFFSET %d		
