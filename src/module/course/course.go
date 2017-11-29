@@ -1013,3 +1013,74 @@ func DeleteAssistant(usersID []int64, scheduleID int64, tx *sqlx.Tx) error {
 	}
 	return nil
 }
+
+func SelectByDay(day int8) ([]CourseSchedule, error) {
+	var course []CourseSchedule
+	query := fmt.Sprintf(`
+		SELECT
+			cs.id,
+			cs.name,
+			cs.description,
+			cs.ucu,
+			sc.id,
+			sc.status,
+			sc.start_time,
+			sc.end_time,
+			sc.day,
+			sc.class,
+			sc.semester,
+			sc.year,
+			sc.places_id,
+			sc.created_by
+		FROM
+			courses cs
+		RIGHT JOIN
+			schedules sc
+		ON
+			cs.id = sc.courses_id
+		WHERE
+			sc.day = (%d)
+		;`, day)
+	rows, err := conn.DB.Queryx(query)
+	defer rows.Close()
+	if err != nil {
+		return course, err
+	}
+
+	for rows.Next() {
+		var id, name, class, placeID string
+		var description sql.NullString
+		var ucu, status, day, semester int8
+		var startTime, endTime uint16
+		var year int16
+		var scheduleID, createdBy int64
+
+		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
+		if err != nil {
+			return course, err
+		}
+
+		course = append(course, CourseSchedule{
+			Course: Course{
+				ID:          id,
+				Name:        name,
+				Description: description,
+				UCU:         ucu,
+			},
+			Schedule: Schedule{
+				ID:        scheduleID,
+				Status:    status,
+				StartTime: startTime,
+				EndTime:   endTime,
+				Day:       day,
+				Class:     class,
+				Semester:  semester,
+				Year:      year,
+				PlaceID:   placeID,
+				CreatedBy: createdBy,
+			},
+		})
+	}
+
+	return course, nil
+}
