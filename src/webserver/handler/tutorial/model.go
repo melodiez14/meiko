@@ -12,16 +12,22 @@ type readParams struct {
 type readArgs struct {
 	payload    string
 	scheduleID int64
-	page       uint64
-	total      uint64
+	page       int
+	total      int
 }
 
-type readResponse struct {
+type readTutorial struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	URL         string `json:"file_url"`
 	Time        int64  `json:"time"`
+}
+
+type readResponse struct {
+	Page      int            `json:"page"`
+	TotalPage int            `json:"total_page"`
+	Tutorials []readTutorial `json:"tutorials"`
 }
 
 type readDetailParams struct {

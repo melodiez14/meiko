@@ -50,6 +50,10 @@ func SelectByPage(limit, offset int, isCount bool) ([]RoleGroup, int, error) {
 		return rolegroups, count, err
 	}
 
+	if !isCount {
+		return rolegroups, count, nil
+	}
+
 	query = `
 		SELECT
 			COUNT(*)
