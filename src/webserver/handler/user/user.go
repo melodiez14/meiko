@@ -296,7 +296,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	params := activationParams{
 		IdentityCode: ps.ByName("id"),
-		Status:       r.FormValue("status"),
+		Status:       ps.ByName("status"),
 	}
 
 	args, err := params.validate()
