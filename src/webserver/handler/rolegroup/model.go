@@ -21,14 +21,20 @@ type readParams struct {
 }
 
 type readArgs struct {
-	page  uint8
-	total uint8
+	page  int
+	total int
 }
 
-type readResponse struct {
+type readRoles struct {
 	ID            int64  `json:"id"`
 	Name          string `json:"name"`
 	IsDeleteAllow bool   `json:"is_delete_allow"`
+}
+
+type readResponse struct {
+	Page      int         `json:"page"`
+	TotalPage int         `json:"total_page"`
+	Roles     []readRoles `json:"roles"`
 }
 
 type readDetailParams struct {

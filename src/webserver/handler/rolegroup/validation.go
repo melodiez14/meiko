@@ -61,12 +61,12 @@ func (params createParams) validate() (createArgs, error) {
 func (params readParams) validate() (readArgs, error) {
 	var args readArgs
 
-	page, err := strconv.ParseUint(params.page, 10, 8)
+	page, err := strconv.ParseUint(params.page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	total, err := strconv.ParseUint(params.total, 10, 8)
+	total, err := strconv.ParseUint(params.total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
@@ -77,8 +77,8 @@ func (params readParams) validate() (readArgs, error) {
 	}
 
 	return readArgs{
-		page:  uint8(page),
-		total: uint8(total),
+		page:  int(page),
+		total: int(total),
 	}, nil
 }
 

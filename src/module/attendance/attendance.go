@@ -276,9 +276,10 @@ func DeleteMeeting(id uint64, tx *sqlx.Tx) error {
 }
 
 // SelectMeetingByPage ...
-func SelectMeetingByPage(scheduleID int64, limit uint8, offset uint64) ([]Meeting, error) {
+func SelectMeetingByPage(scheduleID int64, limit, offset int, isCount bool) ([]Meeting, int, error) {
 
 	meetings := []Meeting{}
+	var count int
 	query := fmt.Sprintf(`
 		SELECT
 			m.id,
@@ -297,10 +298,28 @@ func SelectMeetingByPage(scheduleID int64, limit uint8, offset uint64) ([]Meetin
 
 	err := conn.DB.Select(&meetings, query)
 	if err != nil {
-		return meetings, err
+		return meetings, count, err
 	}
 
-	return meetings, nil
+	if !isCount {
+		return meetings, count, nil
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			meetings
+		WHERE
+			schedules_id = (%d)
+	`, scheduleID)
+
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return meetings, count, err
+	}
+
+	return meetings, count, nil
 }
 
 func SelectUserIDByMeetingID(meetingID uint64) ([]int64, error) {

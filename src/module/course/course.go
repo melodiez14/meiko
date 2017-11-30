@@ -347,9 +347,10 @@ func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day,
 	return id, nil
 }
 
-func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
+func SelectByPage(limit, offset int, isCount bool) ([]CourseSchedule, int, error) {
 
 	var course []CourseSchedule
+	var count int
 	query := fmt.Sprintf(`
 		SELECT
 			cs.id,
@@ -376,7 +377,7 @@ func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()
 	if err != nil {
-		return course, err
+		return course, count, err
 	}
 
 	for rows.Next() {
@@ -389,7 +390,7 @@ func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
 
 		err := rows.Scan(&id, &name, &description, &ucu, &scheduleID, &status, &startTime, &endTime, &day, &class, &semester, &year, &placeID, &createdBy)
 		if err != nil {
-			return course, err
+			return course, count, err
 		}
 
 		course = append(course, CourseSchedule{
@@ -414,7 +415,21 @@ func SelectByPage(limit, offset uint16) ([]CourseSchedule, error) {
 		})
 	}
 
-	return course, nil
+	if !isCount {
+		return course, count, nil
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			schedules`)
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return course, count, err
+	}
+
+	return course, count, nil
 }
 
 func GetByScheduleID(scheduleID int64) (CourseSchedule, error) {

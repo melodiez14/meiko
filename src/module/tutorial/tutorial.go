@@ -10,8 +10,9 @@ import (
 )
 
 // SelectByPage ...
-func SelectByPage(scheduleID int64, limit, offset uint64) ([]Tutorial, error) {
+func SelectByPage(scheduleID int64, limit, offset int, isCount bool) ([]Tutorial, int, error) {
 	var tutorials []Tutorial
+	var count int
 	query := fmt.Sprintf(`
 		SELECT
 			id,
@@ -25,12 +26,28 @@ func SelectByPage(scheduleID int64, limit, offset uint64) ([]Tutorial, error) {
 		LIMIT %d
 		OFFSET %d;
 		`, scheduleID, limit, offset)
-
 	err := conn.DB.Select(&tutorials, query)
 	if err != nil {
-		return tutorials, err
+		return tutorials, count, err
 	}
-	return tutorials, nil
+
+	if !isCount {
+		return tutorials, count, err
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			tutorials
+		WHERE
+			schedules_id = (%d);
+		`, scheduleID)
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return tutorials, count, err
+	}
+	return tutorials, count, nil
 }
 
 // GetByID ...

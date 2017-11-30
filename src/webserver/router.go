@@ -37,9 +37,9 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/user", auth.MustAuthorize(user.ReadHandler))
 	r.POST("/api/admin/v1/user", auth.MustAuthorize(user.CreateHandler))
 	r.GET("/api/admin/v1/user/:id", auth.MustAuthorize(user.DetailHandler))
-	r.POST("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))              // patch
-	r.POST("/api/admin/v1/user/:id/activate", auth.MustAuthorize(user.ActivationHandler)) // patch
-	r.POST("/api/admin/v1/user/:id/delete", auth.MustAuthorize(user.DeleteHandler))       // delete
+	r.PATCH("/api/admin/v1/user/:id", auth.MustAuthorize(user.UpdateHandler))
+	r.PATCH("/api/admin/v1/user/:id/:status", auth.MustAuthorize(user.ActivationHandler))
+	r.DELETE("/api/admin/v1/user/:id", auth.MustAuthorize(user.DeleteHandler))
 
 	// Public
 	r.GET("/api/v1/util/time", user.GetTimeHandler)
@@ -52,8 +52,8 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/role", auth.MustAuthorize(rolegroup.ReadHandler))
 	r.POST("/api/admin/v1/role", auth.MustAuthorize(rolegroup.CreateHandler))
 	r.GET("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.ReadDetailHandler))
-	r.POST("/api/admin/v1/role/:rolegroup_id/update", auth.MustAuthorize(rolegroup.UpdateHandler))
-	r.POST("/api/admin/v1/role/:rolegroup_id/delete", auth.MustAuthorize(rolegroup.DeleteHandler))
+	r.PATCH("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.UpdateHandler))
+	r.DELETE("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.DeleteHandler))
 	// ====================== End Rolegroup Handler =====================
 
 	// ========================== File Handler ==========================
@@ -76,20 +76,20 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))
 	r.GET("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.ReadDetailHandler))                      //read
 	r.GET("/api/admin/v1/course/:schedule_id/parameter", auth.MustAuthorize(course.ReadScheduleParameterHandler)) //read
-	r.POST("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))                         //patch
-	r.POST("/api/admin/v1/course/:schedule_id/delete", auth.MustAuthorize(course.DeleteScheduleHandler))          //delete
+	r.PATCH("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.UpdateHandler))
+	r.DELETE("/api/admin/v1/course/:schedule_id", auth.MustAuthorize(course.DeleteScheduleHandler))
 	r.POST("/api/admin/v1/course/:schedule_id/assistant", auth.MustAuthorize(course.AddAssistantHandler))
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
 	// ======================== End Course Handler ======================
 
-	// ======================== Schedule Handler ========================
+	// ======================== Tutorial Handler ========================
 	r.GET("/api/v1/tutorial", auth.MustAuthorize(tutorial.ReadHandler)) // for admin and user
 	r.POST("/api/admin/v1/tutorial", auth.MustAuthorize(tutorial.CreateHandler))
 	r.GET("/api/admin/v1/tutorial/:tutorial_id", auth.MustAuthorize(tutorial.ReadDetailHandler))
-	r.POST("/api/admin/v1/tutorial/:tutorial_id/update", auth.MustAuthorize(tutorial.UpdateHandler))
-	r.POST("/api/admin/v1/tutorial/:tutorial_id/delete", auth.MustAuthorize(tutorial.DeleteHandler))
-	// ======================= End Course Handler =======================
+	r.PATCH("/api/admin/v1/tutorial/:tutorial_id", auth.MustAuthorize(tutorial.UpdateHandler))
+	r.DELETE("/api/admin/v1/tutorial/:tutorial_id", auth.MustAuthorize(tutorial.DeleteHandler))
+	// ====================== End Tutorial Handler ======================
 
 	// ======================= Attendance Handler =======================
 	// Admin section
@@ -98,8 +98,8 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/attendance", auth.MustAuthorize(attendance.ReadMeetingHandler))
 	r.POST("/api/admin/v1/attendance", auth.MustAuthorize(attendance.CreateMeetingHandler))
 	r.GET("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.ReadMeetingDetailHandler))
-	r.POST("/api/admin/v1/attendance/:meeting_id/delete", auth.MustAuthorize(attendance.DeleteMeetingHandler))
-	r.POST("/api/admin/v1/attendance/:meeting_id/update", auth.MustAuthorize(attendance.UpdateMeetingHandler))
+	r.DELETE("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.DeleteMeetingHandler))
+	r.PATCH("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.UpdateMeetingHandler))
 	// ===================== End Attendance Handler =====================
 	// =========================== Bot Handler ==========================
 	// User section
