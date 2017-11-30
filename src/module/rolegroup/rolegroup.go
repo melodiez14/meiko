@@ -33,8 +33,9 @@ func GetByID(id int64) (RoleGroup, error) {
 }
 
 // SelectByPage ...
-func SelectByPage(limit, offset uint8) ([]RoleGroup, error) {
+func SelectByPage(limit, offset int, isCount bool) ([]RoleGroup, int, error) {
 	rolegroups := []RoleGroup{}
+	var count int
 	query := fmt.Sprintf(`
 		SELECT
 			id,
@@ -46,10 +47,21 @@ func SelectByPage(limit, offset uint8) ([]RoleGroup, error) {
 	`, limit, offset)
 	err := conn.DB.Select(&rolegroups, query)
 	if err != nil {
-		return nil, err
+		return rolegroups, count, err
 	}
 
-	return rolegroups, nil
+	query = `
+		SELECT
+			COUNT(*)
+		FROM
+			rolegroups;
+	`
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return rolegroups, count, err
+	}
+
+	return rolegroups, count, nil
 }
 
 // Update ...

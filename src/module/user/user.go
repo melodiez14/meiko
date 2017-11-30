@@ -488,7 +488,6 @@ func SelectDashboard(id int64, limit, offset int, isCount bool) ([]User, int, er
 		LIMIT %d
 		OFFSET %d;	
 	`, StatusVerified, StatusActivated, id, limit, offset)
-	fmt.Println(query)
 	err := conn.DB.Select(&user, query)
 	if err != nil {
 		return user, count, err
@@ -507,7 +506,6 @@ func SelectDashboard(id int64, limit, offset int, isCount bool) ([]User, int, er
 		(status = (%d) OR status = (%d)) AND
 		id != (%d);	
 		`, StatusVerified, StatusActivated, id)
-	fmt.Println(query)
 	err = conn.DB.Get(&count, query)
 	if err != nil {
 		return user, count, err
