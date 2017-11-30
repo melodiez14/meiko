@@ -67,8 +67,8 @@ func (params readMeetingParams) validate() (readMeetingArgs, error) {
 
 	return readMeetingArgs{
 		scheduleID: scheduleID,
-		page:       uint8(page),
-		total:      uint8(total),
+		page:       int(page),
+		total:      int(total),
 	}, nil
 }
 

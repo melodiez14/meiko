@@ -201,8 +201,8 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	params := readParams{
-		Page:  r.FormValue("pg"),
-		Total: r.FormValue("ttl"),
+		page:  r.FormValue("pg"),
+		total: r.FormValue("ttl"),
 	}
 
 	args, err := params.validate()
@@ -213,8 +213,15 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	offset := (args.Page - 1) * args.Total
-	courses, err := cs.SelectByPage(args.Total, offset)
+	if args.total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
+	offset := (args.page - 1) * args.total
+	courses, count, err := cs.SelectByPage(args.total, offset, true)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -222,7 +229,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	var status string
-	var res []readResponse
+	respCourses := []readCourse{}
 	for _, val := range courses {
 
 		if val.Schedule.Status == cs.StatusScheduleActive {
@@ -231,7 +238,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			status = "inactive"
 		}
 
-		res = append(res, readResponse{
+		respCourses = append(respCourses, readCourse{
 			ID:         val.Course.ID,
 			Name:       val.Course.Name,
 			Class:      val.Schedule.Class,
@@ -243,9 +250,20 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		})
 	}
 
+	totalPage := count / args.total
+	if count%args.total > 0 {
+		totalPage++
+	}
+
+	resp := readResponse{
+		TotalPage: totalPage,
+		Page:      args.page,
+		Courses:   respCourses,
+	}
+
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetData(resp))
 	return
 }
 

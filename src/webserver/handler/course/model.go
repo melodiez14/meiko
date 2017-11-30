@@ -5,13 +5,30 @@ import (
 )
 
 type readParams struct {
-	Page  string
-	Total string
+	page  string
+	total string
 }
 
 type readArgs struct {
-	Page  uint16
-	Total uint16
+	page  int
+	total int
+}
+
+type readCourse struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Class      string `json:"class"`
+	StartTime  string `json:"start_time"`
+	EndTime    string `json:"end_time"`
+	Day        string `json:"day"`
+	Status     string `json:"status"`
+	ScheduleID int64  `json:"schedule_id"`
+}
+
+type readResponse struct {
+	Page      int          `json:"page"`
+	TotalPage int          `json:"total_page"`
+	Courses   []readCourse `json:"courses"`
 }
 
 type searchParams struct {
@@ -27,17 +44,6 @@ type searchResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	UCU         int8   `json:"ucu"`
-}
-
-type readResponse struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	StartTime  string `json:"start_time"`
-	EndTime    string `json:"end_time"`
-	Day        string `json:"day"`
-	Status     string `json:"status"`
-	ScheduleID int64  `json:"schedule_id"`
 }
 
 type readDetailParams struct {

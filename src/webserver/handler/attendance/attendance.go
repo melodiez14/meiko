@@ -485,8 +485,15 @@ func ReadMeetingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	offset := uint64((args.page - 1)) * uint64(args.total)
-	meetings, err := atd.SelectMeetingByPage(args.scheduleID, args.total, offset)
+	if args.total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
+	offset := (args.page - 1) * args.total
+	meetings, count, err := atd.SelectMeetingByPage(args.scheduleID, args.total, offset, true)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -502,16 +509,27 @@ func ReadMeetingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 	totalStudent := uint16(len(enrolled))
 
-	resp := []readMeetingResponse{}
+	respMeetings := []readMeetings{}
 	for _, val := range meetings {
-		resp = append(resp, readMeetingResponse{
+		respMeetings = append(respMeetings, readMeetings{
 			ID:             val.ID,
 			Subject:        val.Subject,
 			MeetingNumber:  val.Number,
-			Date:           val.Date.UnixNano(),
+			Date:           val.Date.Unix(),
 			TotalAttendant: val.TotalAttendant,
 			TotalStudent:   totalStudent,
 		})
+	}
+
+	totalPage := count / args.total
+	if count%args.total > 0 {
+		totalPage++
+	}
+
+	resp := readMeetingResponse{
+		TotalPage: totalPage,
+		Page:      args.page,
+		Meetings:  respMeetings,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
