@@ -224,24 +224,47 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if args.Total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
 	// get verified user by page
 	offset := (args.Page - 1) * args.Total
-	u, _ := user.SelectDashboard(sess.ID, args.Total, offset)
+	u, count, err := user.SelectDashboard(sess.ID, args.Total, offset, true)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
 
+	respUser := []getVerifiedUser{}
 	var status string
-	res := []getVerifiedResponse{}
 	for _, val := range u {
 		if val.Status == alias.UserStatusActivated {
 			status = "active"
 		} else {
 			status = "inactive"
 		}
-		res = append(res, getVerifiedResponse{
+		respUser = append(respUser, getVerifiedUser{
 			Name:         val.Name,
 			Email:        val.Email,
 			IdentityCode: val.IdentityCode,
 			Status:       status,
 		})
+	}
+
+	totalPage := count / int(args.Total)
+	if count%int(args.Total) > 0 {
+		totalPage++
+	}
+
+	res := getVerifiedResponse{
+		Page:      int(args.Page),
+		TotalPage: totalPage,
+		Users:     respUser,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

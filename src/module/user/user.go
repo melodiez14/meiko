@@ -471,14 +471,49 @@ func UpdateStatus(identityCode int64, status int8) error {
 		Phone			= 082214467300
 		RoleGroupsID	= 0
 */
-func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
+func SelectDashboard(id int64, limit, offset int, isCount bool) ([]User, int, error) {
 	var user []User
-	query := fmt.Sprintf(querySelectDashboard, StatusVerified, StatusActivated, id, limit, offset)
+	var count int
+	query := fmt.Sprintf(`
+		SELECT
+			identity_code,
+			name,
+			email,
+			status
+		FROM
+			users
+		WHERE
+			(status = (%d) OR status = (%d)) AND
+			id != (%d)
+		LIMIT %d
+		OFFSET %d;	
+	`, StatusVerified, StatusActivated, id, limit, offset)
+	fmt.Println(query)
 	err := conn.DB.Select(&user, query)
 	if err != nil {
-		return user, err
+		return user, count, err
 	}
-	return user, nil
+
+	if !isCount {
+		return user, count, nil
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+		COUNT(*)
+		FROM
+		users
+		WHERE
+		(status = (%d) OR status = (%d)) AND
+		id != (%d);	
+		`, StatusVerified, StatusActivated, id)
+	fmt.Println(query)
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return user, count, err
+	}
+
+	return user, count, nil
 }
 
 // ChangePassword function to change user password account

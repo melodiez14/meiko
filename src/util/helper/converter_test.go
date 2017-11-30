@@ -713,3 +713,111 @@ func TestTimeToDayInt(t *testing.T) {
 		})
 	}
 }
+
+func TestFloat64Round(t *testing.T) {
+	type args struct {
+		value float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "1.1234",
+			args: args{
+				value: 1.1234,
+			},
+			want: 1,
+		},
+		{
+			name: "1.5",
+			args: args{
+				value: 1.51,
+			},
+			want: 2,
+		},
+		{
+			name: "1.9",
+			args: args{
+				value: 1.9,
+			},
+			want: 2,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.234,
+			},
+			want: -102,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.534,
+			},
+			want: -103,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Float64Round(tt.args.value); got != tt.want {
+				t.Errorf("Float64Round() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFloat32Round(t *testing.T) {
+	type args struct {
+		value float32
+	}
+	tests := []struct {
+		name string
+		args args
+		want float32
+	}{
+		{
+			name: "1.1234",
+			args: args{
+				value: 1.1234,
+			},
+			want: 1,
+		},
+		{
+			name: "1.5",
+			args: args{
+				value: 1.51,
+			},
+			want: 2,
+		},
+		{
+			name: "1.9",
+			args: args{
+				value: 1.9,
+			},
+			want: 2,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.234,
+			},
+			want: -102,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.534,
+			},
+			want: -103,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Float32Round(tt.args.value); got != tt.want {
+				t.Errorf("Float32Round() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
