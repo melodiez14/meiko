@@ -583,3 +583,16 @@ func (params getTodayParams) validate() (getTodayArgs, error) {
 		scheduleID: scheduleID,
 	}, nil
 }
+
+func (params getDetailParams) validate() (getDetailArgs, error) {
+	var args getDetailArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return getDetailArgs{
+		scheduleID: scheduleID,
+	}, nil
+}

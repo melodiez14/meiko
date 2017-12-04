@@ -171,6 +171,20 @@ type getResponse struct {
 	Semester    int8   `json:"semester"`
 }
 
+type getDetailParams struct {
+	scheduleID string
+}
+
+type getDetailArgs struct {
+	scheduleID int64
+}
+
+type getDetailResponse struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type getAssistantParams struct {
 	scheduleID string
 	payload    string

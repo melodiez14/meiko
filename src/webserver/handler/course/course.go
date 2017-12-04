@@ -652,6 +652,58 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return
 }
 
+// GetHandler handles the http request return course list
+/*
+	@params:
+		payload	= required
+	@example:
+		pg	= last or current or all
+		ttl = 10
+	@return
+		[]{id, name, description}
+*/
+func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := getDetailParams{
+		scheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsEnrolled(sess.ID, args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	c, err := cs.GetByScheduleID(args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resp := getDetailResponse{
+		ID:          c.Schedule.ID,
+		Name:        c.Course.Name,
+		Description: c.Course.Description.String,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
 // GetAssistantHandler handles the http request return course assistant list
 /*
 	@params:
