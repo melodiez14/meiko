@@ -1136,3 +1136,75 @@ func GetTodayHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		SetData(resp))
 	return
 }
+
+func EnrollRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := enrollRequestParams{
+		scheduleID: ps.ByName("schedule_id"),
+		payload:    r.FormValue("payload"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsExistScheduleID(args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if cs.IsEnrolled(sess.ID, args.scheduleID) || cs.IsAssistant(sess.ID, args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	isUnapproved := cs.IsUnapproved(sess.ID, args.scheduleID)
+	switch args.payload {
+	case "enroll":
+		if isUnapproved {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid Request"))
+			return
+		}
+		err = cs.InsertUnapproved(sess.ID, args.scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	case "cancel":
+		if !isUnapproved {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid Request"))
+			return
+		}
+		err = cs.DeleteUserRelation(sess.ID, args.scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	default:
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
+	return
+}

@@ -69,6 +69,8 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/course/:schedule_id", auth.MustAuthorize(course.GetDetailHandler))
 	r.GET("/api/v1/course/:schedule_id/assistant", auth.MustAuthorize(course.GetAssistantHandler))
 	r.GET("/api/v1/course/:schedule_id/today", auth.MustAuthorize(course.GetTodayHandler))
+	r.POST("/api/v1/course/:schedule_id/enrollment", auth.MustAuthorize(course.EnrollRequestHandler))
+
 	// Admin section
 	r.GET("/api/admin/v1/course", auth.MustAuthorize(course.ReadHandler))
 	r.POST("/api/admin/v1/course", auth.MustAuthorize(course.CreateHandler))

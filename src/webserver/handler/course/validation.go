@@ -596,3 +596,17 @@ func (params getDetailParams) validate() (getDetailArgs, error) {
 		scheduleID: scheduleID,
 	}, nil
 }
+
+func (params enrollRequestParams) validate() (enrollRequestArgs, error) {
+	var args enrollRequestArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return enrollRequestArgs{
+		payload:    params.payload,
+		scheduleID: scheduleID,
+	}, nil
+}

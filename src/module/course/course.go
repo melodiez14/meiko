@@ -88,6 +88,26 @@ func IsAssistant(userID, scheduleID int64) bool {
 	return true
 }
 
+func IsUnapproved(userID, scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_schedules
+		WHERE
+			users_id = (%d) AND
+			schedules_id = (%d) AND
+			status = (%d)
+		LIMIT 1;
+	`, userID, scheduleID, PStatusUnapproved)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func IsCreator(userID, scheduleID int64) bool {
 	var x string
 	query := fmt.Sprintf(`
@@ -1104,4 +1124,52 @@ func SelectByDayScheduleID(day int8, schedulesID []int64) ([]CourseSchedule, err
 	}
 
 	return course, nil
+}
+
+func InsertUnapproved(userID, scheduleID int64) error {
+	query := fmt.Sprintf(`
+		INSERT INTO
+			p_users_schedules (
+				users_id,
+				schedules_id,
+				status,
+				created_at,
+				updated_at
+			) VALUES (
+				(%d),
+				(%d),
+				(%d),
+				NOW(),
+				NOW()
+			);
+	`, userID, scheduleID, PStatusUnapproved)
+
+	_, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteUserRelation(userID, scheduleID int64) error {
+
+	query := fmt.Sprintf(`
+		DELETE FROM
+			p_users_schedules
+		WHERE
+			users_id = (%d) AND
+			schedules_id = (%d);
+	`, userID, scheduleID)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	if valid, err := result.RowsAffected(); err != nil || valid < 1 {
+		return err
+	}
+
+	return nil
 }

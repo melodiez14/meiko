@@ -268,3 +268,13 @@ type getTodayResponse struct {
 	Time  string `json:"time"`
 	Place string `json:"place"`
 }
+
+type enrollRequestParams struct {
+	scheduleID string
+	payload    string
+}
+
+type enrollRequestArgs struct {
+	scheduleID int64
+	payload    string
+}
