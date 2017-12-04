@@ -167,6 +167,7 @@ type getResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Class       string `json:"class"`
+	Status      string `json:"status"`
 	Semester    int8   `json:"semester"`
 }
 

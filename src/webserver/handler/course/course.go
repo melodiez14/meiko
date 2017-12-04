@@ -626,39 +626,19 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	var csID []int64
-	var csStatus int8
+	resp := []getResponse{}
 	switch args.Payload {
 	case "last":
-		csStatus = cs.StatusScheduleInactive
-		csID, err = cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusStudent)
-		if err != nil {
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError))
-			return
-		}
+		resp, err = getLast(sess.ID)
 	case "current":
-		csStatus = cs.StatusScheduleActive
-		csID, err = cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusStudent)
-		if err != nil {
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError))
-			return
-		}
+		resp, err = getCurrent(sess.ID)
 	case "all":
-		csStatus = cs.StatusScheduleActive
+		resp, err = getAll(sess.ID)
 	default:
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Invalid Request"))
 		return
-	}
-
-	var courses []cs.CourseSchedule
-	if args.Payload == "all" {
-		courses, err = cs.SelectByStatus(csStatus)
-	} else {
-		courses, err = cs.SelectByScheduleID(csID, csStatus)
 	}
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -666,20 +646,10 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	res := []getResponse{}
-	for _, val := range courses {
-		res = append(res, getResponse{
-			ID:          val.Schedule.ID,
-			Name:        val.Course.Name,
-			Description: val.Course.Description.String,
-			Class:       val.Schedule.Class,
-			Semester:    val.Schedule.Semester,
-		})
-	}
-
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetData(resp))
+	return
 }
 
 // GetAssistantHandler handles the http request return course assistant list
