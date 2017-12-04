@@ -556,18 +556,16 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 			Name:        val.Name,
 			Status:      status,
 			Description: description,
-			DueDate:     val.DueDate,
+			DueDate:     val.DueDate.Format("Monday, 2 January 2006 15:04:05"),
 		})
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).SetData(res))
 	return
-
-	// get all assignment by schedule join with p_users_assignment
-	// serve
 }
 
 // GetAssignmentHandler func ...
+
 func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Get assignment ID
 	params := readDetailParam{
