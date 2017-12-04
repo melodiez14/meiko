@@ -266,3 +266,17 @@ type listAssignmentResponse struct {
 	Description string `json:"description"`
 	DueDate     string `json:"due_date"`
 }
+type scoreParams struct {
+	ScheduleID string
+}
+type scoreArgs struct {
+	ScheduleID int64
+}
+type responseScoreSchedule struct {
+	Attendance string `json:"attendance"`
+	Assignment string `json:"assignment"`
+	Quiz       string `json:"quiz"`
+	Mid        string `json:"mid"`
+	Final      string `json:"final"`
+	Total      string `json:"total"`
+}

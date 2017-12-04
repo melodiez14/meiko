@@ -241,14 +241,17 @@ type gradeParameterResponse struct {
 	Nilai      float32 `json:"nilai"`
 }
 type scheduleGrade struct {
-	ScheduleID int64                    `json:"schedule_id"`
-	Name       string                   `json:"name"`
-	Total      float32                  `json:"total"`
-	Grade      []gradeParameterResponse `json:"grade"`
+	ScheduleID int64   `json:"schedule_id"`
+	Name       string  `json:"name"`
+	Attendance float32 `json:"attendance"`
+	Quiz       float32 `json:"quiz"`
+	Assignment float32 `json:"assignment"`
+	Mid        float32 `json:"mid"`
+	Final      float32 `json:"final"`
+	Total      float32 `json:"total"`
 }
 type responseGradeSummery struct {
 	UsersID  int64           `json:"npm"`
-	Type     []string        `json:"type"`
 	Schedule []scheduleGrade `json:"schedules"`
 }
 

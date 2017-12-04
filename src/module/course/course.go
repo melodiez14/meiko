@@ -62,7 +62,6 @@ func IsEnrolled(userID, scheduleID int64) bool {
 	var x string
 	query := fmt.Sprintf("SELECT 'x' FROM p_users_schedules WHERE users_id = (%d) AND schedules_id = (%d) AND status = (%d) LIMIT 1", userID, scheduleID, PStatusStudent)
 	err := conn.DB.Get(&x, query)
-	fmt.Println(query)
 	if err != nil {
 		return false
 	}

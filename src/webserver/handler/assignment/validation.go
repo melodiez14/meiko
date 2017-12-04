@@ -460,3 +460,20 @@ func (params createScoreParams) validate() (createScoreArgs, error) {
 	}, nil
 
 }
+
+func (params scoreParams) validate() (scoreArgs, error) {
+	var args scoreArgs
+	params = scoreParams{
+		ScheduleID: params.ScheduleID,
+	}
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+	id, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error convert to int64")
+	}
+	return scoreArgs{
+		ScheduleID: id,
+	}, nil
+}
