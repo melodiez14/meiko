@@ -556,112 +556,6 @@ func TestIsValidConfirmationCode(t *testing.T) {
 	}
 }
 
-func TestSelectDashboard(t *testing.T) {
-	type args struct {
-		id     int64
-		limit  uint16
-		offset uint16
-	}
-	type mock struct {
-		query  string
-		column []string
-		result [][]driver.Value
-		err    error
-	}
-	tests := []struct {
-		name    string
-		args    args
-		mock    mock
-		want    []User
-		wantErr bool
-	}{
-		{
-			name: "Test Case 1",
-			args: args{
-				id:     1,
-				limit:  10,
-				offset: 10,
-			},
-			mock: mock{
-				query:  `^\s*SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
-				column: []string{"identity_code", "name", "email", "status"},
-				result: [][]driver.Value{
-					[]driver.Value{
-						"140810140016", "Risal Falah", "risal@live.com", "2",
-					},
-					[]driver.Value{
-						"140810140020", "Rifki Muhammad", "rifkirifkigue@gmail.com", "1",
-					},
-					[]driver.Value{
-						"140810140070", "Asep Nur Muhammad Iskandar Yusuf", "asepasepgue@gmail.com", "2",
-					},
-				},
-				err: nil,
-			},
-			want: []User{
-				User{
-					IdentityCode: 140810140016,
-					Name:         "Risal Falah",
-					Email:        "risal@live.com",
-					Status:       2,
-				},
-				User{
-					IdentityCode: 140810140020,
-					Name:         "Rifki Muhammad",
-					Email:        "rifkirifkigue@gmail.com",
-					Status:       1,
-				},
-				User{
-					IdentityCode: 140810140070,
-					Name:         "Asep Nur Muhammad Iskandar Yusuf",
-					Email:        "asepasepgue@gmail.com",
-					Status:       2,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Test Case 2",
-			args: args{
-				id:     1,
-				limit:  10,
-				offset: 10,
-			},
-			mock: mock{
-				query:  `^\s*SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
-				column: []string{"identity_code", "name", "email", "status"},
-				result: [][]driver.Value{},
-				err:    fmt.Errorf("Error connection"),
-			},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		db, _ := conn.InitDBMock()
-		q := db.ExpectQuery(tt.mock.query)
-		if tt.mock.err == nil {
-			rows := sqlmock.NewRows(tt.mock.column)
-			for _, val := range tt.mock.result {
-				rows.AddRow(val...)
-			}
-			q.WillReturnRows(rows)
-		} else {
-			q.WillReturnError(tt.mock.err)
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := SelectDashboard(tt.args.id, tt.args.limit, tt.args.offset)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SelectDashboard() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SelectDashboard() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestUpdateStatus(t *testing.T) {
 	type args struct {
 		identityCode int64
@@ -1673,3 +1567,343 @@ func TestCreate(t *testing.T) {
 		})
 	}
 }
+
+func TestSelectDashboard(t *testing.T) {
+	type args struct {
+		id      int64
+		limit   int
+		offset  int
+		isCount bool
+	}
+	type mock struct {
+		query  string
+		column []string
+		result [][]driver.Value
+		err    error
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mocks   []mock
+		want    []User
+		want1   int
+		wantErr bool
+	}{
+		{
+			name: "No Result",
+			args: args{
+				id:      2,
+				limit:   1,
+				offset:  1,
+				isCount: true,
+			},
+			mocks: []mock{
+				mock{
+					query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					column: []string{"identity_code", "name", "email", "status"},
+					result: [][]driver.Value{},
+					err:    nil,
+				},
+				mock{
+					query:  `^SELECT\s*COUNT\(\*\)\s*FROM\s*users\s*WHERE\s*\(status\s*=\s*\(\d\)\s*OR\s*status\s*=\s*\(\d\)\)\s*AND\s*id\s*!=\s*\(\d\);$`,
+					column: []string{"count(*)"},
+					result: [][]driver.Value{
+						[]driver.Value{
+							"0",
+						},
+					},
+					err: nil,
+				},
+			},
+		},
+		{
+			name: "No Count",
+			args: args{
+				id:      2,
+				limit:   1,
+				offset:  1,
+				isCount: false,
+			},
+			mocks: []mock{
+				mock{
+					query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					column: []string{"identity_code", "name", "email", "status"},
+					result: [][]driver.Value{},
+					err:    nil,
+				},
+			},
+		},
+		{
+			name: "With Result and No Count",
+			args: args{
+				id:      2,
+				limit:   1,
+				offset:  1,
+				isCount: false,
+			},
+			mocks: []mock{
+				mock{
+					query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					column: []string{"identity_code", "name", "email", "status"},
+					result: [][]driver.Value{
+						[]driver.Value{
+							"140810140016", "Risal Falah", "risal@live.com", "2",
+						},
+					},
+					err: nil,
+				},
+			},
+			want: []User{
+				User{
+					IdentityCode: 140810140016,
+					Name:         "Risal Falah",
+					Email:        "risal@live.com",
+					Status:       2,
+				},
+			},
+		},
+		{
+			name: "With Result and Count",
+			args: args{
+				id:      2,
+				limit:   2,
+				offset:  0,
+				isCount: true,
+			},
+			mocks: []mock{
+				mock{
+					query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					column: []string{"identity_code", "name", "email", "status"},
+					result: [][]driver.Value{
+						[]driver.Value{
+							"140810140016", "Risal Falah", "risal@live.com", "2",
+						},
+						[]driver.Value{
+							"140810140020", "Rifki Muhammad", "rifki@live.com", "2",
+						},
+					},
+					err: nil,
+				},
+				mock{
+					query:  `^SELECT\s*COUNT\(\*\)\s*FROM\s*users\s*WHERE\s*\(status\s*=\s*\(\d\)\s*OR\s*status\s*=\s*\(\d\)\)\s*AND\s*id\s*!=\s*\(\d\);$`,
+					column: []string{"count(*)"},
+					result: [][]driver.Value{
+						[]driver.Value{
+							"2",
+						},
+					},
+					err: nil,
+				},
+			},
+			want: []User{
+				User{
+					IdentityCode: 140810140016,
+					Name:         "Risal Falah",
+					Email:        "risal@live.com",
+					Status:       2,
+				},
+				User{
+					IdentityCode: 140810140020,
+					Name:         "Rifki Muhammad",
+					Email:        "rifki@live.com",
+					Status:       2,
+				},
+			},
+			want1: 2,
+		},
+		{
+			name: "Error Connection First Query",
+			args: args{
+				id:      2,
+				limit:   2,
+				offset:  0,
+				isCount: true,
+			},
+			mocks: []mock{
+				mock{
+					query: `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					err:   fmt.Errorf("Error Connection"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error Connection Second Query",
+			args: args{
+				id:      2,
+				limit:   2,
+				offset:  0,
+				isCount: true,
+			},
+			mocks: []mock{
+				mock{
+					query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+					column: []string{"identity_code", "name", "email", "status"},
+					result: [][]driver.Value{
+						[]driver.Value{
+							"140810140016", "Risal Falah", "risal@live.com", "2",
+						},
+						[]driver.Value{
+							"140810140020", "Rifki Muhammad", "rifki@live.com", "2",
+						},
+					},
+					err: nil,
+				},
+				mock{
+					query: `^SELECT\s*COUNT\(\*\)\s*FROM\s*users\s*WHERE\s*\(status\s*=\s*\(\d\)\s*OR\s*status\s*=\s*\(\d\)\)\s*AND\s*id\s*!=\s*\(\d\);$`,
+					err:   fmt.Errorf("Error connection"),
+				},
+			},
+			want: []User{
+				User{
+					IdentityCode: 140810140016,
+					Name:         "Risal Falah",
+					Email:        "risal@live.com",
+					Status:       2,
+				},
+				User{
+					IdentityCode: 140810140020,
+					Name:         "Rifki Muhammad",
+					Email:        "rifki@live.com",
+					Status:       2,
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		db, _ := conn.InitDBMock()
+		for _, vals := range tt.mocks {
+			q := db.ExpectQuery(vals.query)
+			if vals.err == nil {
+				rows := sqlmock.NewRows(vals.column)
+				for _, val := range vals.result {
+					rows.AddRow(val...)
+				}
+				q.WillReturnRows(rows)
+			} else {
+				q.WillReturnError(vals.err)
+			}
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := SelectDashboard(tt.args.id, tt.args.limit, tt.args.offset, tt.args.isCount)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SelectDashboard() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SelectDashboard() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("SelectDashboard() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+// func TestSelectDashboard(t *testing.T) {
+// 	type args struct {
+// 		id     int64
+// 		limit  uint16
+// 		offset uint16
+// 	}
+// type mock struct {
+// 	query  string
+// 	column []string
+// 	result [][]driver.Value
+// 	err    error
+// }
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		mock    mock
+// 		want    []User
+// 		wantErr bool
+// 	}{
+// 		{
+// 			name: "Test Case 1",
+// 			args: args{
+// 				id:     1,
+// 				limit:  10,
+// 				offset: 10,
+// 			},
+// mock: mock{
+// 	query:  `^SELECT(\s)*identity_code,(\s)*name,(\s)*email,(\s)*status(\s)*FROM(\s)*users(\s)*WHERE(\s)*\(status(\s)*=(\s)*\(\d\)(\s)*OR(\s)*status(\s)*=(\s)*\(\d\)\)(\s)*AND(\s)*id(\s)*!=(\s)*\(\d\)(\s)*LIMIT(\s)*\d(\s)*OFFSET(\s)*\d;$`,
+// 	column: []string{"identity_code", "name", "email", "status"},
+// 	result: [][]driver.Value{
+// 		[]driver.Value{
+// 			"140810140016", "Risal Falah", "risal@live.com", "2",
+// 		},
+// 		[]driver.Value{
+// 			"140810140020", "Rifki Muhammad", "rifkirifkigue@gmail.com", "1",
+// 		},
+// 		[]driver.Value{
+// 			"140810140070", "Asep Nur Muhammad Iskandar Yusuf", "asepasepgue@gmail.com", "2",
+// 		},
+// 	},
+// 	err: nil,
+// },
+// 			want: []User{
+// 				User{
+// 					IdentityCode: 140810140016,
+// 					Name:         "Risal Falah",
+// 					Email:        "risal@live.com",
+// 					Status:       2,
+// 				},
+// 				User{
+// 					IdentityCode: 140810140020,
+// 					Name:         "Rifki Muhammad",
+// 					Email:        "rifkirifkigue@gmail.com",
+// 					Status:       1,
+// 				},
+// 				User{
+// 					IdentityCode: 140810140070,
+// 					Name:         "Asep Nur Muhammad Iskandar Yusuf",
+// 					Email:        "asepasepgue@gmail.com",
+// 					Status:       2,
+// 				},
+// 			},
+// 			wantErr: false,
+// 		},
+// 		{
+// 			name: "Test Case 2",
+// 			args: args{
+// 				id:     1,
+// 				limit:  10,
+// 				offset: 10,
+// 			},
+// 			mock: mock{
+// 				query:  `^\s*SELECT(\s*)identity_code,(\s*)name,(\s*)email,(\s*)status(\s*)FROM(\s*)users(\s*)WHERE(\s*)\(status(\s*)=(.+)OR(\s*)status(.+)=(\s*)(.+)\)(\s*)AND(\s*)id(\s*)!=(\s*)(.+)(\s*)LIMIT(\s*)(.+)(\s*)OFFSET(\s*)(.+)`,
+// 				column: []string{"identity_code", "name", "email", "status"},
+// 				result: [][]driver.Value{},
+// 				err:    fmt.Errorf("Error connection"),
+// 			},
+// 			want:    nil,
+// 			wantErr: true,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		db, _ := conn.InitDBMock()
+// 		q := db.ExpectQuery(tt.mock.query)
+// 		if tt.mock.err == nil {
+// 			rows := sqlmock.NewRows(tt.mock.column)
+// 			for _, val := range tt.mock.result {
+// 				rows.AddRow(val...)
+// 			}
+// 			q.WillReturnRows(rows)
+// 		} else {
+// 			q.WillReturnError(tt.mock.err)
+// 		}
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, err := SelectDashboard(tt.args.id, tt.args.limit, tt.args.offset, true)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("SelectDashboard() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if !reflect.DeepEqual(got, tt.want) {
+// 				t.Errorf("SelectDashboard() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }

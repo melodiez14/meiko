@@ -40,8 +40,8 @@ func (params readParams) validate() (readArgs, error) {
 	return readArgs{
 		payload:    params.payload,
 		scheduleID: scheduleID,
-		page:       page,
-		total:      total,
+		page:       int(page),
+		total:      int(total),
 	}, nil
 }
 

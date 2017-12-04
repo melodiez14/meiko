@@ -161,7 +161,7 @@ func (params readListParams) validate() (readListArgs, error) {
 	}
 
 	// should be positive number
-	if page < 0 || total < 0 {
+	if page < 1 || total < 1 {
 		return args, fmt.Errorf("page or total must be positive number")
 	}
 

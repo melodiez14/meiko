@@ -149,8 +149,15 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if args.total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
 	offset := (args.page - 1) * args.total
-	roles, err := rg.SelectByPage(args.total, offset)
+	roles, count, err := rg.SelectByPage(args.total, offset, true)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -164,18 +171,29 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	resp := []readResponse{}
+	respRoles := []readRoles{}
 	for _, val := range roles {
 		isDeleteAllow := true
 		if helper.Int64InSlice(val.ID, rolegroupID) {
 			isDeleteAllow = false
 		}
 
-		resp = append(resp, readResponse{
+		respRoles = append(respRoles, readRoles{
 			ID:            val.ID,
 			Name:          val.Name,
 			IsDeleteAllow: isDeleteAllow,
 		})
+	}
+
+	total := count / args.total
+	if count%args.total > 0 {
+		total++
+	}
+
+	resp := readResponse{
+		TotalPage: total,
+		Page:      args.page,
+		Roles:     respRoles,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

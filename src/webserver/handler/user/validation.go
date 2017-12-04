@@ -173,8 +173,8 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 	}
 
 	args = getVerifiedArgs{
-		Page:  uint16(page),
-		Total: uint16(total),
+		Page:  int(page),
+		Total: int(total),
 	}
 	return args, nil
 }

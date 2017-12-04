@@ -306,6 +306,7 @@ func NormalizeEmail(email string) (string, error) {
 	return strings.Join(parts, "@"), nil
 }
 
+// Trim ...
 func Trim(str string) string {
 	splitted := strings.Fields(str)
 	return strings.Join(splitted, " ")

@@ -1269,3 +1269,78 @@ func TestTrim(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValidFileID(t *testing.T) {
+	type args struct {
+		str string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "12345689023.123123.123.123",
+			args: args{
+				str: "12345689023.123123.123.123",
+			},
+			want: true,
+		},
+		{
+			name: "1",
+			args: args{
+				str: "1",
+			},
+			want: false,
+		},
+		{
+			name: "abcdefghijklmnopqrstuvwxyz",
+			args: args{
+				str: "abcdefghijklmnopqrstuvwxyz",
+			},
+			want: false,
+		},
+		{
+			name: "abcdefghijklmnopqrstuvwxyz12355",
+			args: args{
+				str: "abcdefghijklmnopqrstuvwxyz12355",
+			},
+			want: false,
+		},
+		{
+			name: "123456789012345678901234567890",
+			args: args{
+				str: "123456789012345678901234567890",
+			},
+			want: true,
+		},
+		{
+			name: "123456789012345678901234567890123",
+			args: args{
+				str: "123456789012345678901234567890123",
+			},
+			want: false,
+		},
+		{
+			name: "1234567890123.123252123.jpg",
+			args: args{
+				str: "1234567890123.123252123.jpg",
+			},
+			want: false,
+		},
+		{
+			name: "123456-1234567-123456754",
+			args: args{
+				str: "123456-1234567-123456754",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsValidFileID(tt.args.str); got != tt.want {
+				t.Errorf("IsValidFileID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

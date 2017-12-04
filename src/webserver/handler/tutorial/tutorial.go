@@ -36,6 +36,13 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if args.total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
 	isHasAccess := false
 	switch args.payload {
 	case "assistant":
@@ -53,27 +60,38 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	offset := (args.page - 1) * args.total
-	tutorials, err := tt.SelectByPage(args.scheduleID, args.total, offset)
+	tutorials, count, err := tt.SelectByPage(args.scheduleID, args.total, offset, true)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
 
-	resp := []readResponse{}
+	respTutorial := []readTutorial{}
 	for _, val := range tutorials {
 		desc := "-"
 		if val.Description.Valid {
 			desc = val.Description.String
 		}
 
-		resp = append(resp, readResponse{
+		respTutorial = append(respTutorial, readTutorial{
 			ID:          val.ID,
 			Name:        val.Name,
 			Description: desc,
 			Time:        val.CreatedAt.Unix(),
 			URL:         fmt.Sprintf("/api/v1/filerouter/?id=%d&payload=tutorial", val.ID),
 		})
+	}
+
+	totalPage := count / args.total
+	if count%args.total > 0 {
+		totalPage++
+	}
+
+	resp := readResponse{
+		Page:      args.page,
+		TotalPage: totalPage,
+		Tutorials: respTutorial,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
