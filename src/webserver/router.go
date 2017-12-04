@@ -122,7 +122,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
 	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentHandler))                                 // read detail assignments definitions
 	r.GET("/api/v1/assignment-all/:id", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))                   // List assignments
-	r.GET("/api/v1/grade", auth.MustAuthorize(course.GetGradeSummery))
+	r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummery))
 	r.GET("/api/v1/grade/:id", auth.MustAuthorize(assignment.GradeBySchedule))
 	// ===================== End Assignment Handler =====================
 

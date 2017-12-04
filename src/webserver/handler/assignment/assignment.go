@@ -1058,7 +1058,9 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	res := responseScoreSchedule{}
+	res := responseScoreSchedule{
+		ScheduleID: args.ScheduleID,
+	}
 	var total float32
 	for _, val := range allType {
 		switch val {
@@ -1086,13 +1088,16 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 						}
 						percentage = float32(present) * 100 / float32(totalMeeting)
 					}
-					res.Attendance = fmt.Sprintf("%.2f", (percentage*grade.Percentage)/100)
+					totalAttendance := (percentage * grade.Percentage) / 100
+					res.Attendance = fmt.Sprintf("%.2f", totalAttendance)
+					total = total + totalAttendance
 				}
 			}
 		case "ASSIGNMENT":
 			res.Assignment = "-"
 			for _, grade := range gradeParameters {
 				if grade.Type == val {
+					res.Assignment = "0"
 					assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
 					if err != nil {
 						template.RenderJSONResponse(w, new(template.Response).
@@ -1106,14 +1111,16 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 								SetCode(http.StatusInternalServerError))
 							return
 						}
-						var t float32
-						t = 0
-						for _, score := range scores {
-							t += score
+						if len(scores) > 0 {
+							var t float32
+							t = 0
+							for _, score := range scores {
+								t += score
+							}
+							totalAssignment := (t / float32(len(scores)) * grade.Percentage / 100)
+							total = total + totalAssignment
+							res.Assignment = fmt.Sprintf("%.2f", totalAssignment)
 						}
-						totalAssignment := (t / float32(len(scores)) * grade.Percentage / 100)
-						total = total + totalAssignment
-						res.Assignment = fmt.Sprintf("%.2f", totalAssignment)
 					}
 				}
 			}
@@ -1121,9 +1128,9 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			res.Quiz = "-"
 			for _, grade := range gradeParameters {
 				if grade.Type == val {
+					res.Quiz = "0"
 					assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
 					if err != nil {
-						fmt.Println(2)
 						template.RenderJSONResponse(w, new(template.Response).
 							SetCode(http.StatusInternalServerError))
 						return
@@ -1131,19 +1138,20 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 					if assignmentsID != nil {
 						scores, err := as.SelectScore(sess.ID, assignmentsID)
 						if err != nil {
-							fmt.Println(3)
 							template.RenderJSONResponse(w, new(template.Response).
 								SetCode(http.StatusInternalServerError))
 							return
 						}
-						var t float32
-						t = 0
-						for _, score := range scores {
-							t += score
+						if len(scores) > 0 {
+							var t float32
+							t = 0
+							for _, score := range scores {
+								t += score
+							}
+							totalQuiz := (t / float32(len(scores)) * grade.Percentage / 100)
+							total = total + totalQuiz
+							res.Quiz = fmt.Sprintf("%.2f", totalQuiz)
 						}
-						totalQuiz := (t / float32(len(scores)) * grade.Percentage / 100)
-						total = total + totalQuiz
-						res.Quiz = fmt.Sprintf("%.2f", totalQuiz)
 					}
 				}
 			}
@@ -1151,9 +1159,9 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			res.Mid = "-"
 			for _, grade := range gradeParameters {
 				if grade.Type == val {
+					res.Mid = "0"
 					assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
 					if err != nil {
-						fmt.Println(4)
 						template.RenderJSONResponse(w, new(template.Response).
 							SetCode(http.StatusInternalServerError))
 						return
@@ -1161,19 +1169,20 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 					if assignmentsID != nil {
 						scores, err := as.SelectScore(sess.ID, assignmentsID)
 						if err != nil {
-							fmt.Println(5)
 							template.RenderJSONResponse(w, new(template.Response).
 								SetCode(http.StatusInternalServerError))
 							return
 						}
-						var t float32
-						t = 0
-						for _, score := range scores {
-							t += score
+						if len(scores) > 0 {
+							var t float32
+							t = 0
+							for _, score := range scores {
+								t += score
+							}
+							totalMid := (t / float32(len(scores)) * grade.Percentage / 100)
+							total = total + totalMid
+							res.Mid = fmt.Sprintf("%.2f", totalMid)
 						}
-						totalMid := (t / float32(len(scores)) * grade.Percentage / 100)
-						total = total + totalMid
-						res.Mid = fmt.Sprintf("%.2f", totalMid)
 					}
 				}
 			}
@@ -1181,9 +1190,9 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			res.Final = "-"
 			for _, grade := range gradeParameters {
 				if grade.Type == val {
+					res.Final = "0"
 					assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
 					if err != nil {
-						fmt.Println(6)
 						template.RenderJSONResponse(w, new(template.Response).
 							SetCode(http.StatusInternalServerError))
 						return
@@ -1191,19 +1200,20 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 					if assignmentsID != nil {
 						scores, err := as.SelectScore(sess.ID, assignmentsID)
 						if err != nil {
-							fmt.Println(err.Error())
 							template.RenderJSONResponse(w, new(template.Response).
 								SetCode(http.StatusInternalServerError))
 							return
 						}
-						var t float32
-						t = 0
-						for _, score := range scores {
-							t += score
+						if len(scores) > 0 {
+							var t float32
+							t = 0
+							for _, score := range scores {
+								t += score
+							}
+							totalFinal := (t / float32(len(scores)) * grade.Percentage / 100)
+							total = total + totalFinal
+							res.Final = fmt.Sprintf("%.2f", totalFinal)
 						}
-						totalFinal := (t / float32(len(scores)) * grade.Percentage / 100)
-						total = total + totalFinal
-						res.Final = fmt.Sprintf("%.2f", totalFinal)
 					}
 				}
 			}
@@ -1214,5 +1224,200 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		SetCode(http.StatusOK).
 		SetData(res))
 	return
-	// response
+}
+
+// GradeSummery func ...
+func GradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	listSchedule, err := cs.SelectScheduleIDByUserID(sess.ID, 1)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if listSchedule == nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(nil))
+		return
+	}
+	var res []responseScoreSchedule
+	for _, id := range listSchedule {
+		allType := [5]string{"ATTENDANCE", "ASSIGNMENT", "QUIZ", "MID", "FINAL"}
+		gradeParameters, err := cs.SelectGradeParameterByScheduleID(id)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		re := responseScoreSchedule{
+			ScheduleID: id,
+		}
+		var total float32
+		for _, val := range allType {
+			switch val {
+			case "ATTENDANCE":
+				re.Attendance = "-"
+				for _, grade := range gradeParameters {
+					if grade.Type == val {
+						re.Attendance = "0"
+						var present, totalMeeting int
+						var percentage float32
+
+						meetingsID, err := atd.SelectMeetingIDByScheduleID(sess.ID, id)
+						if err != nil {
+							template.RenderJSONResponse(w, new(template.Response).
+								SetCode(http.StatusInternalServerError))
+							return
+						}
+
+						totalMeeting = len(meetingsID)
+						if totalMeeting > 0 {
+							present, err = atd.CountByUserMeeting(sess.ID, meetingsID)
+							if err != nil {
+								template.RenderJSONResponse(w, new(template.Response).
+									SetCode(http.StatusInternalServerError))
+								return
+							}
+							percentage = float32(present) * 100 / float32(totalMeeting)
+						}
+						totalAttendance := (percentage * grade.Percentage) / 100
+						re.Attendance = fmt.Sprintf("%.2f", totalAttendance)
+						total = total + totalAttendance
+					}
+				}
+			case "ASSIGNMENT":
+				re.Assignment = "-"
+				for _, grade := range gradeParameters {
+					if grade.Type == val {
+						re.Assignment = "0"
+						assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
+						if err != nil {
+							template.RenderJSONResponse(w, new(template.Response).
+								SetCode(http.StatusInternalServerError))
+							return
+						}
+						if assignmentsID != nil {
+							scores, err := as.SelectScore(sess.ID, assignmentsID)
+							if err != nil {
+								template.RenderJSONResponse(w, new(template.Response).
+									SetCode(http.StatusInternalServerError))
+								return
+							}
+							if len(scores) > 0 {
+								var t float32
+								t = 0
+								for _, score := range scores {
+									t += score
+								}
+								totalAssignment := (t / float32(len(scores)) * grade.Percentage / 100)
+								total = total + totalAssignment
+								re.Assignment = fmt.Sprintf("%.2f", totalAssignment)
+							}
+						}
+					}
+				}
+			case "QUIZ":
+				re.Quiz = "-"
+				for _, grade := range gradeParameters {
+					if grade.Type == val {
+						re.Quiz = "0"
+						assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
+						if err != nil {
+							template.RenderJSONResponse(w, new(template.Response).
+								SetCode(http.StatusInternalServerError))
+							return
+						}
+						if assignmentsID != nil {
+							scores, err := as.SelectScore(sess.ID, assignmentsID)
+							if err != nil {
+								template.RenderJSONResponse(w, new(template.Response).
+									SetCode(http.StatusInternalServerError))
+								return
+							}
+							if len(scores) > 0 {
+								var t float32
+								t = 0
+								for _, score := range scores {
+									fmt.Println(1)
+									t += score
+								}
+								totalQuiz := (t / float32(len(scores)) * grade.Percentage / 100)
+								total = total + totalQuiz
+								re.Quiz = fmt.Sprintf("%.2f", totalQuiz)
+							}
+						}
+					}
+				}
+			case "MID":
+				re.Mid = "-"
+				for _, grade := range gradeParameters {
+					if grade.Type == val {
+						re.Mid = "0"
+						assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
+						if err != nil {
+							template.RenderJSONResponse(w, new(template.Response).
+								SetCode(http.StatusInternalServerError))
+							return
+						}
+						if assignmentsID != nil {
+							scores, err := as.SelectScore(sess.ID, assignmentsID)
+							if err != nil {
+								template.RenderJSONResponse(w, new(template.Response).
+									SetCode(http.StatusInternalServerError))
+								return
+							}
+							if len(scores) > 0 {
+								var t float32
+								t = 0
+								for _, score := range scores {
+									t += score
+								}
+								totalMid := (t / float32(len(scores)) * grade.Percentage / 100)
+								total = total + totalMid
+								re.Mid = fmt.Sprintf("%.2f", totalMid)
+							}
+						}
+					}
+				}
+			case "FINAL":
+				re.Final = "-"
+				for _, grade := range gradeParameters {
+					if grade.Type == val {
+						re.Final = "0"
+						assignmentsID, err := as.SelectAssignmentIDByGradeParameter(grade.ID)
+						if err != nil {
+							template.RenderJSONResponse(w, new(template.Response).
+								SetCode(http.StatusInternalServerError))
+							return
+						}
+						if assignmentsID != nil {
+							scores, err := as.SelectScore(sess.ID, assignmentsID)
+							if err != nil {
+								template.RenderJSONResponse(w, new(template.Response).
+									SetCode(http.StatusInternalServerError))
+								return
+							}
+							if len(scores) > 0 {
+								var t float32
+								t = 0
+								for _, score := range scores {
+									t += score
+								}
+								totalFinal := (t / float32(len(scores)) * grade.Percentage / 100)
+								total = total + totalFinal
+								re.Final = fmt.Sprintf("%.2f", totalFinal)
+							}
+						}
+					}
+				}
+			}
+		}
+		re.Total = fmt.Sprintf("%.2f", total)
+		res = append(res, re)
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
 }

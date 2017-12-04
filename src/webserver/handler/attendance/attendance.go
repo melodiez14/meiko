@@ -627,12 +627,6 @@ func ReadMeetingDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 func GetAttendanceHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
-	if !sess.IsHasRoles(rg.ModuleAttendance, rg.RoleXRead, rg.RoleRead) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
 
 	params := getAttendanceParams{
 		scheduleID: r.FormValue("schedule_id"),

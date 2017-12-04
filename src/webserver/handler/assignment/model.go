@@ -273,6 +273,7 @@ type scoreArgs struct {
 	ScheduleID int64
 }
 type responseScoreSchedule struct {
+	ScheduleID int64  `json:"schedule_id"`
 	Attendance string `json:"attendance"`
 	Assignment string `json:"assignment"`
 	Quiz       string `json:"quiz"`
