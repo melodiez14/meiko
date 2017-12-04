@@ -263,6 +263,7 @@ type getTodayArgs struct {
 }
 
 type getTodayResponse struct {
+	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	Time  string `json:"time"`
 	Place string `json:"place"`

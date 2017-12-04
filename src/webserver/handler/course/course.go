@@ -1124,6 +1124,7 @@ func GetTodayHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		t2 := helper.MinutesToTimeString(val.Schedule.EndTime)
 		t := fmt.Sprintf("%s - %s", t1, t2)
 		resp = append(resp, getTodayResponse{
+			ID:    val.Schedule.ID,
 			Name:  val.Course.Name,
 			Place: val.Schedule.PlaceID,
 			Time:  t,
