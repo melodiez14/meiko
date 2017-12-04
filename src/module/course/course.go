@@ -1029,8 +1029,13 @@ func DeleteAssistant(usersID []int64, scheduleID int64, tx *sqlx.Tx) error {
 	return nil
 }
 
-func SelectByDay(day int8) ([]CourseSchedule, error) {
+func SelectByDayScheduleID(day int8, schedulesID []int64) ([]CourseSchedule, error) {
 	var course []CourseSchedule
+	if len(schedulesID) < 1 {
+		return course, nil
+	}
+
+	querySchedulesID := strings.Join(helper.Int64ToStringSlice(schedulesID), ", ")
 	query := fmt.Sprintf(`
 		SELECT
 			cs.id,
@@ -1054,8 +1059,9 @@ func SelectByDay(day int8) ([]CourseSchedule, error) {
 		ON
 			cs.id = sc.courses_id
 		WHERE
-			sc.day = (%d)
-		;`, day)
+			sc.day = (%d) AND
+			sc.id IN (%s)
+		;`, day, querySchedulesID)
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()
 	if err != nil {

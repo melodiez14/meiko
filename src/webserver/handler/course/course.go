@@ -1050,28 +1050,16 @@ func GetTodayHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	params := getTodayParams{
-		scheduleID: ps.ByName("schedule_id"),
-	}
-
-	args, err := params.validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Invalid Request"))
-		return
-	}
-
-	if !cs.IsEnrolled(sess.ID, args.scheduleID) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("You don't have privilege"))
-		return
-	}
-
 	dayNow := time.Now().Weekday()
 
-	courses, err := cs.SelectByDay(int8(dayNow))
+	schedulesID, err := cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusStudent)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	courses, err := cs.SelectByDayScheduleID(int8(dayNow), schedulesID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
