@@ -21,6 +21,8 @@ import (
 const (
 	TableNameAssignments     = "assignments"
 	TableNameUserAssignments = "p_users_assignments"
+	UserMustUpload           = 0
+	UserMustNotUpload        = 1
 )
 
 type createParams struct {
@@ -91,17 +93,29 @@ type detailArgs struct {
 }
 
 type detailResponse struct {
-	ID               int64          `json:"id"`
-	Status           string         `json:"status"`
-	Name             string         `json:"name"`
-	GradeParameterID int32          `json:"grade_parameters_id"`
-	Description      sql.NullString `json:"description"`
-	DueDate          time.Time      `json:"due_date"`
-	FilesID          string         `json:"files_id"`
-	FilesName        sql.NullString `json:"files_name"`
-	Mime             sql.NullString `json:"mime"`
-	Type             string         `json:"type"`
-	Percentage       float32        `json:"percentage"`
+	ID               int64  `json:"id"`
+	Status           int8   `json:"status"`
+	Name             string `json:"name"`
+	GradeParameterID int32  `json:"grade_parameters_id"`
+	Description      string `json:"description"`
+	DueDate          string `json:"due_date"`
+	FilesID          string `json:"files_id"`
+	FilesName        string `json:"files_name"`
+	Mime             string `json:"mime"`
+	Type             string `json:"type"`
+}
+type detailResponseUser struct {
+	ID               int64   `json:"id"`
+	Status           string  `json:"status"`
+	Name             string  `json:"name"`
+	GradeParameterID int32   `json:"grade_parameters_id"`
+	Description      string  `json:"description"`
+	DueDate          string  `json:"due_date"`
+	Score            float32 `json:"score"`
+	FilesName        string  `json:"file_name"`
+	UploadedStatus   bool    `json:"uploaded_status"`
+	MustUploadStatus int8    `json:"must_upload"`
+	ButtonType       string  `json:"button_type"`
 }
 type uploadAssignmentParams struct {
 	UserID       int64

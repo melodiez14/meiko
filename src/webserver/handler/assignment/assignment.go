@@ -192,25 +192,17 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	var status string
-	switch u.Assignment.Status {
-	case 0:
-		status = "inactive"
-	case 1:
-		status = "active"
+	description := fmt.Sprintf("NULL")
+	if u.Description.Valid {
+		description = fmt.Sprintf(u.Description.String)
 	}
-
 	res := detailResponse{
-		ID:               u.Assignment.ID,
-		Status:           status,
-		Name:             u.Assignment.Name,
-		GradeParameterID: u.Assignment.GradeParameterID,
-		Description:      u.Assignment.Description,
-		DueDate:          u.Assignment.DueDate,
-		FilesName:        u.File.Name,
-		Mime:             u.File.Mime,
-		Percentage:       u.GradeParameter.Percentage,
-		Type:             u.GradeParameter.Type,
+		ID:               u.ID,
+		Status:           u.Status,
+		Name:             u.Name,
+		GradeParameterID: u.GradeParameterID,
+		Description:      description,
+		DueDate:          u.DueDate.Format("Monday, 2 January 2006 15:04:05"),
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -511,7 +503,7 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 	params := listAssignmentsParams{
 		Page:       r.FormValue("pg"),
 		Total:      r.FormValue("ttl"),
-		ScheduleID: ps.ByName("schedule_id"),
+		ScheduleID: ps.ByName("id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -565,8 +557,8 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 }
 
 // GetAssignmentHandler func ...
-
 func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
 	// Get assignment ID
 	params := readDetailParam{
 		AssignmentID: ps.ByName("id"),
@@ -589,7 +581,49 @@ func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 			SetCode(http.StatusBadRequest).AddError("You do not took this course"))
 		return
 	}
-	res, err := as.GetByAssignementID(args.AssignmentID)
+	a, err := as.GetByAssignementID(args.AssignmentID)
+
+	var score float32
+	status := "must_not_upload"
+	isUploaded := false
+	score = 0
+	buttonType := "none"
+
+	if as.IsUploaded(args.AssignmentID) {
+		buttonType = "update"
+		isUploaded = true
+		score = as.GetScoreByIDUser(args.AssignmentID, sess.ID)
+	}
+
+	if a.Status == 1 {
+		status = "must_upload"
+		buttonType = "add"
+	} else {
+		buttonType = "none"
+	}
+
+	description := fmt.Sprintf("NULL")
+	if a.Description.Valid {
+		description = fmt.Sprintf(a.Description.String)
+	}
+	prefix := a.Name
+	if len(a.Name) > 9 {
+		p := a.Name[0:8]
+		s := strings.Fields(p)
+		prefix = strings.Join(s, "_")
+	}
+
+	res := detailResponseUser{
+		ID:             a.ID,
+		Name:           a.Name,
+		Status:         status,
+		Description:    description,
+		DueDate:        a.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+		Score:          score,
+		FilesName:      a.UpdatedAt.Format("2006_01_02") + "-" + prefix,
+		UploadedStatus: isUploaded,
+		ButtonType:     buttonType,
+	}
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).AddError("Error"))

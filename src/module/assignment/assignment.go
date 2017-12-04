@@ -271,69 +271,29 @@ func GetAssignmentByID(assignmentID int64) (Assignment, error) {
 }
 
 // GetByAssignementID func ...
-func GetByAssignementID(assignmentID int64) (DetailAssignment, error) {
+func GetByAssignementID(assignmentID int64) (Assignment, error) {
 
-	var assignment DetailAssignment
+	var assignment Assignment
 	query := fmt.Sprintf(`
 			SELECT
-				asg.id,
-				asg.status,
-				asg.name,
-				asg.grade_parameters_id,
-				asg.description,
-				asg.due_date,
-				fs.name,
-				fs.mime,
-				gp.type,
-				gp.percentage
-			FROM((
-				assignments asg
-			LEFT JOIN
-				files fs
-			ON
-				asg.id = fs.table_id)
-			LEFT JOIN
-				grade_parameters gp
-			ON
-				gp.id = asg.grade_parameters_id)
+				id,
+				status,
+				name,
+				grade_parameters_id,
+				description,
+				due_date,
+				updated_at
+			FROM
+				assignments
 			WHERE
-				asg.id = (%d)
+				id = (%d)
 			LIMIT 1;`, assignmentID)
-
-	rows := conn.DB.QueryRowx(query)
-
-	// scan data to variable
-	var name, Type string
-	var nameFile, mime, description sql.NullString
-	var status int8
-	var gradeParameterID int32
-	var id int64
-	var dueDate time.Time
-	var percentage float32
-
-	err := rows.Scan(&id, &status, &name, &gradeParameterID, &description, &dueDate, &nameFile, &mime, &Type, &percentage)
+	err := conn.DB.Get(&assignment, query)
 	if err != nil {
 		return assignment, err
 	}
+	return assignment, nil
 
-	return DetailAssignment{
-		Assignment: Assignment{
-			ID:               id,
-			Name:             name,
-			Description:      description,
-			Status:           status,
-			GradeParameterID: gradeParameterID,
-			DueDate:          dueDate,
-		},
-		File: File{
-			Name: nameFile,
-			Mime: mime,
-		},
-		GradeParameter: GradeParameter{
-			Type:       Type,
-			Percentage: percentage,
-		},
-	}, nil
 }
 
 // IsAssignmentExist func ...
@@ -785,4 +745,23 @@ func IsUploaded(assignmentID int64) bool {
 		return false
 	}
 	return true
+}
+
+// GetScoreByIDUser func ..
+func GetScoreByIDUser(assignmentID, userID int64) float32 {
+	query := fmt.Sprintf(`
+		SELECT
+			score
+		FROM
+			p_users_assignments
+		WHERE
+			users_id=(%d) AND assignments_id=(%d)
+		LIMIT 1;
+		`, userID, assignmentID)
+	var score float32
+	err := conn.DB.Get(&score, query)
+	if err != nil {
+		return score
+	}
+	return score
 }

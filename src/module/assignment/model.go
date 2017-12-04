@@ -22,6 +22,7 @@ type Assignment struct {
 	Description      sql.NullString `db:"description"`
 	GradeParameterID int32          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
+	UpdatedAt        time.Time      `db:"updated_at"`
 }
 
 // File struct ...
