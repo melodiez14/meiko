@@ -169,6 +169,9 @@ type getResponse struct {
 	Class       string `json:"class"`
 	Status      string `json:"status"`
 	Semester    int8   `json:"semester"`
+	Time        string `json:"time"`
+	Day         string `json:"day"`
+	Place       string `json:"place"`
 }
 
 type getDetailParams struct {

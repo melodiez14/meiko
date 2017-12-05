@@ -607,7 +607,8 @@ func SelectByScheduleID(scheduleID []int64, status int8) ([]CourseSchedule, erro
 			cs.id = sc.courses_id
 		WHERE
 			sc.id IN (%s) AND
-			sc.status = (%d)`, ids, status)
+			sc.status = (%d)
+		ORDER BY day ASC;`, ids, status)
 
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()

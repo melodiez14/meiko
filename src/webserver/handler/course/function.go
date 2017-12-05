@@ -1,6 +1,8 @@
 package course
 
 import (
+	"fmt"
+
 	cs "github.com/melodiez14/meiko/src/module/course"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -17,12 +19,19 @@ func getLast(userID int64) ([]getResponse, error) {
 	}
 
 	for _, val := range courses {
+		startTime := helper.MinutesToTimeString(val.Schedule.StartTime)
+		endTime := helper.MinutesToTimeString(val.Schedule.EndTime)
+		t := fmt.Sprintf("%s - %s", startTime, endTime)
+
 		resp = append(resp, getResponse{
 			ID:          val.Schedule.ID,
 			Name:        val.Course.Name,
 			Description: val.Course.Description.String,
 			Class:       val.Schedule.Class,
 			Semester:    val.Schedule.Semester,
+			Day:         helper.IntDayToString(val.Schedule.Day),
+			Time:        t,
+			Place:       val.Schedule.PlaceID,
 			Status:      "enrolled",
 		})
 	}
@@ -42,12 +51,19 @@ func getCurrent(userID int64) ([]getResponse, error) {
 	}
 
 	for _, val := range courses {
+		startTime := helper.MinutesToTimeString(val.Schedule.StartTime)
+		endTime := helper.MinutesToTimeString(val.Schedule.EndTime)
+		t := fmt.Sprintf("%s - %s", startTime, endTime)
+
 		resp = append(resp, getResponse{
 			ID:          val.Schedule.ID,
 			Name:        val.Course.Name,
 			Description: val.Course.Description.String,
 			Class:       val.Schedule.Class,
 			Semester:    val.Schedule.Semester,
+			Day:         helper.IntDayToString(val.Schedule.Day),
+			Time:        t,
+			Place:       val.Schedule.PlaceID,
 			Status:      "enrolled",
 		})
 	}
@@ -76,6 +92,10 @@ func getAll(userID int64) ([]getResponse, error) {
 	unenrolledResp := []getResponse{}
 	waitingResp := []getResponse{}
 	for _, val := range courses {
+		startTime := helper.MinutesToTimeString(val.Schedule.StartTime)
+		endTime := helper.MinutesToTimeString(val.Schedule.EndTime)
+		t := fmt.Sprintf("%s - %s", startTime, endTime)
+
 		if helper.Int64InSlice(val.Schedule.ID, enrolled) {
 			enrolledResp = append(enrolledResp, getResponse{
 				ID:          val.Schedule.ID,
@@ -83,6 +103,9 @@ func getAll(userID int64) ([]getResponse, error) {
 				Description: val.Course.Description.String,
 				Class:       val.Schedule.Class,
 				Semester:    val.Schedule.Semester,
+				Day:         helper.IntDayToString(val.Schedule.Day),
+				Time:        t,
+				Place:       val.Schedule.PlaceID,
 				Status:      "enrolled",
 			})
 		} else if helper.Int64InSlice(val.Schedule.ID, unapproved) {
@@ -92,6 +115,9 @@ func getAll(userID int64) ([]getResponse, error) {
 				Description: val.Course.Description.String,
 				Class:       val.Schedule.Class,
 				Semester:    val.Schedule.Semester,
+				Day:         helper.IntDayToString(val.Schedule.Day),
+				Time:        t,
+				Place:       val.Schedule.PlaceID,
 				Status:      "waiting",
 			})
 		} else {
@@ -101,6 +127,9 @@ func getAll(userID int64) ([]getResponse, error) {
 				Description: val.Course.Description.String,
 				Class:       val.Schedule.Class,
 				Semester:    val.Schedule.Semester,
+				Day:         helper.IntDayToString(val.Schedule.Day),
+				Time:        t,
+				Place:       val.Schedule.PlaceID,
 				Status:      "unenrolled",
 			})
 		}
