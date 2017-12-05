@@ -499,12 +499,88 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	return
 }
 
+// GetAssignmentHandler func ...
+func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	schedulesIDs, err := cs.SelectScheduleIDByUserID(sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	// select Grade parameter
+	gradeList, err := cs.SelectGradeParameterByScheduleIDIN(schedulesIDs)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	assignmentID, err := as.SelectAssignmentIDByGradeParameterIN(gradeList)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	submittedAssignmetID := as.SelectSubmittedAssignment(assignmentID, sess.ID)
+	var unsubmittedAssignmentID []int64
+	for _, val := range assignmentID {
+		for _, submitted := range submittedAssignmetID {
+			if val != submitted {
+				unsubmittedAssignmentID = append(unsubmittedAssignmentID, val)
+			}
+		}
+	}
+	res := []listAssignmentResponse{}
+	unsubmittedAssignment := as.SelectAssignmentByID(unsubmittedAssignmentID)
+	for _, val := range unsubmittedAssignment {
+		r := listAssignmentResponse{}
+		if val.Status == 1 {
+			r.Status = "must_upload"
+		} else {
+			r.Status = "must_not_upload"
+		}
+		description := fmt.Sprintf("NULL")
+		if val.Description.Valid {
+			description = fmt.Sprintf(val.Description.String)
+		}
+		r.ID = val.ID
+		r.Name = val.Name
+		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
+		r.Submitted = false
+		r.Description = description
+		res = append(res, r)
+	}
+	submittedAssignment := as.SelectAssignmentByID(submittedAssignmetID)
+	for _, val := range submittedAssignment {
+		r := listAssignmentResponse{}
+		if val.Status == 1 {
+			r.Status = "must_upload"
+		} else {
+			r.Status = "must_not_upload"
+		}
+		description := fmt.Sprintf("NULL")
+		if val.Description.Valid {
+			description = fmt.Sprintf(val.Description.String)
+		}
+		r.ID = val.ID
+		r.Name = val.Name
+		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
+		r.Submitted = true
+		r.Description = description
+		res = append(res, r)
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+
+}
+
 // GetAssignmentByScheduleHandler func ...
 func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	params := listAssignmentsParams{
-		Page:       r.FormValue("pg"),
-		Total:      r.FormValue("ttl"),
-		ScheduleID: ps.ByName("id"),
+		ScheduleID: r.FormValue("id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -527,24 +603,23 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 			AddError("Error"))
 		return
 	}
-	offset := (args.Page - 1) * args.Total
-	assignments, err := as.GetByGradeParametersID(gradeParamsID, args.Total, offset)
+	assignments := as.SelectByGradeParametersID(gradeParamsID)
 	res := []listAssignmentResponse{}
 	for _, val := range assignments {
-		var status int8
-		status = 0
-		if val.Status == 0 {
-			status = 2
-		} else {
-			if as.IsUploaded(val.ID) {
-				status = 1
-			}
-		}
+		status := "must_not_upload"
+		submited := false
 		var description string
 		if val.Description.Valid {
 			description = fmt.Sprintf(val.Description.String)
 		}
+		if val.Status == 1 {
+			status = "must_upload"
+			if as.IsUploaded(val.ID) {
+				submited = true
+			}
+		}
 		res = append(res, listAssignmentResponse{
+			Submitted:   submited,
 			ID:          val.ID,
 			Name:        val.Name,
 			Status:      status,
@@ -558,7 +633,7 @@ func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps h
 }
 
 // GetAssignmentHandler func ...
-func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func GetAssignmentDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	// Get assignment ID
 	params := readDetailParam{
@@ -1339,7 +1414,6 @@ func GradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 								var t float32
 								t = 0
 								for _, score := range scores {
-									fmt.Println(1)
 									t += score
 								}
 								totalQuiz := (t / float32(len(scores)) * grade.Percentage / 100)

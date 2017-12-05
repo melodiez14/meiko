@@ -816,6 +816,31 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 	return gps, nil
 }
 
+// SelectGradeParameterByScheduleIDIN func
+func SelectGradeParameterByScheduleIDIN(scheduleID []int64) ([]int64, error) {
+	var gps []int64
+	var gradeQuery []string
+	for _, value := range scheduleID {
+		gradeQuery = append(gradeQuery, fmt.Sprintf("%d", value))
+	}
+	queryGradeList := strings.Join(gradeQuery, ",")
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			grade_parameters
+		WHERE
+			schedules_id
+		IN
+			 (%s);
+		`, queryGradeList)
+	err := conn.DB.Select(&gps, query)
+	if err != nil && err != sql.ErrNoRows {
+		return gps, err
+	}
+	return gps, nil
+}
+
 func DeleteGradeParameter(id int64, tx *sqlx.Tx) error {
 
 	query := fmt.Sprintf(`

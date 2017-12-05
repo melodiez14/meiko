@@ -262,9 +262,10 @@ type student struct {
 type listAssignmentResponse struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
-	Status      int8   `json:"status"`
+	Status      string `json:"status"`
 	Description string `json:"description"`
 	DueDate     string `json:"due_date"`
+	Submitted   bool   `json:"submitted"`
 }
 type scoreParams struct {
 	ScheduleID string
