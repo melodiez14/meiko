@@ -73,3 +73,15 @@ type getFileArgs struct {
 	payload  string
 	filename string
 }
+
+type routerParams struct {
+	payload string
+	role    string
+	id      string
+}
+
+type routerArgs struct {
+	payload string
+	role    string
+	id      int64
+}

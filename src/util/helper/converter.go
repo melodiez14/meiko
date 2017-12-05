@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -220,4 +221,25 @@ func Float64Round(value float64) float64 {
 func Float32Round(value float32) float32 {
 	v := float64(value)
 	return float32(math.Ceil(v - 0.5))
+}
+
+// MimeToThumbnail ...
+func MimeToThumbnail(mime string) string {
+	imageMaps := map[string]string{
+		"^image/[a-z]*":     "/api/v1/file/default/ttimg.jpg",
+		"^application/pdf$": "/api/v1/file/default/ttpdf.jpg",
+		"^application/vnd.(ms-powerpoint|openxmlformats-officedocument.presentationml)": "/api/v1/image/file/ttppt.jpg",
+		"^video/[a-z]*": "/api/v1/file/default/ttpdf.jpg",
+		"^application/(msword|vnd.openxmlformats-officedocument.wordprocessingml|vnd.ms-word)": "/api/v1/file/default/ttdoc.jpg",
+		"^application/vnd.(ms-excel|openxmlformats-officedocument.spreadsheetml)":              "/api/v1/file/default/ttxls.jpg",
+		"^application/(x-rar-compressed|zip|x-7z-compressed|x-bzip|x-bzip2|x-tar)$":            "/api/v1/file/default/ttzip.jpg",
+	}
+
+	for i, val := range imageMaps {
+		if valid, _ := regexp.MatchString(i, mime); valid {
+			return val
+		}
+	}
+
+	return "/api/v1/file/default/ttunknown.jpg"
 }

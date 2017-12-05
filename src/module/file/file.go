@@ -316,34 +316,35 @@ func IsExistID(fileID string) bool {
 	return true
 }
 
-// GetByUserIDTableIDName func ...
-func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
+// SelectByRelation func ...
+func SelectByRelation(userID int64, typ string, tablesID []string) ([]File, error) {
 	var files []File
+
+	if len(tablesID) < 1 {
+		return files, nil
+	}
+
+	queryTableID := strings.Join(tablesID, ", ")
 	query := fmt.Sprintf(`
 		SELECT 
 			id,
-			extension
+			extension,
+			mime,
+			type,
+			table_name,
+			table_id
 		FROM
 			files
 		WHERE
-			users_id = (%d) AND table_name=('%s') AND table_id=(%d)
-		`, UserID, TableName, TableID)
-	rows, err := conn.DB.Query(query)
+			users_id = (%d) AND
+			status = (%d) AND
+			type = ('%s') AND
+			table_id IN (%s);
+		`, userID, StatusExist, typ, queryTableID)
+
+	err := conn.DB.Select(&files, query)
 	if err != nil {
 		return files, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id, extension string
-		err := rows.Scan(&id, &extension)
-		if err != nil {
-			return files, err
-		}
-		files = append(files, File{
-			ID:        id,
-			Extension: extension,
-		})
 	}
 	return files, nil
 }
@@ -376,7 +377,7 @@ func UpdateStatusFilesByNameID(TableName string, Status, TableID int64, tx *sqlx
 }
 
 // GetByRelation ...
-func GetByRelation(tableName, tableID string) (File, error) {
+func GetByRelation(typ, tableID string) (File, error) {
 
 	var file File
 	query := fmt.Sprintf(`
@@ -387,10 +388,10 @@ func GetByRelation(tableName, tableID string) (File, error) {
 			files
 		WHERE
 			status = (%d) AND
-			table_name = ('%s') AND
+			type = ('%s') AND
 			table_id = ('%s')
 		LIMIT 1;
-		`, StatusExist, tableName, tableID)
+		`, StatusExist, typ, tableID)
 
 	err := conn.DB.Get(&file, query)
 	if err != nil {

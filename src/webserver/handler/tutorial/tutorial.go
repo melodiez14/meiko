@@ -13,6 +13,7 @@ import (
 	tt "github.com/melodiez14/meiko/src/module/tutorial"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/conn"
+	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
@@ -67,6 +68,26 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	var ttID []string
+	for _, val := range tutorials {
+		ttID = append(ttID, strconv.FormatInt(val.ID, 10))
+	}
+
+	files, err := fl.SelectByRelation(sess.ID, fl.TypTutorial, ttID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	filepict := map[string]string{}
+	for _, val := range files {
+		filepict[val.TableID.String] = helper.MimeToThumbnail(val.Mime)
+		if _, ok := filepict[val.TableID.String]; !ok {
+			filepict[val.TableID.String] = helper.MimeToThumbnail("application/zip")
+		}
+	}
+
 	respTutorial := []readTutorial{}
 	for _, val := range tutorials {
 		desc := "-"
@@ -79,7 +100,8 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			Name:        val.Name,
 			Description: desc,
 			Time:        val.CreatedAt.Unix(),
-			URL:         fmt.Sprintf("/api/v1/filerouter/?id=%d&payload=tutorial", val.ID),
+			ImageURL:    filepict[strconv.FormatInt(val.ID, 10)],
+			URL:         fmt.Sprintf("/api/v1/filerouter?id=%d&payload=tutorial&role=%s", val.ID, args.payload),
 		})
 	}
 
@@ -132,6 +154,13 @@ func ReadDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		}
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, tutorial.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
 		return
 	}
 
@@ -245,9 +274,17 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	if !tt.IsExistID(args.id) {
+	tutorial, err := tt.GetByID(args.id)
+	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, tutorial.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
 			AddError("Invalid Request"))
 		return
 	}
@@ -321,6 +358,13 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	if !cs.IsAssistant(sess.ID, tutorial.ScheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid Request"))
+		return
+	}
+
 	if tt.IsExistName(args.name, tutorial.ScheduleID, tutorial.ID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusConflict).
@@ -329,7 +373,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	id := strconv.FormatInt(args.id, 10)
-	file, err := fl.GetByRelation(fl.TableTutorial, id)
+	file, err := fl.GetByRelation(fl.TypTutorial, id)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))

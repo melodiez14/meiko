@@ -821,3 +821,78 @@ func TestFloat32Round(t *testing.T) {
 		})
 	}
 }
+
+func TestMimeToThumbnail(t *testing.T) {
+	type args struct {
+		mime string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "NULL",
+			args: args{
+				mime: "",
+			},
+			want: "/api/v1/file/default/ttunknown.jpg",
+		},
+		{
+			name: "DOC1",
+			args: args{
+				mime: "application/msword",
+			},
+			want: "/api/v1/file/default/ttdoc.jpg",
+		},
+		{
+			name: "DOC2",
+			args: args{
+				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			},
+			want: "/api/v1/file/default/ttdoc.jpg",
+		},
+		{
+			name: "DOC3",
+			args: args{
+				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+			},
+			want: "/api/v1/file/default/ttdoc.jpg",
+		},
+		{
+			name: "IMG1",
+			args: args{
+				mime: "image/jpg",
+			},
+			want: "/api/v1/file/default/ttimg.jpg",
+		},
+		{
+			name: "IMG2",
+			args: args{
+				mime: "image/png",
+			},
+			want: "/api/v1/file/default/ttimg.jpg",
+		},
+		{
+			name: "IMG3",
+			args: args{
+				mime: "image/gif",
+			},
+			want: "/api/v1/file/default/ttimg.jpg",
+		},
+		{
+			name: "PDF1",
+			args: args{
+				mime: "application/pdf",
+			},
+			want: "/api/v1/file/default/ttpdf.jpg",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MimeToThumbnail(tt.args.mime); got != tt.want {
+				t.Errorf("MimeToThumbnail() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

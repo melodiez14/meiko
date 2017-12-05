@@ -3,6 +3,7 @@ package file
 import (
 	"fmt"
 	"html"
+	"strconv"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -69,5 +70,20 @@ func (params getFileParams) validate() (getFileArgs, error) {
 	return getFileArgs{
 		payload:  params.payload,
 		filename: params.filename,
+	}, nil
+}
+
+func (params routerParams) validate() (routerArgs, error) {
+
+	var args routerArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return routerArgs{
+		payload: params.payload,
+		role:    params.role,
+		id:      id,
 	}, nil
 }

@@ -16,8 +16,10 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/julienschmidt/httprouter"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	tt "github.com/melodiez14/meiko/src/module/tutorial"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
@@ -285,16 +287,43 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	var tableName string
+	var typ string
 	var isHasAccess bool
-	payload := r.FormValue("payload")
-	switch payload {
-	case "assignment":
-		isHasAccess = sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
-		tableName = fl.TableAssignment
-	case "tutorial":
-		isHasAccess = sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
-		tableName = fl.TableTutorial
+
+	params := routerParams{
+		id:      r.FormValue("id"),
+		payload: r.FormValue("payload"),
+		role:    r.FormValue("role"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	if args.payload == "tutorial" {
+		tutorial, err := tt.GetByID(args.id)
+		if err != nil {
+			http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+			return
+		}
+
+		switch args.role {
+		case "assistant":
+			if !sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXRead, rg.RoleRead) || !cs.IsAssistant(sess.ID, tutorial.ScheduleID) {
+				http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+				return
+			}
+		case "student":
+			if !cs.IsEnrolled(sess.ID, tutorial.ScheduleID) {
+				http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+				return
+			}
+		}
+
+		isHasAccess = true
+		typ = fl.TypTutorial
 	}
 
 	if !isHasAccess {
@@ -302,20 +331,13 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	id := r.FormValue("id")
-	_, err := strconv.ParseInt(id, 10, 64)
+	file, err := fl.GetByRelation(typ, strconv.FormatInt(args.id, 10))
 	if err != nil {
 		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 		return
 	}
 
-	file, err := fl.GetByRelation(tableName, id)
-	if err != nil {
-		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
-		return
-	}
-
-	url := fmt.Sprintf("/api/v1/file/%s/%s.%s", payload, file.ID, file.Extension)
+	url := fmt.Sprintf("/api/v1/file/%s/%s.%s", args.payload, file.ID, file.Extension)
 	http.Redirect(w, r, url, http.StatusSeeOther)
 	return
 }

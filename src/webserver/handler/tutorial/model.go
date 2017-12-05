@@ -20,6 +20,7 @@ type readTutorial struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	ImageURL    string `json:"image_url"`
 	URL         string `json:"file_url"`
 	Time        int64  `json:"time"`
 }
