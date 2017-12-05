@@ -988,6 +988,111 @@ func ListEnrolledHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	return
 }
 
+// GetGradeSummery func ...
+func GetGradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	// sess := r.Context().Value("User").(*auth.User)
+	// listSchedule, err := cs.SelectScheduleIDByUserID(sess.ID, SheduleStatusPraktikan)
+	// if err != nil {
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusInternalServerError))
+	// 	return
+	// }
+	// if listSchedule == nil {
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusOK).
+	// 		SetData(nil))
+	// 	return
+	// }
+
+	// res := responseGradeSummery{
+	// 	UsersID: sess.IdentityCode,
+	// 	Type:    nil,
+	// }
+	// for _, scheduleID := range listSchedule {
+	// 	courseID, err := cs.GetCourseID(scheduleID)
+	// 	if err != nil {
+	// 		template.RenderJSONResponse(w, new(template.Response).
+	// 			SetCode(http.StatusInternalServerError))
+	// 		return
+	// 	}
+	// 	name, err := cs.GetName(courseID)
+	// 	if err != nil {
+	// 		template.RenderJSONResponse(w, new(template.Response).
+	// 			SetCode(http.StatusInternalServerError))
+	// 		return
+	// 	}
+	// 	listGradeParams, err := cs.SelectGradeParameterByScheduleID(scheduleID)
+	// 	if err != nil {
+	// 		template.RenderJSONResponse(w, new(template.Response).
+	// 			SetCode(http.StatusInternalServerError))
+	// 		return
+	// 	}
+	// 	schedule := scheduleGrade{
+	// 		ScheduleID: scheduleID,
+	// 		Name:       name,
+	// 		Grade:      nil,
+	// 	}
+	// 	var final float32
+	// 	for _, gradeParam := range listGradeParams {
+	// 		if res.Type == nil {
+	// 			res.Type = append(res.Type, gradeParam.Type)
+	// 		} else {
+	// 			var isSame bool
+	// 			for _, typeRes := range res.Type {
+	// 				if typeRes == gradeParam.Type {
+	// 					isSame = true
+	// 				}
+	// 			}
+	// 			if !isSame {
+	// 				res.Type = append(res.Type, gradeParam.Type)
+	// 			}
+	// 		}
+	// 		listAssignmentID, err := ag.SelectAssignmentIDByGradeParameter(gradeParam.ID)
+	// 		if err != nil {
+	// 			template.RenderJSONResponse(w, new(template.Response).
+	// 				SetCode(http.StatusInternalServerError))
+	// 			return
+	// 		}
+	// 		if listAssignmentID != nil {
+	// 			scores, err := ag.SelectScore(sess.ID, listAssignmentID)
+	// 			if err != nil {
+	// 				template.RenderJSONResponse(w, new(template.Response).
+	// 					SetCode(http.StatusInternalServerError))
+	// 				return
+	// 			}
+	// 			length := float64(len(scores))
+	// 			var total float32
+	// 			for _, score := range scores {
+	// 				total = total + score
+	// 			}
+	// 			total = (total / float32(length)) * gradeParam.Percentage / 100
+	// 			grade := gradeParameterResponse{
+	// 				ID:         gradeParam.ID,
+	// 				Type:       gradeParam.Type,
+	// 				Percentage: gradeParam.Percentage,
+	// 				Nilai:      total,
+	// 			}
+	// 			schedule.Grade = append(schedule.Grade, grade)
+	// 			final = final + total
+	// 		} else {
+	// 			grade := gradeParameterResponse{
+	// 				ID:         gradeParam.ID,
+	// 				Type:       gradeParam.Type,
+	// 				Percentage: gradeParam.Percentage,
+	// 				Nilai:      0,
+	// 			}
+	// 			schedule.Grade = append(schedule.Grade, grade)
+	// 		}
+	// 	}
+	// 	schedule.Total = final
+	// 	res.Schedule = append(res.Schedule, schedule)
+	// }
+	// template.RenderJSONResponse(w, new(template.Response).
+	// 	SetCode(http.StatusOK).
+	// 	SetData(res))
+	// return
+}
 func AddAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -1076,7 +1181,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return
-		}
+		} //udah
 	}
 
 	if len(insert) > 0 {

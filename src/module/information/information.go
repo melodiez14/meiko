@@ -1,9 +1,13 @@
 package information
 
 import (
+	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -111,9 +115,12 @@ func GetScheduleIDByID(informationID int64) int64 {
 }
 
 // Insert func ...
-func Insert(title, description string, scheduleID int64) error {
+func Insert(title, description string, scheduleID int64, tx *sqlx.Tx) (string, error) {
 	var c []string
 	var data string
+	var result sql.Result
+	var err error
+
 	if scheduleID == 0 {
 		c = []string{
 			ColTitle,
@@ -145,19 +152,29 @@ func Insert(title, description string, scheduleID int64) error {
 			)
 		;`, cols, data)
 
-	result, err := conn.DB.Exec(query)
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
 	if err != nil {
-		return err
+		return "", err
 	}
-	row, err := result.RowsAffected()
-	if row == 0 {
-		return fmt.Errorf("No rows affected")
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return "", fmt.Errorf("No rows affected")
 	}
-	return nil
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return "", fmt.Errorf("Error get LastIsertedId")
+	}
+	ID := strconv.FormatInt(id, 10)
+	return ID, nil
 }
 
 // Update func ...
-func Update(title, description string, scheduleID, informationID int64) error {
+func Update(title, description string, scheduleID, informationID int64, tx *sqlx.Tx) error {
 	var data string
 	if scheduleID == 0 {
 		data = fmt.Sprintf(`
@@ -180,13 +197,18 @@ func Update(title, description string, scheduleID, informationID int64) error {
 		WHERE
 			id = (%d)
 		;`, data, informationID)
-
-	result, err := conn.DB.Exec(query)
+	var result sql.Result
+	var err error
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
 	if err != nil {
 		return err
 	}
-	row, err := result.RowsAffected()
-	if row == 0 {
+	rows, err := result.RowsAffected()
+	if rows == 0 {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
@@ -263,7 +285,7 @@ func SelectByPage(scheduleID []int64, total, offset uint16, column ...string) ([
 			schedules_id IN (%s)
 		ORDER BY created_at DESC
 		LIMIT %d OFFSET %d`, cols, ids, total, offset)
-		
+
 	err := conn.DB.Select(&info, query)
 	if err != nil {
 		return info, err

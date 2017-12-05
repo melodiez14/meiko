@@ -22,6 +22,7 @@ type Assignment struct {
 	Description      sql.NullString `db:"description"`
 	GradeParameterID int32          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
+	UpdatedAt        time.Time      `db:"updated_at"`
 }
 
 // File struct ...
@@ -67,8 +68,11 @@ type DetailUploadedAssignment struct {
 	PathFile              sql.NullString
 }
 
-// ListAssignments struct ...
-type ListAssignments struct {
-	Assignment Assignment
-	Score      sql.NullFloat64
+// UserAssignmentDetail struct ...
+type UserAssignmentDetail struct {
+	UserID      int64          `db:"identity_code"`
+	Name        string         `db:"name"`
+	Score       float32        `db:"score"`
+	Description sql.NullString `db:"description"`
+	CreatedAt   time.Time      `db:"updated_at"`
 }
