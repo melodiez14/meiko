@@ -317,7 +317,7 @@ func IsExistID(fileID string) bool {
 }
 
 // SelectByRelation func ...
-func SelectByRelation(userID int64, typ string, tablesID []string) ([]File, error) {
+func SelectByRelation(typ string, tablesID []string) ([]File, error) {
 	var files []File
 
 	if len(tablesID) < 1 {
@@ -336,11 +336,10 @@ func SelectByRelation(userID int64, typ string, tablesID []string) ([]File, erro
 		FROM
 			files
 		WHERE
-			users_id = (%d) AND
 			status = (%d) AND
 			type = ('%s') AND
 			table_id IN (%s);
-		`, userID, StatusExist, typ, queryTableID)
+		`, StatusExist, typ, queryTableID)
 
 	err := conn.DB.Select(&files, query)
 	if err != nil {

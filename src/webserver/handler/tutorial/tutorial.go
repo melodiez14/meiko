@@ -73,7 +73,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ttID = append(ttID, strconv.FormatInt(val.ID, 10))
 	}
 
-	files, err := fl.SelectByRelation(sess.ID, fl.TypTutorial, ttID)
+	files, err := fl.SelectByRelation(fl.TypTutorial, ttID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
