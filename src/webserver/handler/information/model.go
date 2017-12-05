@@ -1,5 +1,9 @@
 package information
 
+const (
+	TableNameInformation = "informations"
+)
+
 type informationResponse struct {
 	Title       string `json:"title"`
 	Date        string `json:"date"`
@@ -21,17 +25,20 @@ type createParams struct {
 	Title       string
 	Description string
 	ScheduleID  string
+	FilesID     string
 }
 type createArgs struct {
 	Title       string
 	Description string
 	ScheduleID  int64
+	FilesID     []string
 }
 type updateParams struct {
 	ID          string
 	Title       string
 	Description string
 	ScheduleID  string
+	FilesID     string
 }
 
 type upadateArgs struct {
@@ -39,6 +46,7 @@ type upadateArgs struct {
 	Title       string
 	Description string
 	ScheduleID  int64
+	FilesID     []string
 }
 
 type deleteParams struct {

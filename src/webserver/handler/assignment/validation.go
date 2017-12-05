@@ -2,9 +2,11 @@ package assignment
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html"
 	"strconv"
+	"strings"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -159,7 +161,6 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 		AssignmentID: params.AssignmentID,
 		UserID:       params.UserID,
 		Description:  html.EscapeString(helper.Trim(params.Description)),
-		Subject:      html.EscapeString(helper.Trim(params.Subject)),
 	}
 	// AssigmentID validation
 	if helper.IsEmpty(params.AssignmentID) {
@@ -169,21 +170,25 @@ func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
 	if err != nil {
 		return args, fmt.Errorf("Error convert AssigmentID")
 	}
-	// Subject validation
-	var subject sql.NullString
-	if !helper.IsEmpty(params.Subject) {
-		subject = sql.NullString{Valid: true, String: params.Subject}
-	}
 	// Description validation
 	var description sql.NullString
 	if !helper.IsEmpty(params.Description) {
 		description = sql.NullString{Valid: true, String: params.Description}
 	}
+	var filesID []string
+	// FilesID validation
+	if !helper.IsEmpty(params.FileID) {
+		filesID = strings.Split(params.FileID, "~")
+		for _, value := range filesID {
+			if !helper.IsValidFileID(value) {
+				return args, fmt.Errorf("Wrong Files ID")
+			}
+		}
+	}
 	return uploadAssignmentArgs{
-		FileID:       params.FileID,
+		FileID:       filesID,
 		AssignmentID: assignmentID,
 		UserID:       params.UserID,
-		Subject:      subject,
 		Description:  description,
 	}, nil
 
@@ -294,23 +299,6 @@ func (params deleteParams) validate() (deleteArgs, error) {
 }
 func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 	var args listAssignmentsArgs
-	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
-		return args, fmt.Errorf("page or total is empty")
-	}
-
-	page, err := strconv.ParseInt(params.Page, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("page must be numeric")
-	}
-
-	total, err := strconv.ParseInt(params.Total, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("total must be numeric")
-	}
-	// should be positive number
-	if page < 0 || total < 0 {
-		return args, fmt.Errorf("page or total must be positive number")
-	}
 	if helper.IsEmpty(params.ScheduleID) {
 		return args, fmt.Errorf("Schedule ID can not be emrpty")
 	}
@@ -320,8 +308,6 @@ func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 	}
 	return listAssignmentsArgs{
 		ScheduleID: id,
-		Page:       uint16(page),
-		Total:      uint16(total),
 	}, nil
 }
 func (params readDetailParam) validate() (readDetailArgs, error) {
@@ -378,5 +364,97 @@ func (params updateScoreParams) validate() (updateScoreArgs, error) {
 		AssignmentID: assignmentID,
 		UserID:       userID,
 		Score:        float32(score),
+	}, nil
+}
+
+func (params detailAssignmentParams) validate() (detailAssignmentArgs, error) {
+	var args detailAssignmentArgs
+	//Schedule ID validation
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return detailAssignmentArgs{
+		ScheduleID:   scheduleID,
+		AssignmentID: assignmentID,
+	}, nil
+}
+
+func (params createScoreParams) validate() (createScoreArgs, error) {
+	args := createScoreArgs{}
+	params = createScoreParams{
+		ScheduleID:   params.ScheduleID,
+		AssignmentID: params.AssignmentID,
+		Users:        params.Users,
+	}
+
+	//Schedule ID validation
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+
+	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	// Users validation
+	var users []int64
+	var score []float32
+	if !helper.IsEmpty(params.Users) {
+		var std []student
+		err := json.Unmarshal([]byte(params.Users), &std)
+
+		if err != nil {
+			return args, err
+		}
+		for _, val := range std {
+			users = append(users, val.IdentityCode)
+			score = append(score, val.Score)
+		}
+	}
+
+	return createScoreArgs{
+		ScheduleID:   scheduleID,
+		AssignmentID: assignmentID,
+		IdentityCode: users,
+		Score:        score,
+	}, nil
+
+}
+
+func (params scoreParams) validate() (scoreArgs, error) {
+	var args scoreArgs
+	params = scoreParams{
+		ScheduleID: params.ScheduleID,
+	}
+	if helper.IsEmpty(params.ScheduleID) {
+		return args, fmt.Errorf("Schedule ID can not be empty")
+	}
+	id, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Error convert to int64")
+	}
+	return scoreArgs{
+		ScheduleID: id,
 	}, nil
 }

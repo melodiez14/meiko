@@ -341,3 +341,109 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	http.Redirect(w, r, url, http.StatusSeeOther)
 	return
 }
+
+// UploadInformationImageHandler func ...
+func UploadInformationImageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+
+	// get uploaded file
+	r.ParseMultipartForm(2 * MB)
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("File is not exist"))
+		return
+	}
+	defer file.Close()
+
+	// extract file extension
+	fn, ext, err := helper.ExtractExtension(header.Filename)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("File doesn't have an extension"))
+		return
+	}
+
+	// decode file
+	img, err := imaging.Decode(file)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Not valid image"))
+		return
+	}
+
+	bound := img.Bounds()
+	params := uploadImageParams{
+		Height:    bound.Dx(),
+		Width:     bound.Dy(),
+		FileName:  fn,
+		Extension: ext,
+		Mime:      header.Header.Get("Content-Type"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	// generate file id
+	t := time.Now().UnixNano()
+	rand.Seed(t)
+	mImgID := fmt.Sprintf("%d.%06d.1", t, rand.Intn(999999))
+	tImgID := fmt.Sprintf("%d.%06d.2", t, rand.Intn(999999))
+
+	go func() {
+		// resize image
+		mImg := imaging.Resize(img, 300, 0, imaging.Lanczos)
+		tImg := imaging.Thumbnail(img, 128, 128, imaging.Lanczos)
+
+		// save image to storage
+		imaging.Save(mImg, "files/var/www/meiko/data/information/"+mImgID+".jpg")
+		imaging.Save(tImg, "files/var/www/meiko/data/information/"+tImgID+".jpg")
+	}()
+
+	// begin transaction to db
+	tx, err := conn.DB.Beginx()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	// insert main image
+	err = fl.Insert(mImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPict, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	// insert thumbnail image
+	err = fl.Insert(tImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPictThumb, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Status OK"))
+	return
+}

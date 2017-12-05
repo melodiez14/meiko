@@ -399,7 +399,6 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("Invalid email or password"))
 		return
 	}
-
 	// check whether user activated
 	switch u.Status {
 	case alias.UserStatusUnverified:
@@ -425,6 +424,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if u.RoleGroupsID.Valid {
 		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 		if err != nil {
+			fmt.Println(err.Error())
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return

@@ -834,7 +834,31 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 	if err != nil && err != sql.ErrNoRows {
 		return gps, err
 	}
+	return gps, nil
+}
 
+// SelectGradeParameterByScheduleIDIN func
+func SelectGradeParameterByScheduleIDIN(scheduleID []int64) ([]int64, error) {
+	var gps []int64
+	var gradeQuery []string
+	for _, value := range scheduleID {
+		gradeQuery = append(gradeQuery, fmt.Sprintf("%d", value))
+	}
+	queryGradeList := strings.Join(gradeQuery, ",")
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			grade_parameters
+		WHERE
+			schedules_id
+		IN
+			 (%s);
+		`, queryGradeList)
+	err := conn.DB.Select(&gps, query)
+	if err != nil && err != sql.ErrNoRows {
+		return gps, err
+	}
 	return gps, nil
 }
 
@@ -988,6 +1012,71 @@ func IsUserHasUploadedFile(assignmentID, userID int64) bool {
 		return false
 	}
 	return true
+}
+
+// IsAllUsersEnrolled func ...
+func IsAllUsersEnrolled(scheduleID int64, usersID []int64) bool {
+	userIDs := []int64{}
+	var userList []string
+	for _, value := range usersID {
+		userList = append(userList, fmt.Sprintf("%d", value))
+	}
+	queryUserList := strings.Join(userList, ",")
+	query := fmt.Sprintf(`SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE 
+			status = (%d) AND
+			schedules_id = (%d) AND users_id IN(%s);`, PStatusStudent, scheduleID, queryUserList)
+
+	err := conn.DB.Select(&userIDs, query)
+	if err != nil && err != sql.ErrNoRows {
+		return false
+	}
+
+	if len(userIDs) != len(usersID) {
+		return false
+	}
+	return true
+}
+
+// GetCourseID func ...
+func GetCourseID(scheduleID int64) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			courses_id
+		FROM
+			schedules
+		WHERE
+			id=(%d)
+		LIMIT 1;
+		`, scheduleID)
+	var res string
+	err := conn.DB.Get(&res, query)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+// GetName func ...
+func GetName(courseID string) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			name
+		FROM
+			courses
+		WHERE
+			id=('%s')
+		LIMIT 1;
+		`, courseID)
+	var res string
+	err := conn.DB.Get(&res, query)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 // InsertAssistant ...

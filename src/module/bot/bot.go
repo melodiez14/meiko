@@ -330,9 +330,9 @@ func SelectInfoWithFile(scheduleID []int64, t []time.Time) ([]Information, error
 
 	var queryTime string
 	if len(t) == 1 {
-		queryTime = fmt.Sprintf("AND date(created_at) = ('%s')", t[0].Format("2006-01-02"))
+		queryTime = fmt.Sprintf("AND date(i.created_at) = ('%s')", t[0].Format("2006-01-02"))
 	} else if len(t) == 2 {
-		queryTime = fmt.Sprintf("AND date(created_at) BETWEEN ('%s') AND ('%s')", t[0].Format("2006-01-02"), t[1].Format("2006-01-02"))
+		queryTime = fmt.Sprintf("AND date(i.created_at) BETWEEN ('%s') AND ('%s')", t[0].Format("2006-01-02"), t[1].Format("2006-01-02"))
 	} else if len(t) > 2 {
 		return info, fmt.Errorf("date more than two")
 	}

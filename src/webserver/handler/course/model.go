@@ -4,6 +4,11 @@ import (
 	"database/sql"
 )
 
+const (
+	SheduleStatusAssistant = 2
+	SheduleStatusPraktikan = 1
+)
+
 type readParams struct {
 	page  string
 	total string
@@ -245,6 +250,27 @@ type listStudentArgs struct {
 type listStudentResponse struct {
 	UserIdentityCode int64  `json:"id"`
 	UserName         string `json:"name"`
+}
+
+type gradeParameterResponse struct {
+	ID         int64   `json:"id"`
+	Type       string  `json:"type"`
+	Percentage float32 `json:"percentage"`
+	Nilai      float32 `json:"nilai"`
+}
+type scheduleGrade struct {
+	ScheduleID int64   `json:"schedule_id"`
+	Name       string  `json:"name"`
+	Attendance float32 `json:"attendance"`
+	Quiz       float32 `json:"quiz"`
+	Assignment float32 `json:"assignment"`
+	Mid        float32 `json:"mid"`
+	Final      float32 `json:"final"`
+	Total      float32 `json:"total"`
+}
+type responseGradeSummery struct {
+	UsersID  int64           `json:"npm"`
+	Schedule []scheduleGrade `json:"schedules"`
 }
 
 type addAssistantParams struct {

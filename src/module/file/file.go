@@ -398,3 +398,23 @@ func GetByRelation(typ, tableID string) (File, error) {
 	}
 	return file, nil
 }
+
+// GetByUserIDTableIDName func ...
+func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
+	var files []File
+	query := fmt.Sprintf(`
+		SELECT 
+			id,
+			extension
+		FROM
+			files
+		WHERE
+			users_id = (%d) AND table_name=('%s') AND table_id=(%d)
+		`, UserID, TableName, TableID)
+
+	err := conn.DB.Select(&files, query)
+	if err != nil {
+		return files, err
+	}
+	return files, nil
+}
