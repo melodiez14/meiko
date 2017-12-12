@@ -52,13 +52,13 @@ type getProfileArgs struct {
 	Payload string
 }
 
-type uploadFileParams struct {
+type metaParams struct {
 	fileName  string
 	mime      string
 	extension string
 }
 
-type uploadFileArgs struct {
+type metaArgs struct {
 	fileName  string
 	mime      string
 	extension string
@@ -84,4 +84,16 @@ type routerArgs struct {
 	payload string
 	role    string
 	id      int64
+}
+
+type uploadFileParams struct {
+	id      string
+	payload string
+	role    string
+}
+
+type uploadFileArgs struct {
+	id      int64
+	payload string
+	role    string
 }

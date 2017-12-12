@@ -3,10 +3,8 @@ package file
 import (
 	"fmt"
 	"html"
-	"io"
 	"math/rand"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -151,7 +149,7 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	case "profile", "default", "information":
 		err = handleSingleWithoutMeta(payload, filename, w)
 	case "assignment-user":
-		err = handleUserAssignment(w) // change the parameter
+		err = handleUserAssignment(w)
 	default:
 		err = fmt.Errorf("Invalid")
 	}
@@ -197,15 +195,40 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	// access validation
 	var typ string
-	payload := r.FormValue("payload")
+
 	isHasAccess := false
-	switch payload {
+	params := uploadFileParams{
+		id:      r.FormValue("id"),
+		payload: r.FormValue("payload"),
+		role:    r.FormValue("role"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest))
+		return
+	}
+
+	switch args.payload {
 	case "assignment":
-		isHasAccess = sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
-		typ = fl.TypAssignment
+		if args.role == "assistant" {
+			typ = fl.TypAssignment
+			isHasAccess = sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		} else if args.role == "student" {
+			// please verify file size
+			typ = fl.TypAssignmentUpload
+			gpid := cs.GetGradeParametersID(args.id)
+			scheduleID := cs.GetScheduleID(gpid)
+			if cs.IsEnrolled(sess.ID, scheduleID) {
+				isHasAccess = true
+			}
+		}
 	case "tutorial":
-		isHasAccess = sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
-		typ = fl.TypTutorial
+		if args.role == "assistant" {
+			typ = fl.TypTutorial
+			isHasAccess = sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXCreate, rg.RoleCreate, rg.RoleXUpdate, rg.RoleUpdate)
+		}
 	}
 
 	if !isHasAccess {
@@ -224,57 +247,18 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			AddError("File is not exist"))
 		return
 	}
-	defer file.Close()
 
-	// extract file extension
-	fn, ext, err := helper.ExtractExtension(header.Filename)
+	fileID, statusCode, err := handleUpload(file, header, sess.ID, typ, args.payload)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("File doesn't have an extension"))
-		return
-	}
-
-	// add mime validation
-	params := uploadFileParams{
-		fileName:  fn,
-		extension: ext,
-		mime:      header.Header.Get("Content-Type"),
-	}
-
-	args, err := params.validate()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
-	}
-
-	// get filename
-	t := time.Now().UnixNano()
-	rand.Seed(t)
-	id := fmt.Sprintf("%d.%06d", t, rand.Intn(999999))
-
-	// save file
-	go func() {
-		path := fmt.Sprintf("%s/%s/%s.%s", alias.Dir["data"], payload, id, args.extension)
-		f, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
-		defer f.Close()
-
-		file.Seek(0, 0)
-		io.Copy(f, file)
-	}()
-
-	err = fl.Insert(id, args.fileName, args.mime, args.extension, sess.ID, typ, nil)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
+			SetCode(statusCode).
+			AddError("File is not exist"))
 		return
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage(id))
+		SetData(fileID))
 	return
 }
 

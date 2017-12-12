@@ -186,24 +186,26 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-	u, err := as.GetByAssignementID(args.IdentityCode)
+
+	assignment, err := as.GetByAssignementID(args.IdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusNotFound))
 		return
 	}
 
-	description := fmt.Sprintf("NULL")
-	if u.Description.Valid {
-		description = fmt.Sprintf(u.Description.String)
+	desc := "-"
+	if assignment.Description.Valid {
+		desc = assignment.Description.String
 	}
+
 	res := detailResponse{
-		ID:               u.ID,
-		Status:           u.Status,
-		Name:             u.Name,
-		GradeParameterID: u.GradeParameterID,
-		Description:      description,
-		DueDate:          u.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+		ID:               assignment.ID,
+		Status:           assignment.Status,
+		Name:             assignment.Name,
+		GradeParameterID: assignment.GradeParameterID,
+		Description:      desc,
+		DueDate:          assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -319,7 +321,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Update Assigment Success!"))
+		SetMessage("Update Assignment Success!"))
 	return
 
 }
@@ -659,16 +661,15 @@ func GetAssignmentDetailHandler(w http.ResponseWriter, r *http.Request, ps httpr
 	}
 	a, err := as.GetByAssignementID(args.AssignmentID)
 
-	var score float32
 	status := "must_not_upload"
 	isUploaded := false
-	score = 0
+	score := "-"
 	buttonType := "none"
 
 	if as.IsUploaded(args.AssignmentID) {
-		buttonType = "update"
 		isUploaded = true
-		score = as.GetScoreByIDUser(args.AssignmentID, sess.ID)
+		buttonType = "update"
+		score = fmt.Sprintf("%.3g", as.GetScoreByIDUser(args.AssignmentID, sess.ID))
 	}
 
 	if a.Status == 1 {
@@ -689,6 +690,37 @@ func GetAssignmentDetailHandler(w http.ResponseWriter, r *http.Request, ps httpr
 		prefix = strings.Join(s, "_")
 	}
 
+	tableID := []string{strconv.FormatInt(args.AssignmentID, 10)}
+	assistantFile, err := fs.SelectByRelation(fs.TypAssignment, tableID, nil)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	studentFile, err := fs.SelectByRelation(fs.TypAssignmentUpload, tableID, &sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	resAssistantFile := []file{}
+	for _, val := range assistantFile {
+		resAssistantFile = append(resAssistantFile, file{
+			Name: val.Name,
+			URL:  fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+		})
+	}
+
+	resStudentFile := []file{}
+	for _, val := range studentFile {
+		resStudentFile = append(resStudentFile, file{
+			Name: val.Name,
+			URL:  fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+		})
+	}
+
 	res := detailResponseUser{
 		ID:             a.ID,
 		Name:           a.Name,
@@ -699,6 +731,8 @@ func GetAssignmentDetailHandler(w http.ResponseWriter, r *http.Request, ps httpr
 		FilesName:      a.UpdatedAt.Format("2006_01_02") + "-" + prefix,
 		UploadedStatus: isUploaded,
 		ButtonType:     buttonType,
+		AssistantFile:  resAssistantFile,
+		StudentFile:    resStudentFile,
 	}
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -1301,8 +1335,8 @@ func GradeBySchedule(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	return
 }
 
-// GradeSummery func ...
-func GradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// GradeSummary func ...
+func GradeSummary(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
 	listSchedule, err := cs.SelectScheduleIDByUserID(sess.ID, 1)
 	if err != nil {
@@ -1310,23 +1344,33 @@ func GradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 			SetCode(http.StatusInternalServerError))
 		return
 	}
+
 	if listSchedule == nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusOK).
 			SetData(nil))
 		return
 	}
+
+	schedules, err := cs.SelectByScheduleID(listSchedule, cs.StatusScheduleActive)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
 	var res []responseScoreSchedule
-	for _, id := range listSchedule {
+	for _, c := range schedules {
 		allType := [5]string{"ATTENDANCE", "ASSIGNMENT", "QUIZ", "MID", "FINAL"}
-		gradeParameters, err := cs.SelectGradeParameterByScheduleID(id)
+		gradeParameters, err := cs.SelectGradeParameterByScheduleID(c.Schedule.ID)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return
 		}
 		re := responseScoreSchedule{
-			ScheduleID: id,
+			ScheduleID: c.Schedule.ID,
+			CourseName: c.Course.Name,
 		}
 		var total float32
 		for _, val := range allType {
@@ -1339,7 +1383,7 @@ func GradeSummery(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 						var present, totalMeeting int
 						var percentage float32
 
-						meetingsID, err := atd.SelectMeetingIDByScheduleID(sess.ID, id)
+						meetingsID, err := atd.SelectMeetingIDByScheduleID(sess.ID, c.Schedule.ID)
 						if err != nil {
 							template.RenderJSONResponse(w, new(template.Response).
 								SetCode(http.StatusInternalServerError))

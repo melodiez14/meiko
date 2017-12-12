@@ -43,8 +43,21 @@ func (params uploadImageParams) validate() (uploadImageArgs, error) {
 }
 
 func (params uploadFileParams) validate() (uploadFileArgs, error) {
-	var args uploadFileArgs
-	params = uploadFileParams{
+
+	id, _ := strconv.ParseInt(params.id, 10, 64)
+
+	// validate mime and extension
+
+	return uploadFileArgs{
+		id:      id,
+		payload: params.payload,
+		role:    params.role,
+	}, nil
+}
+
+func (params metaParams) validate() (metaArgs, error) {
+	var args metaArgs
+	params = metaParams{
 		fileName:  html.EscapeString(params.fileName),
 		extension: params.extension,
 		mime:      params.mime,
@@ -56,7 +69,7 @@ func (params uploadFileParams) validate() (uploadFileArgs, error) {
 
 	// validate mime and extension
 
-	return uploadFileArgs{
+	return metaArgs{
 		fileName:  params.fileName,
 		extension: params.extension,
 		mime:      params.mime,

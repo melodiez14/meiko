@@ -62,7 +62,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfileHandler))
 	r.POST("/api/v1/image/profile", auth.MustAuthorize(file.UploadProfileImageHandler))
 	r.POST("/api/admin/v1/image/information", auth.MustAuthorize(file.UploadInformationImageHandler))
-	//r.POST("/api/v1/file/assignment", auth.MustAuthorize(file.UploadAssignmentHandler))
+	// r.POST("/api/v1/file/assignment", auth.MustAuthorize(file.UploadAssignmentHandler))
 	r.POST("/api/v1/file", auth.MustAuthorize(file.UploadFileHandler))
 	// ======================== End File Handler ========================
 
@@ -71,7 +71,6 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/course", auth.MustAuthorize(course.GetHandler))
 	r.GET("/api/v1/course/:schedule_id", auth.MustAuthorize(course.GetDetailHandler))
 	r.GET("/api/v1/course/:schedule_id/assistant", auth.MustAuthorize(course.GetAssistantHandler))
-	r.GET("/api/v1/course/:schedule_id/today", auth.MustAuthorize(course.GetTodayHandler))
 	r.POST("/api/v1/course/:schedule_id/enrollment", auth.MustAuthorize(course.EnrollRequestHandler))
 
 	// Admin section
@@ -126,7 +125,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentDetailHandler))                           // read detail assignments definitions
 	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetAssignmentHandler))                                     // List assignments
 	r.GET("/api/v1/assignment-schedule", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))                  // List assignments
-	r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummery))
+	r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummary))
 	r.GET("/api/v1/grade/:id", auth.MustAuthorize(assignment.GradeBySchedule))
 	// ===================== End Assignment Handler =====================
 

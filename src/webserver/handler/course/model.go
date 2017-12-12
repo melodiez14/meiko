@@ -268,7 +268,7 @@ type scheduleGrade struct {
 	Final      float32 `json:"final"`
 	Total      float32 `json:"total"`
 }
-type responseGradeSummery struct {
+type responseGradeSummary struct {
 	UsersID  int64           `json:"npm"`
 	Schedule []scheduleGrade `json:"schedules"`
 }

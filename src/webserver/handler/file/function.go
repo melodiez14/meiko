@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,6 +50,8 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 		w.Header().Set("Content-Length", size)
 	}
 
+	// seek the read before copying to the response
+	file.Seek(0, 0)
 	io.Copy(w, file)
 
 	return nil
@@ -85,6 +89,8 @@ func handleSingleWithoutMeta(payload, filename string, w http.ResponseWriter) er
 		w.Header().Set("Content-Length", size)
 	}
 
+	// seek the read before copying to the response
+	file.Seek(0, 0)
 	io.Copy(w, file)
 
 	return nil
@@ -145,4 +151,51 @@ func handleUserAssignment(w http.ResponseWriter) error {
 	}
 
 	return nil
+}
+
+func handleUpload(file multipart.File, header *multipart.FileHeader, userID int64, typ string, payload string) (string, int, error) {
+
+	var fileID string
+
+	// extract file extension
+	defer file.Close()
+	file.Seek(0, 0)
+
+	fn, ext, err := helper.ExtractExtension(header.Filename)
+	if err != nil {
+		return fileID, http.StatusBadRequest, err
+	}
+
+	params := metaParams{
+		fileName:  fn,
+		extension: ext,
+		mime:      header.Header.Get("Content-Type"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		return fileID, http.StatusBadRequest, fmt.Errorf("Invalid Request")
+	}
+
+	// get filename
+	t := time.Now().UnixNano()
+	rand.Seed(t)
+	fileID = fmt.Sprintf("%d.%06d", t, rand.Intn(999999))
+
+	// save file
+	go func() {
+		path := fmt.Sprintf("%s/%s/%s.%s", alias.Dir["data"], payload, fileID, args.extension)
+		f, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0666)
+		defer f.Close()
+
+		file.Seek(0, 0)
+		io.Copy(f, file)
+	}()
+
+	err = fl.Insert(fileID, args.fileName, args.mime, args.extension, userID, typ, nil)
+	if err != nil {
+		return fileID, http.StatusInternalServerError, fmt.Errorf("Internal Error")
+	}
+
+	return fileID, http.StatusOK, nil
 }

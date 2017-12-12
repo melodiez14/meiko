@@ -105,18 +105,26 @@ type detailResponse struct {
 	Type             string `json:"type"`
 }
 type detailResponseUser struct {
-	ID               int64   `json:"id"`
-	Status           string  `json:"status"`
-	Name             string  `json:"name"`
-	GradeParameterID int32   `json:"grade_parameters_id"`
-	Description      string  `json:"description"`
-	DueDate          string  `json:"due_date"`
-	Score            float32 `json:"score"`
-	FilesName        string  `json:"file_name"`
-	UploadedStatus   bool    `json:"uploaded_status"`
-	MustUploadStatus int8    `json:"must_upload"`
-	ButtonType       string  `json:"button_type"`
+	ID               int64  `json:"id"`
+	Status           string `json:"status"`
+	Name             string `json:"name"`
+	GradeParameterID int32  `json:"grade_parameters_id"`
+	Description      string `json:"description"`
+	DueDate          string `json:"due_date"`
+	Score            string `json:"score"`
+	FilesName        string `json:"file_name"`
+	UploadedStatus   bool   `json:"uploaded_status"`
+	MustUploadStatus int8   `json:"must_upload"`
+	ButtonType       string `json:"button_type"`
+	AssistantFile    []file `json:"assignment_file"`
+	StudentFile      []file `json:"uploaded_file"`
 }
+
+type file struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
 type uploadAssignmentParams struct {
 	UserID       int64
 	AssignmentID string
@@ -275,6 +283,7 @@ type scoreArgs struct {
 }
 type responseScoreSchedule struct {
 	ScheduleID int64  `json:"schedule_id"`
+	CourseName string `json:"course_name"`
 	Attendance string `json:"attendance"`
 	Assignment string `json:"assignment"`
 	Quiz       string `json:"quiz"`

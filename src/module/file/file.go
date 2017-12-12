@@ -317,17 +317,23 @@ func IsExistID(fileID string) bool {
 }
 
 // SelectByRelation func ...
-func SelectByRelation(typ string, tablesID []string) ([]File, error) {
+func SelectByRelation(typ string, tablesID []string, userID *int64) ([]File, error) {
 	var files []File
 
 	if len(tablesID) < 1 {
 		return files, nil
 	}
 
+	var queryUserID string
+	if userID != nil {
+		queryUserID = fmt.Sprintf("users_id = (%d) AND ", *userID)
+	}
+
 	queryTableID := strings.Join(tablesID, ", ")
 	query := fmt.Sprintf(`
 		SELECT 
 			id,
+			name,
 			extension,
 			mime,
 			type,
@@ -336,10 +342,11 @@ func SelectByRelation(typ string, tablesID []string) ([]File, error) {
 		FROM
 			files
 		WHERE
+			%s
 			status = (%d) AND
 			type = ('%s') AND
 			table_id IN (%s);
-		`, StatusExist, typ, queryTableID)
+		`, queryUserID, StatusExist, typ, queryTableID)
 
 	err := conn.DB.Select(&files, query)
 	if err != nil {
