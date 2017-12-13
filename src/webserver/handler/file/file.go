@@ -3,9 +3,12 @@ package file
 import (
 	"fmt"
 	"html"
+	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/melodiez14/meiko/src/util/alias"
@@ -429,5 +432,88 @@ func UploadInformationImageHandler(w http.ResponseWriter, r *http.Request, ps ht
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Status OK"))
+	return
+}
+
+func StaticHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	filepath := ps.ByName("filepath")
+	path := fmt.Sprintf("%s%s", alias.Dir["static"], filepath)
+	file, err := os.Open(path)
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	if stat.IsDir() {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	contentType := "text/plain"
+	if strings.HasSuffix(filepath, ".css") {
+		contentType = "text/css"
+	} else if strings.HasSuffix(filepath, ".js") {
+		contentType = "text/javascript"
+	} else if strings.HasSuffix(filepath, ".html") {
+		contentType = "text/html"
+	}
+
+	size := strconv.FormatInt(stat.Size(), 10)
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=2628000")
+	w.Header().Set("Content-Length", size)
+
+	file.Seek(0, 0)
+	io.Copy(w, file)
+
+	return
+}
+
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+
+	path := fmt.Sprintf("%s/index.html", alias.Dir["static"])
+	file, err := os.Open(path)
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	if stat.IsDir() {
+		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+		return
+	}
+
+	// Only the first 512 bytes are used to sniff the content type.
+	buffer := make([]byte, 512)
+	file.Read(buffer)
+	file.Seek(0, 0)
+
+	// Always returns a valid content-type and "application/octet-stream" if no others seemed to match.
+	contentType := http.DetectContentType(buffer)
+	size := strconv.FormatInt(stat.Size(), 10)
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=2628000")
+	w.Header().Set("Content-Length", size)
+
+	file.Seek(0, 0)
+	io.Copy(w, file)
+
 	return
 }

@@ -1,9 +1,10 @@
 package webserver
 
 import (
+	"net/http"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
-	"github.com/melodiez14/meiko/src/webserver/handler"
 	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
 	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/bot"
@@ -18,9 +19,6 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
-
-	// Home Handler
-	r.GET("/", handler.HelloHandler)
 
 	// ========================== User Handler ==========================
 	// User section
@@ -64,6 +62,7 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/image/information", auth.MustAuthorize(file.UploadInformationImageHandler))
 	// r.POST("/api/v1/file/assignment", auth.MustAuthorize(file.UploadAssignmentHandler))
 	r.POST("/api/v1/file", auth.MustAuthorize(file.UploadFileHandler))
+	r.GET("/static/*filepath", file.StaticHandler)
 	// ======================== End File Handler ========================
 
 	// ========================= Course Handler =========================
@@ -146,6 +145,6 @@ func loadRouter(r *httprouter.Router) {
 	// ======================== End Place Handler =======================
 
 	// Catch
-	// r.NotFound = http.RedirectHandler("/", http.StatusPermanentRedirect)
+	r.NotFound = http.HandlerFunc(file.IndexHandler)
 	// r.MethodNotAllowed = http.RedirectHandler("/", http.StatusPermanentRedirect)
 }
