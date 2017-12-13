@@ -55,7 +55,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	// Insert to table assignments
 	tx := conn.DB.MustBegin()
-	TableID, err := as.Insert(
+	tableID, err := as.Insert(
 		args.GradeParametersID,
 		args.Name,
 		args.Status,
@@ -77,9 +77,9 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			SetMessage("Success Without files"))
 		return
 	}
+
 	// Split files id if possible
 	filesID := strings.Split(args.FilesID, "~")
-	tableName := "assignments"
 	for _, fileID := range filesID {
 		// Wrong file code
 		if !as.IsFileIDExist(fileID) {
@@ -90,7 +90,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 		// Update files
-		err = fs.UpdateRelation(fileID, tableName, TableID, tx)
+		err = fs.UpdateRelation(fileID, fs.TypAssignment, tableID, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
@@ -273,7 +273,6 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	var filesIDUser = strings.Split(args.FilesID, "~")
-	var tableID = strconv.FormatInt(args.ID, 10)
 	// Get All relations with
 	filesIDDB, err := fs.GetByStatus(fs.StatusExist, args.ID)
 	if err != nil {
@@ -283,11 +282,12 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	// Add new file
+	var tableID = strconv.FormatInt(args.ID, 10)
 	for _, fileID := range filesIDUser {
 		if !fs.IsExistID(fileID) {
 			filesIDDB = append(filesIDDB, fileID)
 			// Update relation
-			err := fs.UpdateRelation(fileID, TableNameAssignments, tableID, tx)
+			err := fs.UpdateRelation(fileID, fs.TypAssignment, tableID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).
@@ -378,11 +378,12 @@ func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		return
 	}
 
-	tableID := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
+	assignmentID := strconv.FormatInt(args.AssignmentID, 10)
+
 	//Update Relations
 	if args.FileID != nil {
 		for _, fileID := range args.FileID {
-			err := fs.UpdateRelation(fileID, TableNameUserAssignments, tableID, tx)
+			err := fs.UpdateRelation(fileID, fs.TypAssignmentUpload, assignmentID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).
@@ -441,8 +442,8 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			AddError("Update Failed"))
 		return
 	}
-	key := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
-	tableID, err := strconv.ParseInt(key, 10, 64)
+
+	tableID := strconv.FormatInt(args.AssignmentID, 10)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
@@ -450,45 +451,50 @@ func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			AddError("Can not convert to int64"))
 		return
 	}
+
 	// Get All relations with
-	filesIDDB, err := fs.GetByStatus(fs.StatusExist, tableID)
+	filesIDDB, err := fs.SelectByRelation(fs.TypAssignmentUpload, []string{tableID}, &sess.ID)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
+
+	_ = filesIDDB
+
 	// Add new file
-	for _, fileID := range args.FileID {
-		if !fs.IsExistID(fileID) {
-			filesIDDB = append(filesIDDB, fileID)
-			// Update relation
-			err := fs.UpdateRelation(fileID, TableNameUserAssignments, key, tx)
-			if err != nil {
-				tx.Rollback()
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError))
-				return
-			}
-		}
-	}
-	for _, fileIDDB := range filesIDDB {
-		isSame := 0
-		for _, fileIDUser := range args.FileID {
-			if fileIDUser == fileIDDB {
-				isSame = 1
-			}
-		}
-		if isSame == 0 {
-			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
-			if err != nil {
-				tx.Rollback()
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError))
-				return
-			}
-		}
-	}
+	// for _, fileID := range args.FileID {
+	// 	if !fs.IsExistID(fileID) {
+	// 		filesIDDB = append(filesIDDB, fileID)
+	// 		// Update relation
+	// 		err := fs.UpdateRelation(fileID, fs.TypAssignmentUpload, tableID, tx)
+	// 		if err != nil {
+	// 			tx.Rollback()
+	// 			template.RenderJSONResponse(w, new(template.Response).
+	// 				SetCode(http.StatusInternalServerError))
+	// 			return
+	// 		}
+	// 	}
+	// }
+	// for _, fileIDDB := range filesIDDB {
+	// 	isSame := 0
+	// 	for _, fileIDUser := range args.FileID {
+	// 		if fileIDUser == fileIDDB {
+	// 			isSame = 1
+	// 		}
+	// 	}
+	// 	if isSame == 0 {
+	// 		err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
+	// 		if err != nil {
+	// 			tx.Rollback()
+	// 			template.RenderJSONResponse(w, new(template.Response).
+	// 				SetCode(http.StatusInternalServerError))
+	// 			return
+	// 		}
+	// 	}
+	// }
+
 	err = tx.Commit()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -782,7 +788,7 @@ func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	// Get File
-	files, err := fs.GetByUserIDTableIDName(sess.ID, tableID, TableNameUserAssignments)
+	files, err := fs.GetByUserIDTableID(sess.ID, tableID, fs.TypAssignmentUpload)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))

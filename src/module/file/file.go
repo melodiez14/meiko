@@ -182,7 +182,7 @@ func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx
 	return nil
 }
 
-func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
+func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
@@ -190,15 +190,14 @@ func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 		UPDATE
 			files
 		SET
-			table_name = ('%s'),
 			table_id = ('%s'),
 			updated_at = NOW()
 		WHERE
 			status = (%d) AND
 			id = ('%s') AND
-			table_name IS NULL AND
+			type = ('%s') AND
 			table_id IS NULL;
-		`, tableName, tableID, StatusExist, id)
+		`, tableID, StatusExist, id, typ)
 
 	if tx != nil {
 		result, err = tx.Exec(query)
@@ -406,8 +405,8 @@ func GetByRelation(typ, tableID string) (File, error) {
 	return file, nil
 }
 
-// GetByUserIDTableIDName func ...
-func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, error) {
+// GetByUserIDTableID func ...
+func GetByUserIDTableID(userID, tableID int64, typ string) ([]File, error) {
 	var files []File
 	query := fmt.Sprintf(`
 		SELECT 
@@ -416,8 +415,10 @@ func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, er
 		FROM
 			files
 		WHERE
-			users_id = (%d) AND table_name=('%s') AND table_id=(%d)
-		`, UserID, TableName, TableID)
+			users_id = (%d) AND
+			type = ('%s') AND
+			table_id = (%d)
+		`, userID, typ, tableID)
 
 	err := conn.DB.Select(&files, query)
 	if err != nil {
