@@ -59,8 +59,6 @@ func MustAuthorize(h httprouter.Handle) httprouter.Handle {
 			return
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		r = r.WithContext(context.WithValue(r.Context(), "User", userData))
 
 		h(w, r, ps)

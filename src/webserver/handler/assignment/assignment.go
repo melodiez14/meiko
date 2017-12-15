@@ -47,8 +47,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	if !cs.IsEnrolled(sess.ID, scheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You are not authorized"))
+			SetCode(http.StatusNoContent))
 		return
 	}
 
@@ -171,8 +170,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	if !cs.IsEnrolled(sess.ID, scheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You are not authorized"))
+			SetCode(http.StatusNoContent))
 		return
 	}
 
