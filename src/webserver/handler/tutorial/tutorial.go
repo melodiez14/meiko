@@ -236,7 +236,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	tutorialID := strconv.FormatInt(lastInsertID, 10)
 
-	err = fl.UpdateRelation(args.fileID, fl.TableTutorial, tutorialID, tx)
+	err = fl.UpdateRelation(args.fileID, fl.TypTutorial, tutorialID, tx)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
@@ -300,7 +300,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	err = fl.DeleteByRelation(fl.TableTutorial, id, tx)
+	err = fl.DeleteByRelation(fl.TypTutorial, id, tx)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
@@ -407,7 +407,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 
-		err = fl.UpdateRelation(args.fileID, fl.TableTutorial, id, tx)
+		err = fl.UpdateRelation(args.fileID, fl.TypTutorial, id, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).

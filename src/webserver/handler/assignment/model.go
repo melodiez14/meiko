@@ -7,23 +7,27 @@ import (
 	fs "github.com/melodiez14/meiko/src/module/file"
 )
 
-// type summaryResponse struct {
-// 	ID     int64  `json:"id"`
-// 	Name   string `json:"name"`
-// 	Status int8   `json:"status,omitempty"`
-// }
+type getDetailParams struct {
+	id string
+}
 
-// type profileSummaryResponse struct {
-// 	CourseName string `json:"course_name"`
-// 	Complete   int8   `json:"complete"`
-// 	Incomplete int8   `json:"incomplete"`
-// }
-const (
-	TableNameAssignments     = "assignments"
-	TableNameUserAssignments = "p_users_assignments"
-	UserMustUpload           = 0
-	UserMustNotUpload        = 1
-)
+type getDetailArgs struct {
+	id int64
+}
+
+type uploadParams struct {
+	id          string
+	description string
+	fileID      string
+}
+
+type uploadArgs struct {
+	id          int64
+	description sql.NullString
+	fileID      []string
+}
+
+// old
 
 type createParams struct {
 	FilesID           string
@@ -203,12 +207,6 @@ type listAssignmentsArgs struct {
 	DueDate      string
 	Name         string
 	Description  string
-}
-type getDetailParams struct {
-	id string
-}
-type getDetailArgs struct {
-	id int64
 }
 
 type updateScoreParams struct {

@@ -341,24 +341,27 @@ func IsAssignmentExistByGradeParameterID(assignmentID, gradeParameterID int64) b
 	return true
 }
 
-// UpdateUploadAssignment func ...
-func UpdateUploadAssignment(assignmentID, userID int64, description sql.NullString, tx *sqlx.Tx) error {
+// UpdateUpload ...
+func UpdateUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 	var result sql.Result
 	var err error
 
-	queryDescription := fmt.Sprintf("NULL")
-	if description.Valid {
-		queryDescription = fmt.Sprintf(description.String)
+	queryDesc := fmt.Sprintf("(NULL)")
+	if desc.Valid {
+		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
+
 	query := fmt.Sprintf(`
 		UPDATE  
 			p_users_assignments 
 		SET
-				description = ('%s'),
-				updated_at = NOW()
+			description = %s,
+			updated_at = NOW()
 		WHERE
-			assignments_id = (%d) AND users_id = (%d)
-		;`, queryDescription, assignmentID, userID)
+			assignments_id = (%d) AND
+			users_id = (%d);
+		`, queryDesc, id, userID)
+
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -374,16 +377,17 @@ func UpdateUploadAssignment(assignmentID, userID int64, description sql.NullStri
 	return nil
 }
 
-// UploadAssignment func ...
-func UploadAssignment(assignmentID, userID int64, description sql.NullString, tx *sqlx.Tx) error {
+// InsertUpload ...
+func InsertUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
 
-	queryDescription := fmt.Sprintf("NULL")
-	if description.Valid {
-		queryDescription = fmt.Sprintf(description.String)
+	queryDesc := fmt.Sprintf("(NULL)")
+	if desc.Valid {
+		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
+
 	query := fmt.Sprintf(`
 		INSERT INTO 
 			p_users_assignments (
@@ -396,11 +400,12 @@ func UploadAssignment(assignmentID, userID int64, description sql.NullString, tx
 		VALUES(
 				(%d),
 				(%d),
-				('%s'),
+				%s,
 				NOW(),
 				NOW()
-			)
-		;`, assignmentID, userID, queryDescription)
+			);
+	`, id, userID, queryDesc)
+
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -409,10 +414,12 @@ func UploadAssignment(assignmentID, userID int64, description sql.NullString, tx
 	if err != nil {
 		return err
 	}
+
 	rows, err := result.RowsAffected()
 	if rows == 0 {
 		return fmt.Errorf("No rows affected")
 	}
+
 	return nil
 }
 

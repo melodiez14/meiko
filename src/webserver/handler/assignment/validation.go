@@ -8,8 +8,61 @@ import (
 	"strconv"
 	"strings"
 
+	asg "github.com/melodiez14/meiko/src/module/assignment"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
+
+func (params getDetailParams) validate() (getDetailArgs, error) {
+	var args getDetailArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return getDetailArgs{
+		id: id,
+	}, nil
+}
+
+func (params uploadParams) validate() (uploadArgs, error) {
+
+	var args uploadArgs
+	params = uploadParams{
+		id:          params.id,
+		fileID:      params.fileID,
+		description: html.EscapeString(params.description),
+	}
+
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	var desc sql.NullString
+	if !helper.IsEmpty(params.description) {
+		if len(params.description) > asg.MaxDesc {
+			return args, fmt.Errorf("Description reach maximum of 1000 character")
+		}
+		desc = sql.NullString{
+			Valid:  true,
+			String: params.description,
+		}
+	}
+
+	fileID := strings.Split(params.fileID, "~")
+	for _, val := range fileID {
+		if !helper.IsValidFileID(val) {
+			return args, fmt.Errorf("Invalid fileID format")
+		}
+	}
+
+	return uploadArgs{
+		id:          id,
+		description: desc,
+		fileID:      fileID,
+	}, nil
+}
+
+// old
 
 func (params createParams) validate() (createArgs, error) {
 	var args createArgs
@@ -311,16 +364,6 @@ func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 	}, nil
 }
 
-func (params getDetailParams) validate() (getDetailArgs, error) {
-	var args getDetailArgs
-	id, err := strconv.ParseInt(params.id, 10, 64)
-	if err != nil {
-		return args, err
-	}
-	return getDetailArgs{
-		id: id,
-	}, nil
-}
 func (params updateScoreParams) validate() (updateScoreArgs, error) {
 	var args updateScoreArgs
 	//Schedule ID validation

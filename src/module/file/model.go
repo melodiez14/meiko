@@ -17,10 +17,11 @@ const (
 	TypProfPict         = "PL-IMG-M"
 	TypProfPictThumb    = "PL-IMG-T"
 	TypAssignment       = "ASG-FILE"
-	TypAssignmentUpload = "ASG_UPL"
+	TypAssignmentUpload = "ASG-UPL"
 	TypTutorial         = "TT-FILE"
 	TypInfPict          = "INF-IMG-M"
 	TypInfPictThumb     = "INF-IMG-T"
+	TypInf              = "INF-FILE"
 
 	TableAssignment = "assignments"
 	TableTutorial   = "tutorials"

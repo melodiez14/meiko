@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
+// ...
 const (
-	// MaximumID const
-	MaximumID               = 40
+	MaxDesc                 = 1000
 	StatusUploadNotRequired = 0
 	StatusUploadRequired    = 1
 )

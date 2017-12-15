@@ -108,7 +108,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	if args.FilesID != nil {
 		for _, fileID := range args.FilesID {
-			err := fs.UpdateRelation(fileID, TableNameInformation, tableID, tx)
+			err := fs.UpdateRelation(fileID, fs.TypInf, tableID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).
@@ -194,7 +194,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		if !fs.IsExistID(fileID) {
 			filesIDDB = append(filesIDDB, fileID)
 			// Update relation
-			err := fs.UpdateRelation(fileID, TableNameInformation, tableID, tx)
+			err := fs.UpdateRelation(fileID, fs.TypInf, tableID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).

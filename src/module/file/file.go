@@ -10,7 +10,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetByIDExt(id, ext string, column ...string) (File, error) {
+func GetByIDExt(id string, column ...string) (File, error) {
 
 	var c []string
 	var file File
@@ -32,7 +32,7 @@ func GetByIDExt(id, ext string, column ...string) (File, error) {
 	}
 
 	cols := strings.Join(c, ", ")
-	query := fmt.Sprintf(`SELECT %s FROM files WHERE id = ('%s') AND extension = ('%s') LIMIT 1;`, cols, id, ext)
+	query := fmt.Sprintf(`SELECT %s FROM files WHERE id = ('%s') LIMIT 1;`, cols, id)
 	err := conn.DB.Get(&file, query)
 	if err != nil {
 		return file, err
@@ -93,7 +93,7 @@ func DeleteProfileImage(userID int64, tx *sqlx.Tx) error {
 }
 
 // DeleteByRelation ...
-func DeleteByRelation(tableName, tableID string, tx *sqlx.Tx) error {
+func DeleteByRelation(typ, tableID string, tx *sqlx.Tx) error {
 
 	query := fmt.Sprintf(`
 		UPDATE
@@ -103,7 +103,7 @@ func DeleteByRelation(tableName, tableID string, tx *sqlx.Tx) error {
 			updated_at = NOW()
 		WHERE
 			table_name = ('%s') AND
-			table_id = ('%s');`, StatusDeleted, tableName, tableID)
+			table_id = ('%s');`, StatusDeleted, typ, tableID)
 
 	var err error
 	if tx != nil {
@@ -139,6 +139,34 @@ func Delete(id string, tx *sqlx.Tx) error {
 		return err
 	}
 	return nil
+}
+
+// GetByStatus func ...
+func GetByStatus(status int, tableID int64) ([]string, error) {
+
+	var files []string
+	query := fmt.Sprintf(`
+			SELECT 
+				id
+			FROM
+				files
+			WHERE
+				status = (%d) AND table_id = (%d) 
+			;`, status, tableID)
+
+	rows, err := conn.DB.Query(query)
+	if err != nil {
+		return files, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return files, err
+		}
+		files = append(files, id)
+	}
+	return files, nil
 }
 
 func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx.Tx) error {
@@ -182,7 +210,7 @@ func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx
 	return nil
 }
 
-func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
+func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
@@ -190,15 +218,13 @@ func UpdateRelation(id, tableName, tableID string, tx *sqlx.Tx) error {
 		UPDATE
 			files
 		SET
-			table_name = ('%s'),
 			table_id = ('%s'),
 			updated_at = NOW()
 		WHERE
-			status = (%d) AND
 			id = ('%s') AND
-			table_name IS NULL AND
+			type = ('%s') AND
 			table_id IS NULL;
-		`, tableName, tableID, StatusExist, id)
+		`, tableID, id, typ)
 
 	if tx != nil {
 		result, err = tx.Exec(query)
@@ -266,34 +292,6 @@ func UpdateStatusFiles(id string, status int, tx *sqlx.Tx) error {
 	return nil
 }
 
-// GetByStatus func ...
-func GetByStatus(status int, tableID int64) ([]string, error) {
-
-	var files []string
-	query := fmt.Sprintf(`
-		SELECT 
-			id
-		FROM
-			files
-		WHERE
-			status = (%d) AND table_id = (%d) 
-		;`, status, tableID)
-
-	rows, err := conn.DB.Query(query)
-	if err != nil {
-		return files, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return files, err
-		}
-		files = append(files, id)
-	}
-	return files, nil
-}
-
 // IsExistID func ...
 func IsExistID(fileID string) bool {
 
@@ -353,6 +351,28 @@ func SelectByRelation(typ string, tablesID []string, userID *int64) ([]File, err
 		return files, err
 	}
 	return files, nil
+}
+
+func SelectIDByRelation(typ string, tableID string, userID int64) ([]string, error) {
+
+	var filesID []string
+	query := fmt.Sprintf(`
+		SELECT 
+			id
+		FROM
+			files
+		WHERE
+			users_id = (%d) AND
+			status = (%d) AND
+			type = ('%s') AND
+			table_id = ('%s');
+		`, userID, StatusExist, typ, tableID)
+
+	err := conn.DB.Select(&filesID, query)
+	if err != nil {
+		return filesID, err
+	}
+	return filesID, nil
 }
 
 // UpdateStatusFilesByNameID func ...

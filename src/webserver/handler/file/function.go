@@ -28,13 +28,13 @@ func handleSingleWithMeta(payload, filename string, w http.ResponseWriter) error
 	}
 	defer file.Close()
 
-	fn, ext, err := helper.ExtractExtension(filename)
+	fn, _, err := helper.ExtractExtension(filename)
 	if err != nil {
 		return err
 	}
 
 	// load metadata
-	fileInfo, err := fl.GetByIDExt(fn, ext, fl.ColName, fl.ColExtension, fl.ColMime)
+	fileInfo, err := fl.GetByIDExt(fn, fl.ColName, fl.ColExtension, fl.ColMime)
 	if err != nil {
 		return err
 	}
