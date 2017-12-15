@@ -222,7 +222,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 			// please verify file size
 			typ = fl.TypAssignmentUpload
 			gpid := cs.GetGradeParametersID(args.id)
-			scheduleID := cs.GetScheduleID(gpid)
+			scheduleID, _ := cs.GetScheduleIDByGP(gpid)
 			if cs.IsEnrolled(sess.ID, scheduleID) {
 				isHasAccess = true
 			}

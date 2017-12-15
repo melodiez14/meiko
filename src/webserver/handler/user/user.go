@@ -603,16 +603,16 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	u, err := user.GetByIdentityCode(sess.IdentityCode)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
-		return
-	}
+	// u, err := user.GetByIdentityCode(sess.IdentityCode)
+	// if err != nil {
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusForbidden).
+	// 		AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
+	// 	return
+	// }
 
 	var gender string
-	switch u.Gender {
+	switch sess.Gender {
 	case user.GenderMale:
 		gender = "male"
 	case user.GenderFemale:
@@ -620,13 +620,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	res := getProfileResponse{
-		Name:                  u.Name,
-		Email:                 u.Email,
+		Name:                  sess.Name,
+		Email:                 sess.Email,
 		Gender:                gender,
-		Phone:                 u.Phone.String,
-		IdentityCode:          u.IdentityCode,
-		LineID:                u.LineID.String,
-		Note:                  u.Note,
+		Phone:                 sess.Phone,
+		IdentityCode:          sess.IdentityCode,
+		LineID:                sess.LineID,
+		Note:                  sess.Note,
 		ImageProfile:          alias.URLProfile,
 		ImageProfileThumbnail: alias.URLProfileThumbnail,
 	}

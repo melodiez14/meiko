@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	as "github.com/melodiez14/meiko/src/module/assignment"
 	"github.com/melodiez14/meiko/src/util/helper"
 
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -723,46 +722,22 @@ func IsUserExist(identityCode int64) bool {
 }
 
 // IsUserTakeSchedule func ...
-func IsUserTakeSchedule(UserID, ScheduleID int64) bool {
+func IsUserTakeSchedule(id, scheduleID int64) bool {
 	var x string
 	query := fmt.Sprintf(`
-			SELECT
-				'x'
-			FROM
-				p_users_schedules pus
-			WHERE
-				pus.users_id = (%d) AND schedules_id = (%d)
-			LIMIT 1;`, UserID, ScheduleID)
+		SELECT
+			'x'
+		FROM
+			p_users_schedules
+		WHERE
+			users_id = (%d) AND schedules_id = (%d)
+		LIMIT 1;`, id, scheduleID)
 
 	err := conn.DB.Get(&x, query)
 	if err != nil {
 		return false
 	}
 	return true
-}
-
-// SelectUserByScheduleID func ...
-func SelectUserByScheduleID(scheduleID int64) ([]as.UserAssignmentDetail, error) {
-	var user []as.UserAssignmentDetail
-	query := fmt.Sprintf(`
-			SELECT
-				usr.identity_code,
-				usr.name
-			FROM
-				p_users_schedules pus
-			INNER JOIN
-				users usr
-			ON
-				usr.id=pus.users_id
-			WHERE
-				pus.schedules_id=(%d);
-		`, scheduleID)
-
-	err := conn.DB.Select(&user, query)
-	if err != nil {
-		return user, err
-	}
-	return user, nil
 }
 
 // SelectIDByIdentityCode ...

@@ -7,11 +7,9 @@ import (
 
 const (
 	// MaximumID const
-	MaximumID = 40
-	// StatusAssignmentInactive const
-	StatusAssignmentInactive = 0
-	// StatusAssignmentActive const
-	StatusAssignmentActive = 1
+	MaximumID               = 40
+	StatusUploadNotRequired = 0
+	StatusUploadRequired    = 1
 )
 
 // Assignment struct ...
@@ -20,9 +18,20 @@ type Assignment struct {
 	Name             string         `db:"name"`
 	Status           int8           `db:"status"`
 	Description      sql.NullString `db:"description"`
-	GradeParameterID int32          `db:"grade_parameters_id"`
+	GradeParameterID int64          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
+	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
+}
+
+// UserAssignment struct ...
+type UserAssignment struct {
+	UserID       int64           `db:"users_id"`
+	AssignmentID int64           `db:"assignments_id"`
+	Score        sql.NullFloat64 `db:"score"`
+	Description  sql.NullString  `db:"description"`
+	CreatedAt    time.Time       `db:"created_at"`
+	UpdatedAt    time.Time       `db:"updated_at"`
 }
 
 // File struct ...
@@ -66,13 +75,4 @@ type DetailUploadedAssignment struct {
 	Score                 sql.NullString
 	DueDate               string
 	PathFile              sql.NullString
-}
-
-// UserAssignmentDetail struct ...
-type UserAssignmentDetail struct {
-	UserID      int64          `db:"identity_code"`
-	Name        string         `db:"name"`
-	Score       float32        `db:"score"`
-	Description sql.NullString `db:"description"`
-	CreatedAt   time.Time      `db:"updated_at"`
 }

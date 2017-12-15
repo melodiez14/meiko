@@ -310,19 +310,15 @@ func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 		ScheduleID: id,
 	}, nil
 }
-func (params readDetailParam) validate() (readDetailArgs, error) {
 
-	var args readDetailArgs
-	// Assignment ID validation
-	if helper.IsEmpty(params.AssignmentID) {
-		return args, fmt.Errorf("Assignment ID can not be empty")
-	}
-	id, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+func (params getDetailParams) validate() (getDetailArgs, error) {
+	var args getDetailArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
 	if err != nil {
 		return args, err
 	}
-	return readDetailArgs{
-		AssignmentID: id,
+	return getDetailArgs{
+		id: id,
 	}, nil
 }
 func (params updateScoreParams) validate() (updateScoreArgs, error) {

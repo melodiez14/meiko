@@ -105,19 +105,17 @@ type detailResponse struct {
 	Type             string `json:"type"`
 }
 type detailResponseUser struct {
-	ID               int64  `json:"id"`
-	Status           string `json:"status"`
-	Name             string `json:"name"`
-	GradeParameterID int32  `json:"grade_parameters_id"`
-	Description      string `json:"description"`
-	DueDate          string `json:"due_date"`
-	Score            string `json:"score"`
-	FilesName        string `json:"file_name"`
-	UploadedStatus   bool   `json:"uploaded_status"`
-	MustUploadStatus int8   `json:"must_upload"`
-	ButtonType       string `json:"button_type"`
-	AssistantFile    []file `json:"assignment_file"`
-	StudentFile      []file `json:"uploaded_file"`
+	ID             int64  `json:"id"`
+	Status         string `json:"status"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	DueDate        string `json:"due_date"`
+	Score          string `json:"score"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+	AssignmentFile []file `json:"assignment_file"`
+	UploadedFile   []file `json:"uploaded_file"`
+	UploadDate     string `json:"upload_date"`
 }
 
 type file struct {
@@ -206,11 +204,11 @@ type listAssignmentsArgs struct {
 	Name         string
 	Description  string
 }
-type readDetailParam struct {
-	AssignmentID string
+type getDetailParams struct {
+	id string
 }
-type readDetailArgs struct {
-	AssignmentID int64
+type getDetailArgs struct {
+	id int64
 }
 
 type updateScoreParams struct {

@@ -109,23 +109,23 @@ func loadRouter(r *httprouter.Router) {
 	// ========================= End Bot Handler ========================
 
 	// ========================= Assignment Handler ========================
-	r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
-	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
-	r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
-	r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
-	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
-	r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
-	r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
-	r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
+	// r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
+	// r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
+	// r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
+	// r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
+	// r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
+	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
+	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
+	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
 
-	r.PATCH("/api/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                                // update upload by users
-	r.POST("/api/v1/assignment", auth.MustAuthorize(assignment.CreateHandlerByUser))                                     // create upload by user
-	r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
-	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetAssignmentDetailHandler))                           // read detail assignments definitions
-	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetAssignmentHandler))                                     // List assignments
-	r.GET("/api/v1/assignment-schedule", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))                  // List assignments
-	r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummary))
-	r.GET("/api/v1/grade/:id", auth.MustAuthorize(assignment.GradeBySchedule))
+	// r.PATCH("/api/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandlerByUser))                                // update upload by users
+	// r.POST("/api/v1/assignment", auth.MustAuthorize(assignment.CreateHandlerByUser))                                     // create upload by user
+	// r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
+	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetDetailHandler)) // read detail assignments definitions
+	// r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetAssignmentHandler))                                     // List assignments
+	// r.GET("/api/v1/assignment-schedule", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))                  // List assignments
+	// r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummary))
+	// r.GET("/api/v1/grade/:id", auth.MustAuthorize(assignment.GradeBySchedule))
 	// ===================== End Assignment Handler =====================
 
 	// ======================= Information Handler ======================

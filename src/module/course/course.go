@@ -923,27 +923,23 @@ func UpdateGradeParameter(typ string, percentage float32, statusChange uint8, sc
 	return nil
 }
 
-// GetScheduleID func ...
-func GetScheduleID(gradeParametersID int64) int64 {
+// GetScheduleIDByGP ...
+func GetScheduleIDByGP(gpID int64) (int64, error) {
+	var scheduleID int64
 	query := fmt.Sprintf(`
 		SELECT 
-			gp.schedules_id
+			schedules_id
 		FROM
-			grade_parameters gp
+			grade_parameters
 		WHERE
 			id = (%d)
-		`, gradeParametersID)
-	var scheduleID string
-	err := conn.DB.QueryRow(query).Scan(&scheduleID)
+		`, gpID)
+	err := conn.DB.Get(&scheduleID, query)
 	if err != nil {
-		return 0
-	}
-	scheduleid, err := strconv.ParseInt(scheduleID, 10, 64)
-	if err != nil {
-		return 0
+		return scheduleID, err
 	}
 
-	return scheduleid
+	return scheduleID, nil
 }
 
 // GetGradeParametersID func ...
