@@ -97,3 +97,9 @@ type uploadFileArgs struct {
 	payload string
 	role    string
 }
+
+type fileResponse struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	URLThumbnail string `json:"url_thumbnail"`
+}

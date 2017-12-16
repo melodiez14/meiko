@@ -251,7 +251,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	fileID, statusCode, err := handleUpload(file, header, sess.ID, typ, args.payload)
+	resp, statusCode, err := handleUpload(file, header, sess.ID, typ, args.payload)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(statusCode).
@@ -261,7 +261,7 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(fileID))
+		SetData(resp))
 	return
 }
 

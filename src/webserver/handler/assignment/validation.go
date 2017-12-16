@@ -227,31 +227,35 @@ func (params updatePrams) validate() (updateArgs, error) {
 	}, nil
 
 }
+
 func (params readParams) validate() (readArgs, error) {
+
 	var args readArgs
-	// if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
-	// 	return args, fmt.Errorf("page or total is empty")
-	// }
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("scheduleID must be numeric")
+	}
 
-	// page, err := strconv.ParseInt(params.Page, 10, 64)
-	// if err != nil {
-	// 	return args, fmt.Errorf("page must be numeric")
-	// }
+	page, err := strconv.ParseInt(params.page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
 
-	// total, err := strconv.ParseInt(params.Total, 10, 64)
-	// if err != nil {
-	// 	return args, fmt.Errorf("total must be numeric")
-	// }
+	total, err := strconv.ParseInt(params.total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
 
-	// // should be positive number
-	// if page < 0 || total < 0 {
-	// 	return args, fmt.Errorf("page or total must be positive number")
-	// }
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
+	}
 
-	// args = readArgs{
-	// 	Page:  uint16(page),
-	// 	Total: uint16(total),
-	// }
+	args = readArgs{
+		page:       int(page),
+		total:      int(total),
+		scheduleID: scheduleID,
+	}
 	return args, nil
 
 }

@@ -361,6 +361,27 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := readParams{
+		page:  r.FormValue("pg"),
+		total: r.FormValue("ttl"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+	_ = args
 }
 
 func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

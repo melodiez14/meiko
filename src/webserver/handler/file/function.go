@@ -153,9 +153,9 @@ func handleUserAssignment(w http.ResponseWriter) error {
 	return nil
 }
 
-func handleUpload(file multipart.File, header *multipart.FileHeader, userID int64, typ string, payload string) (string, int, error) {
+func handleUpload(file multipart.File, header *multipart.FileHeader, userID int64, typ string, payload string) (fileResponse, int, error) {
 
-	var fileID string
+	var resp fileResponse
 
 	// extract file extension
 	defer file.Close()
@@ -163,7 +163,7 @@ func handleUpload(file multipart.File, header *multipart.FileHeader, userID int6
 
 	fn, ext, err := helper.ExtractExtension(header.Filename)
 	if err != nil {
-		return fileID, http.StatusBadRequest, err
+		return resp, http.StatusBadRequest, err
 	}
 
 	params := metaParams{
@@ -174,13 +174,13 @@ func handleUpload(file multipart.File, header *multipart.FileHeader, userID int6
 
 	args, err := params.validate()
 	if err != nil {
-		return fileID, http.StatusBadRequest, fmt.Errorf("Invalid Request")
+		return resp, http.StatusBadRequest, fmt.Errorf("Invalid Request")
 	}
 
 	// get filename
 	t := time.Now().UnixNano()
 	rand.Seed(t)
-	fileID = fmt.Sprintf("%d.%06d", t, rand.Intn(999999))
+	fileID := fmt.Sprintf("%d.%06d", t, rand.Intn(999999))
 
 	// save file
 	go func() {
@@ -194,8 +194,12 @@ func handleUpload(file multipart.File, header *multipart.FileHeader, userID int6
 
 	err = fl.Insert(fileID, args.fileName, args.mime, args.extension, userID, typ, nil)
 	if err != nil {
-		return fileID, http.StatusInternalServerError, fmt.Errorf("Internal Error")
+		return resp, http.StatusInternalServerError, fmt.Errorf("Internal Error")
 	}
 
-	return fileID, http.StatusOK, nil
+	return fileResponse{
+		ID:           fileID,
+		Name:         header.Filename,
+		URLThumbnail: helper.MimeToThumbnail(params.mime),
+	}, http.StatusOK, nil
 }

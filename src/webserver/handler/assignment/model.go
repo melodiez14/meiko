@@ -60,20 +60,30 @@ type submitArgs struct {
 }
 
 type readParams struct {
-	page  string
-	total string
+	scheduleID string
+	page       string
+	total      string
 }
 
 type readArgs struct {
-	page  uint16
-	total uint16
+	scheduleID int64
+	page       int
+	total      int
 }
 
 type readResponse struct {
-	name        string         `db:"name"`
-	description sql.NullString `db:"description"`
-	status      string         `db:"status"`
-	DueDate     time.Time      `db:"due_date"`
+	Page        int64  `json:"page"`
+	TotalPage   int64  `json:"total_page"`
+	Assignments []read `json:"assignments"`
+}
+
+type read struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+	DueDate   string `json:"due_date"`
+	UpdatedAt string `json:"updated_at"`
+	URL       string `json:"url"`
 }
 
 type createParams struct {
