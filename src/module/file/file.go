@@ -335,7 +335,7 @@ func SelectByRelation(typ string, tablesID []string, userID *int64) ([]File, err
 			extension,
 			mime,
 			type,
-			table_name,
+			users_id,
 			table_id
 		FROM
 			files

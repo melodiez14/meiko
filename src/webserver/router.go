@@ -109,11 +109,11 @@ func loadRouter(r *httprouter.Router) {
 	// ========================= End Bot Handler ========================
 
 	// ========================= Assignment Handler ========================
+	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.ReadHandler))
 	// r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
 	// r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
 	// r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	// r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
-	// r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.GetAllAssignmentHandler))
 	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
 	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
 	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score

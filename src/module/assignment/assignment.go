@@ -175,48 +175,52 @@ func IsFileIDExist(ID string) bool {
 }
 
 // SelectByPage func ...
-func SelectByPage(limit, offset uint16) ([]Assignment, error) {
+func SelectByPage(gpID []int64, limit, offset int, isCount bool) ([]Assignment, int, error) {
 	var assignment []Assignment
+	var count int
+	queryGP := strings.Join(helper.Int64ToStringSlice(gpID), ", ")
 	query := fmt.Sprintf(`
 		SELECT
+			id,
 			grade_parameters_id,
 			name,
 			description,
 			status,
-			due_date
+			due_date,
+			created_at,
+			updated_at
 		FROM
 			assignments
+		WHERE
+			grade_parameters_id IN (%s)
 		LIMIT %d
-		OFFSET %d;`, limit, offset)
+		OFFSET %d;`, queryGP, limit, offset)
 
-	rows, err := conn.DB.Queryx(query)
-	defer rows.Close()
+	err := conn.DB.Select(&assignment, query)
 	if err != nil {
-		return assignment, err
+		return assignment, count, err
 	}
 
-	for rows.Next() {
-		var name string
-		var description sql.NullString
-		var status int8
-		var gradeParameterID int64
-		var dueDate time.Time
-
-		err := rows.Scan(&gradeParameterID, &name, &description, &status, &dueDate)
-		if err != nil {
-			return assignment, err
-		}
-		assignment = append(assignment,
-			Assignment{
-				Name:             name,
-				Status:           status,
-				Description:      description,
-				GradeParameterID: gradeParameterID,
-				DueDate:          dueDate,
-			},
-		)
+	if !isCount {
+		return assignment, count, nil
 	}
-	return assignment, nil
+
+	query = fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			assignments
+		WHERE
+			grade_parameters_id IN (%s)
+		LIMIT %d
+		OFFSET %d;`, queryGP, limit, offset)
+
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return assignment, count, err
+	}
+
+	return assignment, count, nil
 }
 
 // GetByGradeParametersID func ...

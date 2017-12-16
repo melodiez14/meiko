@@ -361,6 +361,7 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
+	resp := readResponse{Assignments: []read{}}
 	sess := r.Context().Value("User").(*auth.User)
 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -370,8 +371,9 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	params := readParams{
-		page:  r.FormValue("pg"),
-		total: r.FormValue("ttl"),
+		scheduleID: r.FormValue("schedule_id"),
+		page:       r.FormValue("pg"),
+		total:      r.FormValue("ttl"),
 	}
 
 	args, err := params.validate()
@@ -381,7 +383,67 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			AddError("Invalid Request"))
 		return
 	}
-	_ = args
+
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	gps, err := cs.SelectGPBySchedule([]int64{args.scheduleID})
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(gps) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	var gpsID []int64
+	for _, val := range gps {
+		gpsID = append(gpsID, val.ID)
+	}
+
+	offset := (args.page - 1) * args.total
+	assignments, count, err := asg.SelectByPage(gpsID, args.total, offset, true)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	rAssignment := []read{}
+	for _, val := range assignments {
+		rAssignment = append(rAssignment, read{
+			ID:        val.ID,
+			Name:      val.Name,
+			URL:       fmt.Sprintf("/api/v1/filerouter/?id=%d&payload=assignment&role=assistant", val.ID),
+			DueDate:   val.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+			UpdatedAt: val.UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+		})
+	}
+
+	totalPage := count / args.total
+	if count%args.total > 0 {
+		totalPage++
+	}
+
+	resp = readResponse{
+		Assignments: rAssignment,
+		Page:        args.page,
+		TotalPage:   totalPage,
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
 }
 
 func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

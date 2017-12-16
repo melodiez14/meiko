@@ -72,8 +72,8 @@ type readArgs struct {
 }
 
 type readResponse struct {
-	Page        int64  `json:"page"`
-	TotalPage   int64  `json:"total_page"`
+	Page        int    `json:"page"`
+	TotalPage   int    `json:"total_page"`
 	Assignments []read `json:"assignments"`
 }
 

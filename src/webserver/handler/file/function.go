@@ -11,7 +11,10 @@ import (
 	"strconv"
 	"time"
 
+	asg "github.com/melodiez14/meiko/src/module/assignment"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
+	usr "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -96,9 +99,44 @@ func handleSingleWithoutMeta(payload, filename string, w http.ResponseWriter) er
 	return nil
 }
 
-func handleUserAssignment(w http.ResponseWriter) error {
+func handleUserAssignment(userID, assignmentID int64, w http.ResponseWriter) error {
 
-	cntDisposition := fmt.Sprintf(`attachment; filename="%d.zip"`, time.Now().Unix())
+	assignment, err := asg.GetByID(assignmentID)
+	if err != nil {
+		return err
+	}
+
+	scheduleID, err := cs.GetScheduleIDByGP(assignment.GradeParameterID)
+	if err != nil {
+		return err
+	}
+
+	if !cs.IsAssistant(userID, scheduleID) {
+		return fmt.Errorf("You are not authorized")
+	}
+
+	tableID := strconv.FormatInt(assignment.ID, 10)
+	files, err := fl.SelectByRelation(fl.TypAssignmentUpload, []string{tableID}, nil)
+	if err != nil {
+		return err
+	}
+
+	studentsID := []int64{}
+	for _, val := range files {
+		studentsID = append(studentsID, val.UserID)
+	}
+
+	users, err := usr.SelectByID(studentsID, false, usr.ColID, usr.ColIdentityCode)
+	if err != nil {
+		return err
+	}
+
+	studentMap := map[int64]int64{}
+	for _, val := range users {
+		studentMap[val.ID] = val.IdentityCode
+	}
+
+	cntDisposition := fmt.Sprintf(`attachment; filename="%s_%s.zip"`, time.Now().Format("20060102150405"), assignment.Name)
 	w.Header().Set("Pragma", "public")
 	w.Header().Set("Expires", "0")
 	w.Header().Set("Cache-Control", "must-revalidate, post-check=0, pre-check=0")
@@ -109,22 +147,11 @@ func handleUserAssignment(w http.ResponseWriter) error {
 	zw := zip.NewWriter(w)
 	defer zw.Close()
 
-	path := []string{
-		"files/var/www/meiko/data/profile/1509451269985766000.058679.1.jpg",
-		"files/var/www/meiko/data/profile/1509451499164314000.255057.1.jpg",
-	}
-
-	len := len(path)
-	if len < 1 {
-		return fmt.Errorf("No data")
-	} else if len == 1 {
-		return handleSingleWithMeta("assignment-upload", "filename.extension", w)
-	}
-
-	for _, val := range path {
-		file, err := os.Open(val)
+	for _, val := range files {
+		path := fmt.Sprintf("%s/assignment/%s.%s", alias.Dir["data"], val.ID, val.Extension)
+		file, err := os.Open(path)
 		if err != nil {
-			return err
+			continue
 		}
 		defer file.Close()
 
@@ -139,6 +166,7 @@ func handleUserAssignment(w http.ResponseWriter) error {
 		}
 
 		hdr.Method = zip.Deflate
+		hdr.Name = fmt.Sprintf("%d_%s.%s", studentMap[val.UserID], val.Name, val.Extension)
 		writter, err := zw.CreateHeader(hdr)
 		if err != nil {
 			return err

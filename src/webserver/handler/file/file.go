@@ -151,8 +151,6 @@ func GetFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		err = handleSingleWithMeta(payload, filename, w)
 	case "profile", "default", "information":
 		err = handleSingleWithoutMeta(payload, filename, w)
-	case "assignment-user":
-		err = handleUserAssignment(w)
 	default:
 		err = fmt.Errorf("Invalid")
 	}
@@ -289,13 +287,13 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	if args.payload == "tutorial" {
+	switch args.payload {
+	case "tutorial":
 		tutorial, err := tt.GetByID(args.id)
 		if err != nil {
 			http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
 			return
 		}
-
 		switch args.role {
 		case "assistant":
 			if !sess.IsHasRoles(rg.ModuleTutorial, rg.RoleXRead, rg.RoleRead) || !cs.IsAssistant(sess.ID, tutorial.ScheduleID) {
@@ -308,9 +306,18 @@ func RouterFileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 				return
 			}
 		}
-
 		isHasAccess = true
 		typ = fl.TypTutorial
+	case "assignment":
+		if args.role == "assistant" {
+			if sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXRead, rg.RoleRead) {
+				err = handleUserAssignment(sess.ID, args.id, w)
+				if err != nil {
+					http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
+				}
+				return
+			}
+		}
 	}
 
 	if !isHasAccess {
