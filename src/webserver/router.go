@@ -118,11 +118,11 @@ func loadRouter(r *httprouter.Router) {
 	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
 	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
 
-	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetDetailHandler)) // read detail assignments definitions
-	r.PUT("/api/v1/assignment/:id", auth.MustAuthorize(assignment.UploadHandler))    // update upload by users
+	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetHandler))           // assignment list
+	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetDetailHandler)) // assignment detail
+	r.PUT("/api/v1/assignment/:id", auth.MustAuthorize(assignment.SubmitHandler))    // assignment submit
 	// r.POST("/api/v1/assignment", auth.MustAuthorize(assignment.CreateHandlerByUser))                                     // create upload by user
 	// r.GET("/api/v1/assignment/:id/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedDetailHandler)) // detail user assignments
-	// r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetAssignmentHandler))                                     // List assignments
 	// r.GET("/api/v1/assignment-schedule", auth.MustAuthorize(assignment.GetAssignmentByScheduleHandler))                  // List assignments
 	// r.GET("/api/v1/grade", auth.MustAuthorize(assignment.GradeSummary))
 	// r.GET("/api/v1/grade/:id", auth.MustAuthorize(assignment.GradeBySchedule))

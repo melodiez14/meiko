@@ -4,7 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/melodiez14/meiko/src/util/helper"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/melodiez14/meiko/src/util/conn"
@@ -125,12 +128,12 @@ func Update(gradeParameters, id int64, name, status, dueDate string, description
 		UPDATE 
 			assignments
 		SET
-				name = ('%s'),
-				status = ('%s'),
-				due_date = ('%s'),
-				grade_parameters_id = (%d),
-				description = ('%s'),
-				updated_at = NOW()
+			name = ('%s'),
+			status = ('%s'),
+			due_date = ('%s'),
+			grade_parameters_id = (%d),
+			description = ('%s'),
+			updated_at = NOW()
 		WHERE
 			id = (%d);
 		`, name, status, dueDate, gradeParameters, queryDescription, id)
@@ -341,8 +344,8 @@ func IsAssignmentExistByGradeParameterID(assignmentID, gradeParameterID int64) b
 	return true
 }
 
-// UpdateUpload ...
-func UpdateUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
+// UpdateSubmit ...
+func UpdateSubmit(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 	var result sql.Result
 	var err error
 
@@ -377,8 +380,8 @@ func UpdateUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 	return nil
 }
 
-// InsertUpload ...
-func InsertUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
+// InsertSubmit ...
+func InsertSubmit(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
@@ -423,8 +426,44 @@ func InsertUpload(id, userID int64, desc sql.NullString, tx *sqlx.Tx) error {
 	return nil
 }
 
-// GetUploaded func ...
-func GetUploaded(id, userID int64) (*UserAssignment, error) {
+// SelectByGP ...
+func SelectByGP(gpsID []int64, isSort bool) ([]Assignment, error) {
+	var assignments []Assignment
+	if len(gpsID) < 1 {
+		return assignments, nil
+	}
+	queryGP := strings.Join(helper.Int64ToStringSlice(gpsID), ", ")
+	querySort := ""
+	if isSort {
+		querySort = "ORDER BY due_date ASC"
+	}
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			name,
+			status,
+			description,
+			grade_parameters_id,
+			due_date,
+			created_at,
+			updated_at
+		FROM
+			assignments
+		WHERE
+			grade_parameters_id
+		IN
+			(%s)
+		%s;
+		`, queryGP, querySort)
+	err := conn.DB.Select(&assignments, query)
+	if err != nil {
+		return assignments, err
+	}
+	return assignments, nil
+}
+
+// GetSubmittedByUser ...
+func GetSubmittedByUser(id int64, userID int64) (*UserAssignment, error) {
 	assignment := &UserAssignment{}
 	query := fmt.Sprintf(`
 		SELECT
@@ -438,7 +477,8 @@ func GetUploaded(id, userID int64) (*UserAssignment, error) {
 			p_users_assignments
 		WHERE
 			assignments_id = (%d) AND
-			users_id = (%d)`, id, userID)
+			users_id = (%d)
+		LIMIT 1;`, id, userID)
 
 	err := conn.DB.Get(assignment, query)
 	if err != nil {
@@ -446,6 +486,35 @@ func GetUploaded(id, userID int64) (*UserAssignment, error) {
 			return nil, err
 		}
 		return nil, nil
+	}
+	return assignment, nil
+}
+
+// SelectSubmittedByUser ...
+func SelectSubmittedByUser(id []int64, userID int64) ([]UserAssignment, error) {
+	assignment := []UserAssignment{}
+	if len(id) < 1 {
+		return assignment, nil
+	}
+
+	queryID := strings.Join(helper.Int64ToStringSlice(id), ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			assignments_id,
+			users_id,
+			score,
+			description,
+			created_at,
+			updated_at
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id IN (%s) AND
+			users_id = (%d)`, queryID, userID)
+
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return nil, err
 	}
 	return assignment, nil
 }

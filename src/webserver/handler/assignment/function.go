@@ -11,13 +11,13 @@ import (
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
-func handleUploadInsert(id, userID int64, desc sql.NullString, fileID []string) error {
+func handleSubmitInsert(id, userID int64, desc sql.NullString, fileID []string) error {
 	tableID := strconv.FormatInt(id, 10)
 
 	tx := conn.DB.MustBegin()
 
 	// update assignment
-	err := asg.InsertUpload(id, userID, desc, tx)
+	err := asg.InsertSubmit(id, userID, desc, tx)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -36,7 +36,7 @@ func handleUploadInsert(id, userID int64, desc sql.NullString, fileID []string) 
 	return nil
 }
 
-func handleUploadUpdate(id, userID int64, desc sql.NullString, fileID []string) error {
+func handleSubmitUpdate(id, userID int64, desc sql.NullString, fileID []string) error {
 	tableID := strconv.FormatInt(id, 10)
 	oldFile, err := fl.SelectIDByRelation(fl.TypAssignmentUpload, tableID, userID)
 	if err != nil {
@@ -60,7 +60,7 @@ func handleUploadUpdate(id, userID int64, desc sql.NullString, fileID []string) 
 	tx := conn.DB.MustBegin()
 
 	// update assignment
-	err = asg.UpdateUpload(id, userID, desc, tx)
+	err = asg.UpdateSubmit(id, userID, desc, tx)
 	if err != nil {
 		tx.Rollback()
 		return err

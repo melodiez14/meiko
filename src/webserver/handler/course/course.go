@@ -440,7 +440,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// get old grade parameter
-	gpsOld, err := cs.SelectGradeParameterByScheduleID(args.ScheduleID)
+	gpsOld, err := cs.SelectGPBySchedule([]int64{args.ScheduleID})
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -914,7 +914,7 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	gps, err := cs.SelectGradeParameterByScheduleID(args.ScheduleID)
+	gps, err := cs.SelectGPBySchedule([]int64{args.ScheduleID})
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))

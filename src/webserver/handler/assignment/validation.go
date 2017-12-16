@@ -12,6 +12,20 @@ import (
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
+func (params getParams) validate() (getArgs, error) {
+	var args getArgs
+	if helper.IsEmpty(params.scheduleID) {
+		return args, nil
+	}
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return getArgs{
+		scheduleID: sql.NullInt64{Valid: true, Int64: scheduleID},
+	}, nil
+}
+
 func (params getDetailParams) validate() (getDetailArgs, error) {
 	var args getDetailArgs
 	id, err := strconv.ParseInt(params.id, 10, 64)
@@ -23,10 +37,10 @@ func (params getDetailParams) validate() (getDetailArgs, error) {
 	}, nil
 }
 
-func (params uploadParams) validate() (uploadArgs, error) {
+func (params submitParams) validate() (submitArgs, error) {
 
-	var args uploadArgs
-	params = uploadParams{
+	var args submitArgs
+	params = submitParams{
 		id:          params.id,
 		fileID:      params.fileID,
 		description: html.EscapeString(params.description),
@@ -55,7 +69,7 @@ func (params uploadParams) validate() (uploadArgs, error) {
 		}
 	}
 
-	return uploadArgs{
+	return submitArgs{
 		id:          id,
 		description: desc,
 		fileID:      fileID,

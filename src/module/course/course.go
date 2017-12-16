@@ -817,8 +817,14 @@ func InsertGradeParameter(typ string, percentage float32, statusChange uint8, sc
 	return nil
 }
 
-func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error) {
+func SelectGPBySchedule(scheduleID []int64) ([]GradeParameter, error) {
 	var gps []GradeParameter
+
+	if len(scheduleID) < 1 {
+		return gps, nil
+	}
+
+	querySchID := strings.Join(helper.Int64ToStringSlice(scheduleID), ", ")
 	query := fmt.Sprintf(`
 		SELECT
 			id,
@@ -828,8 +834,8 @@ func SelectGradeParameterByScheduleID(scheduleID int64) ([]GradeParameter, error
 		FROM
 			grade_parameters
 		WHERE
-			schedules_id = (%d);
-		`, scheduleID)
+			schedules_id IN (%s);
+		`, querySchID)
 	err := conn.DB.Select(&gps, query)
 	if err != nil && err != sql.ErrNoRows {
 		return gps, err

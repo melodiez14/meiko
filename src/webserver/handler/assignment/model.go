@@ -7,6 +7,24 @@ import (
 	fs "github.com/melodiez14/meiko/src/module/file"
 )
 
+type getParams struct {
+	scheduleID string
+}
+
+type getArgs struct {
+	scheduleID sql.NullInt64
+}
+
+type getResponse struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
+	DueDate     string `json:"due_date"`
+	Score       string `json:"score"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
 type getDetailParams struct {
 	id string
 }
@@ -15,13 +33,27 @@ type getDetailArgs struct {
 	id int64
 }
 
-type uploadParams struct {
+type getDetailResponse struct {
+	ID             int64  `json:"id"`
+	Status         string `json:"status"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	DueDate        string `json:"due_date"`
+	Score          string `json:"score"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+	AssignmentFile []file `json:"assignment_file"`
+	SubmittedFile  []file `json:"submitted_file"`
+	SubmittedDate  string `json:"submitted_date"`
+}
+
+type submitParams struct {
 	id          string
 	description string
 	fileID      string
 }
 
-type uploadArgs struct {
+type submitArgs struct {
 	id          int64
 	description sql.NullString
 	fileID      []string
@@ -108,23 +140,11 @@ type detailResponse struct {
 	Mime             string `json:"mime"`
 	Type             string `json:"type"`
 }
-type detailResponseUser struct {
-	ID             int64  `json:"id"`
-	Status         string `json:"status"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	DueDate        string `json:"due_date"`
-	Score          string `json:"score"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
-	AssignmentFile []file `json:"assignment_file"`
-	UploadedFile   []file `json:"uploaded_file"`
-	UploadDate     string `json:"upload_date"`
-}
 
 type file struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	URLThumbnail string `json:"url_thumbnail"`
 }
 
 type uploadAssignmentParams struct {

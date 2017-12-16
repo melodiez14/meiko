@@ -836,56 +836,56 @@ func TestMimeToThumbnail(t *testing.T) {
 			args: args{
 				mime: "",
 			},
-			want: "/api/v1/file/default/ttunknown.jpg",
+			want: "/static/img/unknown.png",
 		},
 		{
 			name: "DOC1",
 			args: args{
 				mime: "application/msword",
 			},
-			want: "/api/v1/file/default/ttdoc.jpg",
+			want: "/static/img/doc.png",
 		},
 		{
 			name: "DOC2",
 			args: args{
 				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 			},
-			want: "/api/v1/file/default/ttdoc.jpg",
+			want: "/static/img/doc.png",
 		},
 		{
 			name: "DOC3",
 			args: args{
 				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
 			},
-			want: "/api/v1/file/default/ttdoc.jpg",
+			want: "/static/img/doc.png",
 		},
 		{
 			name: "IMG1",
 			args: args{
 				mime: "image/jpg",
 			},
-			want: "/api/v1/file/default/ttimg.jpg",
+			want: "/static/img/image.png",
 		},
 		{
 			name: "IMG2",
 			args: args{
 				mime: "image/png",
 			},
-			want: "/api/v1/file/default/ttimg.jpg",
+			want: "/static/img/image.png",
 		},
 		{
 			name: "IMG3",
 			args: args{
 				mime: "image/gif",
 			},
-			want: "/api/v1/file/default/ttimg.jpg",
+			want: "/static/img/image.png",
 		},
 		{
 			name: "PDF1",
 			args: args{
 				mime: "application/pdf",
 			},
-			want: "/api/v1/file/default/ttpdf.jpg",
+			want: "/static/img/pdf.png",
 		},
 	}
 	for _, tt := range tests {

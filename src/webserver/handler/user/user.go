@@ -164,9 +164,6 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 		go email.SendEmailValidation(u.Name, args.Email, verification.Code)
 
-		// for debugging purpose
-		fmt.Println(verification.Code)
-
 		template.RenderJSONResponse(w, new(template.Response).
 			SetMessage(fmt.Sprintf("Code has been sent to email")).
 			SetCode(http.StatusOK))
@@ -424,7 +421,6 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if u.RoleGroupsID.Valid {
 		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 		if err != nil {
-			fmt.Println(err.Error())
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return

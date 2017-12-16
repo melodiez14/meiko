@@ -11,14 +11,232 @@ import (
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
+
+// // GetAssignmentHandler func ...
+// func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// 	sess := r.Context().Value("User").(*auth.User)
+// 	schedulesIDs, err := cs.SelectScheduleIDByUserID(sess.ID)
+// 	if err != nil {
+// 		template.RenderJSONResponse(w, new(template.Response).
+// 			SetCode(http.StatusInternalServerError))
+// 		return
+// 	}
+// 	// select Grade parameter
+// 	gradeList, err := cs.SelectGradeParameterByScheduleIDIN(schedulesIDs)
+// 	if err != nil {
+// 		template.RenderJSONResponse(w, new(template.Response).
+// 			SetCode(http.StatusInternalServerError))
+// 		return
+// 	}
+// 	assignmentID, err := as.SelectAssignmentIDByGradeParameterIN(gradeList)
+// 	if err != nil {
+// 		template.RenderJSONResponse(w, new(template.Response).
+// 			SetCode(http.StatusInternalServerError))
+// 		return
+// 	}
+
+// 	submittedAssignmetID := as.SelectSubmittedAssignment(assignmentID, sess.ID)
+// 	var unsubmittedAssignmentID []int64
+// 	for _, val := range assignmentID {
+// 		for _, submitted := range submittedAssignmetID {
+// 			if val != submitted {
+// 				unsubmittedAssignmentID = append(unsubmittedAssignmentID, val)
+// 			}
+// 		}
+// 	}
+// 	res := []listAssignmentResponse{}
+// 	unsubmittedAssignment := as.SelectAssignmentByID(unsubmittedAssignmentID)
+// 	for _, val := range unsubmittedAssignment {
+// 		r := listAssignmentResponse{}
+// 		if val.Status == 1 {
+// 			r.Status = "must_upload"
+// 		} else {
+// 			r.Status = "must_not_upload"
+// 		}
+// 		description := fmt.Sprintf("NULL")
+// 		if val.Description.Valid {
+// 			description = fmt.Sprintf(val.Description.String)
+// 		}
+// 		r.ID = val.ID
+// 		r.Name = val.Name
+// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
+// 		r.Submitted = false
+// 		r.Description = description
+// 		res = append(res, r)
+// 	}
+// 	submittedAssignment := as.SelectAssignmentByID(submittedAssignmetID)
+// 	for _, val := range submittedAssignment {
+// 		r := listAssignmentResponse{}
+// 		if val.Status == 1 {
+// 			r.Status = "must_upload"
+// 		} else {
+// 			r.Status = "must_not_upload"
+// 		}
+// 		description := fmt.Sprintf("NULL")
+// 		if val.Description.Valid {
+// 			description = fmt.Sprintf(val.Description.String)
+// 		}
+// 		r.ID = val.ID
+// 		r.Name = val.Name
+// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
+// 		r.Submitted = true
+// 		r.Description = description
+// 		res = append(res, r)
+// 	}
+// 	template.RenderJSONResponse(w, new(template.Response).
+// 		SetCode(http.StatusOK).
+// 		SetData(res))
+// 	return
+
+// }
+
+// GetHandler ...
+func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	resp := []getResponse{}
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := getParams{
+		scheduleID: r.FormValue("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	var schedulesID []int64
+	switch args.scheduleID.Valid {
+	case true:
+		// specific scheduleID
+		if !cs.IsEnrolled(sess.ID, args.scheduleID.Int64) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusNoContent))
+			return
+		}
+		schedulesID = []int64{args.scheduleID.Int64}
+	case false:
+		// all enrolled schedule
+		schedulesID, err = cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusStudent)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		// return if empty
+		if len(schedulesID) < 1 {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusOK).
+				SetData(resp))
+			return
+		}
+	}
+
+	gps, err := cs.SelectGPBySchedule(schedulesID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(gps) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	var gpsID []int64
+	for _, val := range gps {
+		gpsID = append(gpsID, val.ID)
+	}
+
+	assignments, err := asg.SelectByGP(gpsID, true)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var asgID []int64
+	for _, val := range assignments {
+		asgID = append(asgID, val.ID)
+	}
+
+	if len(asgID) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	submitted, err := asg.SelectSubmittedByUser(asgID, sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(submitted) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	submitMap := map[int64]asg.UserAssignment{}
+	for _, val := range submitted {
+		submitMap[val.AssignmentID] = val
+	}
+
+	for _, assignment := range assignments {
+		submit, exist := submitMap[assignment.ID]
+		desc := "-"
+		score := "-"
+		status := "unsubmitted"
+
+		if exist {
+			if assignment.DueDate.Before(time.Now()) {
+				status = "overdue"
+			} else {
+				status = "submitted"
+				if submit.Score.Valid {
+					score = fmt.Sprintf("%.3g", submit.Score.Float64)
+				}
+			}
+		}
+
+		if assignment.Description.Valid {
+			desc = assignment.Description.String
+		}
+
+		resp = append(resp, getResponse{
+			ID:          assignment.ID,
+			DueDate:     assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+			Name:        assignment.Name,
+			Score:       score,
+			Status:      status,
+			Description: desc,
+			UpdatedAt:   assignment.UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
 
 // GetDetailHandler ...
 func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
-
 	params := getDetailParams{
 		id: ps.ByName("id"),
 	}
@@ -51,7 +269,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
-	upload, err := asg.GetUploaded(args.id, sess.ID)
+	submitted, err := asg.GetSubmittedByUser(args.id, sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -61,15 +279,15 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	// response data preparation
 	status := "unsubmitted"
 	score := "-"
-	uploadDate := "-"
+	submittedDate := "-"
 	if assignment.DueDate.Before(time.Now()) {
 		status = "overdue"
 	}
-	if upload != nil {
+	if submitted != nil {
 		status = "submitted"
-		uploadDate = upload.UpdatedAt.Format("Monday, 2 January 2006 15:04:05")
-		if upload.Score.Valid {
-			score = fmt.Sprintf("%.3g", upload.Score.Float64)
+		submittedDate = submitted.UpdatedAt.Format("Monday, 2 January 2006 15:04:05")
+		if submitted.Score.Valid {
+			score = fmt.Sprintf("%.3g", submitted.Score.Float64)
 		}
 	}
 	if assignment.Status == asg.StatusUploadNotRequired {
@@ -84,7 +302,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
-	uploadFile, err := fl.SelectByRelation(fl.TypAssignmentUpload, tableID, &sess.ID)
+	submittedFile, err := fl.SelectByRelation(fl.TypAssignmentUpload, tableID, &sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -95,21 +313,23 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	rAsgFile := []file{}
 	for _, val := range asgFile {
 		rAsgFile = append(rAsgFile, file{
-			Name: fmt.Sprintf("%s.%s", val.Name, val.Extension),
-			URL:  fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+			Name:         fmt.Sprintf("%s.%s", val.Name, val.Extension),
+			URL:          fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+			URLThumbnail: helper.MimeToThumbnail(val.Mime),
 		})
 	}
 
 	// file from student
-	rUploadFile := []file{}
-	for _, val := range uploadFile {
-		rUploadFile = append(rUploadFile, file{
-			Name: fmt.Sprintf("%s.%s", val.Name, val.Extension),
-			URL:  fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+	rSubmittedFile := []file{}
+	for _, val := range submittedFile {
+		rSubmittedFile = append(rSubmittedFile, file{
+			Name:         fmt.Sprintf("%s.%s", val.Name, val.Extension),
+			URL:          fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+			URLThumbnail: helper.MimeToThumbnail(val.Mime),
 		})
 	}
 
-	resp := detailResponseUser{
+	resp := getDetailResponse{
 		ID:             assignment.ID,
 		Name:           assignment.Name,
 		Status:         status,
@@ -119,8 +339,8 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		CreatedAt:      assignment.CreatedAt.Format("Monday, 2 January 2006"),
 		UpdatedAt:      assignment.UpdatedAt.Format("Monday, 2 January 2006"),
 		AssignmentFile: rAsgFile,
-		UploadedFile:   rUploadFile,
-		UploadDate:     uploadDate,
+		SubmittedFile:  rSubmittedFile,
+		SubmittedDate:  submittedDate,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -129,11 +349,12 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	return
 }
 
-func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// SubmitHandler ...
+func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	params := uploadParams{
+	params := submitParams{
 		id:          ps.ByName("id"),
 		description: r.FormValue("description"),
 		fileID:      r.FormValue("file_id"),
@@ -151,6 +372,13 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusNoContent))
+		return
+	}
+
+	if assignment.Status == asg.StatusUploadNotRequired {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -174,7 +402,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	upload, err := asg.GetUploaded(args.id, sess.ID)
+	upload, err := asg.GetSubmittedByUser(args.id, sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -183,7 +411,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// update
 	if upload != nil {
-		err = handleUploadUpdate(assignment.ID, sess.ID, args.description, args.fileID)
+		err = handleSubmitUpdate(assignment.ID, sess.ID, args.description, args.fileID)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
@@ -197,7 +425,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	// insert
-	err = handleUploadInsert(assignment.ID, sess.ID, args.description, args.fileID)
+	err = handleSubmitInsert(assignment.ID, sess.ID, args.description, args.fileID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -208,7 +436,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetCode(http.StatusOK).
 		SetMessage("Success"))
 	return
-
 }
 
 // // CreateHandler function is
@@ -691,84 +918,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 // 		SetCode(http.StatusOK).
 // 		SetMessage("Update Assignment Success!"))
 // 	return
-// }
-
-// // GetAssignmentHandler func ...
-// func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	schedulesIDs, err := cs.SelectScheduleIDByUserID(sess.ID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	// select Grade parameter
-// 	gradeList, err := cs.SelectGradeParameterByScheduleIDIN(schedulesIDs)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	assignmentID, err := as.SelectAssignmentIDByGradeParameterIN(gradeList)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-
-// 	submittedAssignmetID := as.SelectSubmittedAssignment(assignmentID, sess.ID)
-// 	var unsubmittedAssignmentID []int64
-// 	for _, val := range assignmentID {
-// 		for _, submitted := range submittedAssignmetID {
-// 			if val != submitted {
-// 				unsubmittedAssignmentID = append(unsubmittedAssignmentID, val)
-// 			}
-// 		}
-// 	}
-// 	res := []listAssignmentResponse{}
-// 	unsubmittedAssignment := as.SelectAssignmentByID(unsubmittedAssignmentID)
-// 	for _, val := range unsubmittedAssignment {
-// 		r := listAssignmentResponse{}
-// 		if val.Status == 1 {
-// 			r.Status = "must_upload"
-// 		} else {
-// 			r.Status = "must_not_upload"
-// 		}
-// 		description := fmt.Sprintf("NULL")
-// 		if val.Description.Valid {
-// 			description = fmt.Sprintf(val.Description.String)
-// 		}
-// 		r.ID = val.ID
-// 		r.Name = val.Name
-// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
-// 		r.Submitted = false
-// 		r.Description = description
-// 		res = append(res, r)
-// 	}
-// 	submittedAssignment := as.SelectAssignmentByID(submittedAssignmetID)
-// 	for _, val := range submittedAssignment {
-// 		r := listAssignmentResponse{}
-// 		if val.Status == 1 {
-// 			r.Status = "must_upload"
-// 		} else {
-// 			r.Status = "must_not_upload"
-// 		}
-// 		description := fmt.Sprintf("NULL")
-// 		if val.Description.Valid {
-// 			description = fmt.Sprintf(val.Description.String)
-// 		}
-// 		r.ID = val.ID
-// 		r.Name = val.Name
-// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
-// 		r.Submitted = true
-// 		r.Description = description
-// 		res = append(res, r)
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
-
 // }
 
 // // GetAssignmentByScheduleHandler func ...

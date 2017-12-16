@@ -445,7 +445,6 @@ func StaticHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 	defer file.Close()
-
 	stat, err := file.Stat()
 	if err != nil {
 		http.Redirect(w, r, fl.NotFoundURL, http.StatusSeeOther)
@@ -464,6 +463,12 @@ func StaticHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		contentType = "text/javascript"
 	} else if strings.HasSuffix(filepath, ".html") {
 		contentType = "text/html"
+	} else if strings.HasSuffix(filepath, ".jpg") {
+		contentType = "image/jpeg"
+	} else if strings.HasSuffix(filepath, ".png") {
+		contentType = "image/png"
+	} else if strings.HasSuffix(filepath, ".gif") {
+		contentType = "image/gif"
 	}
 
 	size := strconv.FormatInt(stat.Size(), 10)
