@@ -231,6 +231,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	rAsgFile := []file{}
 	for _, val := range asgFile {
 		rAsgFile = append(rAsgFile, file{
+			ID:           val.ID,
 			Name:         fmt.Sprintf("%s.%s", val.Name, val.Extension),
 			URL:          fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
 			URLThumbnail: helper.MimeToThumbnail(val.Mime),
@@ -241,6 +242,7 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	rSubmittedFile := []file{}
 	for _, val := range submittedFile {
 		rSubmittedFile = append(rSubmittedFile, file{
+			ID:           val.ID,
 			Name:         fmt.Sprintf("%s.%s", val.Name, val.Extension),
 			URL:          fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
 			URLThumbnail: helper.MimeToThumbnail(val.Mime),

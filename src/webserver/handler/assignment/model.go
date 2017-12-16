@@ -59,7 +59,22 @@ type submitArgs struct {
 	fileID      []string
 }
 
-// old
+type readParams struct {
+	page  string
+	total string
+}
+
+type readArgs struct {
+	page  uint16
+	total uint16
+}
+
+type readResponse struct {
+	name        string         `db:"name"`
+	description sql.NullString `db:"description"`
+	status      string         `db:"status"`
+	DueDate     time.Time      `db:"due_date"`
+}
 
 type createParams struct {
 	filesID     string
@@ -83,6 +98,8 @@ type createArgs struct {
 	fileType    []string
 }
 
+// old
+
 type updatePrams struct {
 	ID                string
 	FilesID           string
@@ -101,24 +118,6 @@ type updateArgs struct {
 	Status            string
 	DueDate           string
 	TableID           int64
-}
-
-type readParams struct {
-	Page  string
-	Total string
-}
-
-type readArgs struct {
-	Page  uint16
-	Total uint16
-}
-
-type readResponse struct {
-	Name             string         `db:"name"`
-	Description      sql.NullString `db:"description"`
-	Status           string         `db:"status"`
-	GradeParameterID int32          `db:"grade_parameters_id"`
-	DueDate          time.Time      `db:"due_date"`
 }
 
 type detailParams struct {
@@ -143,6 +142,7 @@ type detailResponse struct {
 }
 
 type file struct {
+	ID           string `json:"id"`
 	Name         string `json:"name"`
 	URL          string `json:"url"`
 	URLThumbnail string `json:"url_thumbnail"`
