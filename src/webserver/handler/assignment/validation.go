@@ -7,6 +7,7 @@ import (
 	"html"
 	"strconv"
 	"strings"
+	"time"
 
 	asg "github.com/melodiez14/meiko/src/module/assignment"
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -76,54 +77,100 @@ func (params submitParams) validate() (submitArgs, error) {
 	}, nil
 }
 
-// old
-
 func (params createParams) validate() (createArgs, error) {
 	var args createArgs
 	params = createParams{
-		FilesID:           params.FilesID,
-		GradeParametersID: params.GradeParametersID,
-		Name:              html.EscapeString(helper.Trim(params.Name)),
-		Description:       html.EscapeString(helper.Trim(params.Description)),
-		Status:            params.Status,
-		DueDate:           params.DueDate,
+		filesID:     params.filesID,
+		gpID:        params.gpID,
+		name:        html.EscapeString(helper.Trim(params.name)),
+		description: html.EscapeString(helper.Trim(params.description)),
+		status:      params.status,
+		dueDate:     params.dueDate,
+		fileType:    params.fileType,
+		fileSize:    params.fileSize,
 	}
-	// GradeParameter validation
-	if helper.IsEmpty(params.GradeParametersID) {
-		return args, fmt.Errorf("grade_parameters can not be empty")
+
+	filesID := strings.Split(params.filesID, "~")
+	for _, val := range filesID {
+		if !helper.IsValidFileID(val) {
+			return args, fmt.Errorf("Invalid fileID format")
+		}
 	}
-	GradeParametersID, err := strconv.ParseInt(params.GradeParametersID, 10, 64)
+
+	gpID, err := strconv.ParseInt(params.gpID, 10, 64)
 	if err != nil {
-		return args, fmt.Errorf("grade_parameters error parsing")
+		return args, fmt.Errorf("Invalid request")
 	}
-	// Name
-	if helper.IsEmpty(params.Name) {
+
+	// name
+	if helper.IsEmpty(params.name) {
 		return args, fmt.Errorf("Name can not be empty")
 	}
 
-	// Status validation
-	if helper.IsEmpty(params.Status) {
-		return args, fmt.Errorf("status can not be empty")
+	if !helper.IsAlphaNumericSpace(params.name) {
+		return args, fmt.Errorf("Name can only contain of alphabet and numeric")
 	}
-	// Description validation
-	var description sql.NullString
-	if !helper.IsEmpty(params.Description) {
-		description = sql.NullString{Valid: true, String: params.Description}
-	}
-	//DueDate validation
-	if helper.IsEmpty(params.DueDate) {
-		return args, fmt.Errorf("due_date can not be empty")
-	}
-	return createArgs{
-		FilesID:           params.FilesID,
-		GradeParametersID: GradeParametersID,
-		Name:              params.Name,
-		Description:       description,
-		Status:            params.Status,
-		DueDate:           params.DueDate,
-	}, nil
 
+	name := strings.Title(params.name)
+
+	// description validation
+	var desc sql.NullString
+	if !helper.IsEmpty(params.description) {
+		desc = sql.NullString{Valid: true, String: params.description}
+	}
+
+	// status
+	var status int8
+	switch params.status {
+	case "required":
+		status = asg.StatusUploadRequired
+	case "notrequired":
+		status = asg.StatusUploadNotRequired
+	default:
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	// dueDate validation
+	if helper.IsEmpty(params.dueDate) {
+		return args, fmt.Errorf("due date can not be empty")
+	}
+
+	dueDateInt64, err := strconv.ParseInt(params.dueDate, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+	dueDate := time.Unix(dueDateInt64, 0)
+
+	size, err := strconv.ParseInt(params.fileSize, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("Invalid request")
+	}
+
+	if size >= 100 {
+		return args, fmt.Errorf("Max size too large. It should be below 100MB")
+	}
+
+	typ := strings.Split(params.fileType, "~")
+	for _, val := range typ {
+		if !helper.IsValidFileID(val) {
+			return args, fmt.Errorf("Invalid fileID format")
+		}
+	}
+
+	return createArgs{
+		filesID:     filesID,
+		gpID:        gpID,
+		name:        name,
+		description: desc,
+		status:      status,
+		dueDate:     dueDate,
+		fileSize:    size,
+		fileType:    typ,
+	}, nil
 }
+
+// old
+
 func (params updatePrams) validate() (updateArgs, error) {
 	var args updateArgs
 	params = updatePrams{

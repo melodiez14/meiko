@@ -6,92 +6,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/melodiez14/meiko/src/util/conn"
+
 	"github.com/julienschmidt/httprouter"
 	asg "github.com/melodiez14/meiko/src/module/assignment"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
+	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
-
-// // GetAssignmentHandler func ...
-// func GetAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	schedulesIDs, err := cs.SelectScheduleIDByUserID(sess.ID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	// select Grade parameter
-// 	gradeList, err := cs.SelectGradeParameterByScheduleIDIN(schedulesIDs)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	assignmentID, err := as.SelectAssignmentIDByGradeParameterIN(gradeList)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-
-// 	submittedAssignmetID := as.SelectSubmittedAssignment(assignmentID, sess.ID)
-// 	var unsubmittedAssignmentID []int64
-// 	for _, val := range assignmentID {
-// 		for _, submitted := range submittedAssignmetID {
-// 			if val != submitted {
-// 				unsubmittedAssignmentID = append(unsubmittedAssignmentID, val)
-// 			}
-// 		}
-// 	}
-// 	res := []listAssignmentResponse{}
-// 	unsubmittedAssignment := as.SelectAssignmentByID(unsubmittedAssignmentID)
-// 	for _, val := range unsubmittedAssignment {
-// 		r := listAssignmentResponse{}
-// 		if val.Status == 1 {
-// 			r.Status = "must_upload"
-// 		} else {
-// 			r.Status = "must_not_upload"
-// 		}
-// 		description := fmt.Sprintf("NULL")
-// 		if val.Description.Valid {
-// 			description = fmt.Sprintf(val.Description.String)
-// 		}
-// 		r.ID = val.ID
-// 		r.Name = val.Name
-// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
-// 		r.Submitted = false
-// 		r.Description = description
-// 		res = append(res, r)
-// 	}
-// 	submittedAssignment := as.SelectAssignmentByID(submittedAssignmetID)
-// 	for _, val := range submittedAssignment {
-// 		r := listAssignmentResponse{}
-// 		if val.Status == 1 {
-// 			r.Status = "must_upload"
-// 		} else {
-// 			r.Status = "must_not_upload"
-// 		}
-// 		description := fmt.Sprintf("NULL")
-// 		if val.Description.Valid {
-// 			description = fmt.Sprintf(val.Description.String)
-// 		}
-// 		r.ID = val.ID
-// 		r.Name = val.Name
-// 		r.DueDate = val.DueDate.Format("Monday, 2 January 2006 15:04:05")
-// 		r.Submitted = true
-// 		r.Description = description
-// 		res = append(res, r)
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
-
-// }
 
 // GetHandler ...
 func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -180,13 +105,6 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
-		return
-	}
-
-	if len(submitted) < 1 {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusOK).
-			SetData(resp))
 		return
 	}
 
@@ -398,7 +316,8 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	if !cs.IsEnrolled(sess.ID, scheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusNoContent))
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
 		return
 	}
 
@@ -432,6 +351,82 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
+	return
+}
+
+func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+}
+
+func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := createParams{
+		name:        r.FormValue("name"),
+		description: r.FormValue("description"),
+		gpID:        r.FormValue("gpid"),
+		dueDate:     r.FormValue("due_date"),
+		status:      r.FormValue("status"),
+		filesID:     r.FormValue("file_id"),
+		fileSize:    r.FormValue("file_size"),
+		fileType:    r.FormValue("file_type"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	scheduleID, err := cs.GetScheduleIDByGP(args.gpID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	// validate file_id more ui friendly
+	// slow performance
+
+	tx := conn.DB.MustBegin()
+	id, err := asg.Insert(args.name, args.description, args.gpID, args.fileSize, args.dueDate, args.status, tx)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	idStr := strconv.FormatInt(id, 10)
+	for _, fileID := range args.filesID {
+		if fl.UpdateRelation(fileID, fl.TypAssignment, idStr, tx) != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+
+	tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Success"))

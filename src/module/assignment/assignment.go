@@ -3,7 +3,6 @@ package assignment
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -66,32 +65,37 @@ func IsExistByGradeParameterID(gpID int64) bool {
 }
 
 // Insert function is ...
-func Insert(GradeParameters int64, Name, Status, DueDate string, Description sql.NullString, tx ...*sqlx.Tx) (string, error) {
-	queryDescription := fmt.Sprintf("NULL")
-	if Description.Valid {
-		queryDescription = fmt.Sprintf("('%s')", Description.String)
+func Insert(name string, desc sql.NullString, gps, maxSize int64, duedate time.Time, status int8, tx ...*sqlx.Tx) (int64, error) {
+
+	var id int64
+	queryDesc := fmt.Sprintf("(NULL)")
+	if desc.Valid {
+		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
+
 	query := fmt.Sprintf(`
 		INSERT INTO
 			assignments(
 				name,
+				description,
 				status,
 				due_date,
 				grade_parameters_id,
-				description,
+				max_size,
 				created_at,
 				updated_at
 			)
 		VALUES(
 			('%s'),
-			('%s'),
-			('%s'),
-			('%d'),
 			%s,
+			('%d'),
+			('%s'),
+			(%d),
+			(%d),
 			NOW(),
 			NOW()
 		);
-		`, Name, Status, DueDate, GradeParameters, queryDescription)
+		`, name, queryDesc, status, duedate, gps, maxSize)
 
 	var result sql.Result
 	var err error
@@ -101,18 +105,17 @@ func Insert(GradeParameters int64, Name, Status, DueDate string, Description sql
 		result, err = conn.DB.Exec(query)
 	}
 	if err != nil {
-		return "", err
+		return id, err
 	}
 	rows, err := result.RowsAffected()
 	if rows == 0 {
-		return "", fmt.Errorf("No rows affected")
+		return id, fmt.Errorf("No rows affected")
 	}
-	id, err := result.LastInsertId()
+	id, err = result.LastInsertId()
 	if err != nil {
-		return "", fmt.Errorf("Error get LastIsertedId")
+		return id, fmt.Errorf("Error getting inserted ID")
 	}
-	ID := strconv.FormatInt(id, 10)
-	return ID, nil
+	return id, nil
 }
 
 // Update func ...

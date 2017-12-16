@@ -62,26 +62,27 @@ type submitArgs struct {
 // old
 
 type createParams struct {
-	FilesID           string
-	GradeParametersID string
-	Name              string
-	Description       string
-	Status            string
-	DueDate           string
-	Size              string
-	Type              string
+	filesID     string
+	gpID        string
+	name        string
+	description string
+	status      string
+	dueDate     string
+	fileSize    string
+	fileType    string
 }
 
 type createArgs struct {
-	FilesID           string
-	GradeParametersID int64
-	Name              string
-	Description       sql.NullString
-	Status            string
-	DueDate           string
-	Size              int64
-	Type              string
+	filesID     []string
+	gpID        int64
+	name        string
+	description sql.NullString
+	status      int8
+	dueDate     time.Time
+	fileSize    int64
+	fileType    []string
 }
+
 type updatePrams struct {
 	ID                string
 	FilesID           string
