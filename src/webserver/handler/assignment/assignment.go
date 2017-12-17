@@ -589,6 +589,28 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	resp := []getReportResponse{}
 	sess := r.Context().Value("User").(*auth.User)
 
+	payload := r.FormValue("schedule_id")
+	if !helper.IsEmpty(payload) {
+		scheduleID, err := strconv.ParseInt(payload, 10, 64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid Request"))
+			return
+		}
+		gradeResp, statusCode, err := handleGradeBySchedule(scheduleID, sess.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(statusCode).
+				AddError("Invalid Request"))
+			return
+		}
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(gradeResp))
+		return
+	}
+
 	schedulesID, err := cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusStudent)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).

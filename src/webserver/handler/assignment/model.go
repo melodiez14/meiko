@@ -130,6 +130,12 @@ type getReportResponse struct {
 	Total      string `json:"total"`
 }
 
+type getGradeResponse struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Score string `json:"grade"`
+}
+
 // old
 
 type updatePrams struct {

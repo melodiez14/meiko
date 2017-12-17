@@ -2,11 +2,15 @@ package assignment
 
 import (
 	"database/sql"
+	"fmt"
+	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 
 	asg "github.com/melodiez14/meiko/src/module/assignment"
+	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -88,4 +92,61 @@ func handleSubmitUpdate(id, userID int64, desc sql.NullString, fileID []string) 
 
 	tx.Commit()
 	return nil
+}
+
+func handleGradeBySchedule(scheduleID, userID int64) ([]getGradeResponse, int, error) {
+
+	resp := []getGradeResponse{}
+	if !cs.IsEnrolled(userID, scheduleID) {
+		return nil, http.StatusForbidden, fmt.Errorf("You are not authorized")
+	}
+
+	gps, err := cs.SelectGPBySchedule([]int64{scheduleID})
+	if err != nil {
+		return resp, http.StatusInternalServerError, err
+	}
+
+	if len(gps) < 1 {
+		return resp, http.StatusOK, nil
+	}
+
+	var gpsID []int64
+	for _, gp := range gps {
+		gpsID = append(gpsID, gp.ID)
+	}
+
+	assignments, err := asg.SelectByGP(gpsID, false)
+	if err != nil {
+		return resp, http.StatusInternalServerError, err
+	}
+
+	var asgID []int64
+	var asgGP = make(map[int64]cs.GradeParameter)
+	var asgName = make(map[int64]string)
+	for _, assignment := range assignments {
+		asgID = append(asgID, assignment.ID)
+		asgName[assignment.ID] = assignment.Name
+		for _, gp := range gps {
+			if assignment.GradeParameterID == gp.ID {
+				asgGP[assignment.ID] = gp
+			}
+		}
+	}
+
+	submitted, err := asg.SelectSubmittedByUser(asgID, userID)
+	if err != nil {
+		return resp, http.StatusInternalServerError, err
+	}
+
+	for _, val := range submitted {
+		if val.Score.Valid {
+			resp = append(resp, getGradeResponse{
+				Name:  asgName[val.AssignmentID],
+				Type:  strings.ToLower(asgGP[val.AssignmentID].Type),
+				Score: fmt.Sprintf("%.3g", val.Score.Float64),
+			})
+		}
+	}
+
+	return resp, http.StatusOK, nil
 }
