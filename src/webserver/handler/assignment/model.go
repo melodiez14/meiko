@@ -108,6 +108,14 @@ type createArgs struct {
 	fileType    []string
 }
 
+type deleteParams struct {
+	id string
+}
+
+type deleteArgs struct {
+	id int64
+}
+
 // old
 
 type updatePrams struct {
@@ -215,12 +223,6 @@ type readUploadedDetailArgs struct {
 	PathFile     []fs.File
 }
 
-type deleteParams struct {
-	ID string
-}
-type deleteArgs struct {
-	ID int64
-}
 type listAssignmentsParams struct {
 	Page         string
 	Total        string

@@ -169,6 +169,51 @@ func (params createParams) validate() (createArgs, error) {
 	}, nil
 }
 
+func (params readParams) validate() (readArgs, error) {
+
+	var args readArgs
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("scheduleID must be numeric")
+	}
+
+	page, err := strconv.ParseInt(params.page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
+
+	total, err := strconv.ParseInt(params.total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
+
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
+	}
+
+	args = readArgs{
+		page:       int(page),
+		total:      int(total),
+		scheduleID: scheduleID,
+	}
+	return args, nil
+
+}
+
+func (params deleteParams) validate() (deleteArgs, error) {
+	var args deleteArgs
+
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return deleteArgs{
+		id: id,
+	}, nil
+}
+
 // old
 
 func (params updatePrams) validate() (updateArgs, error) {
@@ -225,38 +270,6 @@ func (params updatePrams) validate() (updateArgs, error) {
 		Status:            params.Status,
 		DueDate:           params.DueDate,
 	}, nil
-
-}
-
-func (params readParams) validate() (readArgs, error) {
-
-	var args readArgs
-	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("scheduleID must be numeric")
-	}
-
-	page, err := strconv.ParseInt(params.page, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("page must be numeric")
-	}
-
-	total, err := strconv.ParseInt(params.total, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("total must be numeric")
-	}
-
-	// should be positive number
-	if page < 0 || total < 0 {
-		return args, fmt.Errorf("page or total must be positive number")
-	}
-
-	args = readArgs{
-		page:       int(page),
-		total:      int(total),
-		scheduleID: scheduleID,
-	}
-	return args, nil
 
 }
 
@@ -400,22 +413,7 @@ func (params readUploadedDetailParams) validate() (readUploadedDetailArgs, error
 	}, nil
 
 }
-func (params deleteParams) validate() (deleteArgs, error) {
-	var args deleteArgs
-	params = deleteParams{
-		ID: params.ID,
-	}
-	if helper.IsEmpty(params.ID) {
-		return args, fmt.Errorf("Assignment ID can not be empty")
-	}
-	id, err := strconv.ParseInt(params.ID, 10, 64)
-	if err != nil {
-		return args, fmt.Errorf("Error convert to int64")
-	}
-	return deleteArgs{
-		ID: id,
-	}, nil
-}
+
 func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 	var args listAssignmentsArgs
 	if helper.IsEmpty(params.ScheduleID) {

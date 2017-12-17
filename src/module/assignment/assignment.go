@@ -526,6 +526,25 @@ func SelectSubmittedByUser(id []int64, userID int64) ([]UserAssignment, error) {
 	return assignment, nil
 }
 
+// IsExistSubmitted used for check that are there any student which have uploaded it assignments
+func IsExistSubmitted(id int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		LIMIT 1`, id)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // IsUserHaveUploadedAsssignment func ...
 func IsUserHaveUploadedAsssignment(AssignmentID int64) bool {
 	var x string

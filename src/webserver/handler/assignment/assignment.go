@@ -118,22 +118,24 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		desc := "-"
 		score := "-"
 		status := "unsubmitted"
-
+		if assignment.DueDate.Before(time.Now()) {
+			status = "overdue"
+		}
 		if exist {
+			status = "submitted"
 			if assignment.DueDate.Before(time.Now()) {
-				status = "overdue"
-			} else {
-				status = "submitted"
-				if submit.Score.Valid {
-					score = fmt.Sprintf("%.3g", submit.Score.Float64)
-				}
+				status = "done"
+			}
+			if submit.Score.Valid {
+				score = fmt.Sprintf("%.3g", submit.Score.Float64)
 			}
 		}
-
+		if assignment.Status == asg.StatusUploadNotRequired {
+			status = "notrequired"
+		}
 		if assignment.Description.Valid {
 			desc = assignment.Description.String
 		}
-
 		resp = append(resp, getResponse{
 			ID:          assignment.ID,
 			DueDate:     assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
@@ -204,6 +206,9 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	if submitted != nil {
 		status = "submitted"
 		submittedDate = submitted.UpdatedAt.Format("Monday, 2 January 2006 15:04:05")
+		if assignment.DueDate.Before(time.Now()) {
+			status = "done"
+		}
 		if submitted.Score.Valid {
 			score = fmt.Sprintf("%.3g", submitted.Score.Float64)
 		}
@@ -516,6 +521,54 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetCode(http.StatusOK).
 		SetMessage("Success"))
 	return
+}
+
+func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXDelete, rg.RoleDelete) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := deleteParams{
+		id: ps.ByName("id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	assignment, err := asg.GetByID(args.id)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+
+	// validate if there is submitted task
+	// asg.SelectSubmittedByUser
+
+	scheduleID, err := cs.GetScheduleIDByGP(assignment.GradeParameterID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
 }
 
 // // CreateHandler function is
