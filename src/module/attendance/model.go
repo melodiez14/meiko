@@ -25,3 +25,8 @@ type AttendanceCount struct {
 	MeetingID uint64 `db:"meetings_id"`
 	Count     uint16 `db:"count"`
 }
+
+type AttendanceReport struct {
+	MeetingTotal    int `db:"meeting_total"`
+	AttendanceTotal int `db:"attendance_total"`
+}

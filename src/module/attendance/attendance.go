@@ -381,3 +381,37 @@ func CountByUserMeeting(userID int64, meetingsID []int64) (int, error) {
 
 	return count, nil
 }
+
+func CountByUserSchedule(userID int64, schedulesID []int64) (map[int64]AttendanceReport, error) {
+
+	report := map[int64]AttendanceReport{}
+	querySchID := strings.Join(helper.Int64ToStringSlice(schedulesID), ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			m.schedules_id,
+			count(m.id) as meeting_total,
+			count(a.meetings_id) as attendance_total
+		FROM meetings m
+		LEFT JOIN attendances a ON m.id = a.meetings_id AND users_id = (%d)
+		WHERE m.schedules_id IN (%s)
+		GROUP BY m.schedules_id
+	`, userID, querySchID)
+	rows, err := conn.DB.Queryx(query)
+	if err != nil {
+		return report, err
+	}
+	defer rows.Close()
+
+	var scheduleID int64
+	var meetTotal int
+	var attTotal int
+	for rows.Next() {
+		err = rows.Scan(&scheduleID, &meetTotal, &attTotal)
+		if err != nil {
+			return report, err
+		}
+		report[scheduleID] = AttendanceReport{AttendanceTotal: attTotal, MeetingTotal: meetTotal}
+	}
+
+	return report, nil
+}

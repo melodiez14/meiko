@@ -10,6 +10,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	asg "github.com/melodiez14/meiko/src/module/assignment"
+	att "github.com/melodiez14/meiko/src/module/attendance"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
@@ -602,6 +603,25 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
+	courses, err := cs.SelectByScheduleID(schedulesID, cs.StatusScheduleActive)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	if len(courses) < 1 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	schedulesID = []int64{}
+	for _, val := range courses {
+		schedulesID = append(schedulesID, val.Schedule.ID)
+	}
+
 	gps, err := cs.SelectGPBySchedule(schedulesID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -617,10 +637,10 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	var gpsID []int64
-	var gpMap map[int64]int64
+	scheduleGP := map[int64][]cs.GradeParameter{}
 	for _, gp := range gps {
 		gpsID = append(gpsID, gp.ID)
-		gpMap[gp.ID] = gp.ScheduleID
+		scheduleGP[gp.ScheduleID] = append(scheduleGP[gp.ScheduleID], gp)
 	}
 
 	assignments, err := asg.SelectByGP(gpsID, false)
@@ -631,8 +651,10 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	var asgID []int64
+	gpAsg := map[int64][]asg.Assignment{}
 	for _, val := range assignments {
 		asgID = append(asgID, val.ID)
+		gpAsg[val.GradeParameterID] = append(gpAsg[val.GradeParameterID], val)
 	}
 
 	if len(asgID) < 1 {
@@ -649,10 +671,75 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
-	submitMap := map[int64]asg.UserAssignment{}
+	asgSubmit := map[int64]asg.UserAssignment{}
 	for _, val := range submitted {
-		submitMap[val.AssignmentID] = val
+		asgSubmit[val.AssignmentID] = val
 	}
+
+	attReport, err := att.CountByUserSchedule(sess.ID, schedulesID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	for _, c := range courses {
+		rep := getReportResponse{
+			CourseName: c.Course.Name,
+			ScheduleID: c.Schedule.ID,
+			Assignment: "-",
+			Attendance: "-",
+			Quiz:       "-",
+			Mid:        "-",
+			Final:      "-",
+			Total:      "-",
+		}
+		total := float64(0)
+		for _, gp := range scheduleGP[c.Schedule.ID] {
+			scoreFloat64 := float64(0)
+			if gp.Type == "ATTENDANCE" {
+				attendance := attReport[gp.ScheduleID]
+				if attendance.MeetingTotal > 0 {
+					scoreFloat64 = (float64(attendance.AttendanceTotal) / float64(attendance.MeetingTotal)) * float64(gp.Percentage) / 100
+				}
+				rep.Attendance = fmt.Sprintf("%.3g", scoreFloat64)
+			} else {
+				count := len(gpAsg[gp.ID])
+				for _, assignment := range gpAsg[gp.ID] {
+					submit, exist := asgSubmit[assignment.ID]
+					if !exist {
+						continue
+					}
+					if submit.Score.Valid {
+						scoreFloat64 += submit.Score.Float64
+					} else {
+						count--
+					}
+				}
+				if count > 0 {
+					scoreFloat64 = scoreFloat64 / float64(count)
+				}
+				total += (scoreFloat64 * float64(gp.Percentage) / 100)
+				switch gp.Type {
+				case "ASSIGNMENT":
+					rep.Assignment = fmt.Sprintf("%.3g", scoreFloat64)
+				case "QUIZ":
+					rep.Quiz = fmt.Sprintf("%.3g", scoreFloat64)
+				case "MID":
+					rep.Mid = fmt.Sprintf("%.3g", scoreFloat64)
+				case "FINAL":
+					rep.Final = fmt.Sprintf("%.3g", scoreFloat64)
+				}
+			}
+		}
+		rep.Total = fmt.Sprintf("%.3g", total)
+		resp = append(resp, rep)
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
 }
 
 // // CreateHandler function is

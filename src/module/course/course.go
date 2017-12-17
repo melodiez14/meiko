@@ -830,7 +830,8 @@ func SelectGPBySchedule(scheduleID []int64) ([]GradeParameter, error) {
 			id,
 			type,
 			percentage,
-			status_change
+			status_change,
+			schedules_id
 		FROM
 			grade_parameters
 		WHERE
