@@ -16,13 +16,14 @@ type getArgs struct {
 }
 
 type getResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Status      string `json:"status"`
-	Description string `json:"description"`
-	DueDate     string `json:"due_date"`
-	Score       string `json:"score"`
-	UpdatedAt   string `json:"updated_at"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	Status        string `json:"status"`
+	IsAllowUpload bool   `json:"is_allow_upload"`
+	Description   string `json:"description"`
+	DueDate       string `json:"due_date"`
+	Score         string `json:"score"`
+	UpdatedAt     string `json:"updated_at"`
 }
 
 type getDetailParams struct {
@@ -34,17 +35,19 @@ type getDetailArgs struct {
 }
 
 type getDetailResponse struct {
-	ID             int64  `json:"id"`
-	Status         string `json:"status"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	DueDate        string `json:"due_date"`
-	Score          string `json:"score"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
-	AssignmentFile []file `json:"assignment_file"`
-	SubmittedFile  []file `json:"submitted_file"`
-	SubmittedDate  string `json:"submitted_date"`
+	ID                   int64  `json:"id"`
+	Name                 string `json:"name"`
+	Description          string `json:"description"`
+	DueDate              string `json:"due_date"`
+	Score                string `json:"score"`
+	Status               string `json:"status"`
+	CreatedAt            string `json:"created_at"`
+	UpdatedAt            string `json:"updated_at"`
+	AssignmentFile       []file `json:"assignment_file"`
+	IsAllowUpload        bool   `json:"is_allow_upload"`
+	SubmittedDescription string `json:"submitted_description"`
+	SubmittedFile        []file `json:"submitted_file"`
+	SubmittedDate        string `json:"submitted_date"`
 }
 
 type submitParams struct {
@@ -114,6 +117,17 @@ type deleteParams struct {
 
 type deleteArgs struct {
 	id int64
+}
+
+type getReportResponse struct {
+	ScheduleID int64  `json:"schedule_id"`
+	CourseName string `json:"course_name"`
+	Attendance string `json:"attendance"`
+	Assignment string `json:"assignment"`
+	Quiz       string `json:"quiz"`
+	Mid        string `json:"mid"`
+	Final      string `json:"final"`
+	Total      string `json:"total"`
 }
 
 // old
