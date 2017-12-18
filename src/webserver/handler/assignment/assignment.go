@@ -140,6 +140,10 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if assignment.Description.Valid {
 			desc = assignment.Description.String
 		}
+		// used for general
+		if !args.scheduleID.Valid && status != "unsubmitted" {
+			continue
+		}
 		resp = append(resp, getResponse{
 			ID:            assignment.ID,
 			DueDate:       assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
