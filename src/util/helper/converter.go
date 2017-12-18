@@ -232,7 +232,7 @@ func MimeToThumbnail(mime string) string {
 		"^video/[a-z]*": "/static/img/video.png",
 		"^application/(msword|vnd.openxmlformats-officedocument.wordprocessingml|vnd.ms-word)": "/static/img/doc.png",
 		"^application/vnd.(ms-excel|openxmlformats-officedocument.spreadsheetml)":              "/static/img/xls.png",
-		"^application/(x-rar-compressed|zip|x-7z-compressed|x-bzip|x-bzip2|x-tar)$":            "/static/img/archive.jpg",
+		"^application/(x-rar-compressed|zip|x-7z-compressed|x-bzip|x-bzip2|x-tar)$":            "/static/img/archive.png",
 	}
 
 	for i, val := range imageMaps {
