@@ -15,13 +15,16 @@ import (
 
 func (params getParams) validate() (getArgs, error) {
 	var args getArgs
-	if helper.IsEmpty(params.scheduleID) {
-		return args, nil
+	var scheduleID sql.NullInt64
+	if !helper.IsEmpty(params.scheduleID) {
+		schID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+		if err != nil {
+			return args, err
+		}
+		scheduleID.Int64 = schID
+		scheduleID.Valid = true
 	}
-	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
-	if err != nil {
-		return args, err
-	}
+
 	var filter sql.NullString
 	if !helper.IsEmpty(params.filter) {
 		switch params.filter {
@@ -33,7 +36,7 @@ func (params getParams) validate() (getArgs, error) {
 		}
 	}
 	return getArgs{
-		scheduleID: sql.NullInt64{Valid: true, Int64: scheduleID},
+		scheduleID: scheduleID,
 		filter:     filter,
 	}, nil
 }
