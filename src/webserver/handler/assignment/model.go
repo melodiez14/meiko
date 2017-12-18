@@ -9,10 +9,12 @@ import (
 
 type getParams struct {
 	scheduleID string
+	filter     string
 }
 
 type getArgs struct {
 	scheduleID sql.NullInt64
+	filter     sql.NullString
 }
 
 type getResponse struct {

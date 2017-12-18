@@ -22,8 +22,19 @@ func (params getParams) validate() (getArgs, error) {
 	if err != nil {
 		return args, err
 	}
+	var filter sql.NullString
+	if !helper.IsEmpty(params.filter) {
+		switch params.filter {
+		case "submitted", "unsubmitted", "overdue", "done":
+			filter.String = params.filter
+			filter.Valid = true
+		default:
+			return args, fmt.Errorf("Invalid request")
+		}
+	}
 	return getArgs{
 		scheduleID: sql.NullInt64{Valid: true, Int64: scheduleID},
+		filter:     filter,
 	}, nil
 }
 

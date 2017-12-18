@@ -27,6 +27,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	params := getParams{
 		scheduleID: r.FormValue("schedule_id"),
+		filter:     r.FormValue("filter"),
 	}
 
 	args, err := params.validate()
@@ -140,9 +141,10 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if assignment.Description.Valid {
 			desc = assignment.Description.String
 		}
-		// used for general
-		if !args.scheduleID.Valid && status != "unsubmitted" {
-			continue
+		if args.filter.Valid {
+			if args.filter.String != status {
+				continue
+			}
 		}
 		resp = append(resp, getResponse{
 			ID:            assignment.ID,
