@@ -52,8 +52,14 @@ func (params submitParams) validate() (submitArgs, error) {
 		return args, err
 	}
 
+	isEmptyDesc := helper.IsEmpty(params.description)
+	isEmptyFile := helper.IsEmpty(params.fileID)
+	if isEmptyDesc && isEmptyFile {
+		return args, fmt.Errorf("File or description must be filled")
+	}
+
 	var desc sql.NullString
-	if !helper.IsEmpty(params.description) {
+	if !isEmptyDesc {
 		if len(params.description) > asg.MaxDesc {
 			return args, fmt.Errorf("Description reach maximum of 1000 character")
 		}
@@ -63,10 +69,13 @@ func (params submitParams) validate() (submitArgs, error) {
 		}
 	}
 
-	fileID := strings.Split(params.fileID, "~")
-	for _, val := range fileID {
-		if !helper.IsValidFileID(val) {
-			return args, fmt.Errorf("Invalid fileID format")
+	var fileID []string
+	if !isEmptyFile {
+		fileID = strings.Split(params.fileID, "~")
+		for _, val := range fileID {
+			if !helper.IsValidFileID(val) {
+				return args, fmt.Errorf("Invalid request")
+			}
 		}
 	}
 
