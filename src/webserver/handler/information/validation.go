@@ -188,3 +188,14 @@ func (params getParams) validate() (getArgs, error) {
 		total: total,
 	}, nil
 }
+
+func (params getDetailParams) validate() (getDetailArgs, error) {
+	var args getDetailArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return getDetailArgs{
+		id: id,
+	}, nil
+}

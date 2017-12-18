@@ -23,6 +23,22 @@ type getResponse struct {
 	ImageThumbnail string `json:"image_thumbnail"`
 }
 
+type getDetailParams struct {
+	id string
+}
+
+type getDetailArgs struct {
+	id int64
+}
+
+type getDetailResponse struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Date        string `json:"date"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+}
+
 type detailInfromationParams struct {
 	ID string
 }

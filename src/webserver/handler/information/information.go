@@ -411,33 +411,62 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
-	params := detailInfromationParams{
-		ID: ps.ByName("id"),
+	params := getDetailParams{
+		id: ps.ByName("id"),
 	}
+
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).AddError(err.Error()))
 		return
 	}
-	scheduleID := inf.GetScheduleIDByID(args.ID)
-	if scheduleID != 0 {
-		if !course.IsEnrolled(sess.ID, scheduleID) {
+
+	scheduleID := inf.GetScheduleIDByID(args.id)
+	if scheduleID != nil {
+		if !course.IsEnrolled(sess.ID, *scheduleID) {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusBadRequest).
 				AddError("you do not have permission to this informations"))
 			return
 		}
 	}
-	res, err := inf.GetByID(args.ID)
+
+	information, err := inf.GetByID(args.id)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Information does not exist"))
 		return
 	}
+
+	images, err := fs.SelectByRelation(fs.TypInfPict, []string{params.id}, &sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	mImg := fs.NoImgAvailable
+	if len(images) > 0 {
+		mImg = fmt.Sprintf("/api/v1/file/information/%s.%s", images[0].ID, images[0].Extension)
+	}
+
+	desc := "-"
+	if information.Description.Valid {
+		desc = information.Description.String
+	}
+
+	resp := getDetailResponse{
+		ID:          information.ID,
+		Title:       information.Title,
+		Description: desc,
+		Date:        information.CreatedAt.Format("Monday, 2 January 2006"),
+		Image:       mImg,
+	}
+
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetData(resp))
 	return
 }

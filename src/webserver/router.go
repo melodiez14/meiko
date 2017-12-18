@@ -129,14 +129,15 @@ func loadRouter(r *httprouter.Router) {
 	// ===================== End Assignment Handler =====================
 
 	// ======================= Information Handler ======================
-	// User section
+	// Admin section
 	r.POST("/api/admin/v1/information", auth.MustAuthorize(information.CreateHandler))              // create infomation by admin
 	r.PATCH("/api/admin/v1/information/:id", auth.MustAuthorize(information.UpdateHandler))         // update infomation by admin
 	r.DELETE("/api/admin/v1/information/:id", auth.MustAuthorize(information.DeleteHandler))        // delete information by admin
 	r.GET("/api/admin/v1/information", auth.MustAuthorize(information.ReadHandler))                 // read list information by admin
 	r.GET("/api/admin/v1/information/:id", auth.MustAuthorize(information.GetDetailByAdminHandler)) // read detail information by admin
-	r.GET("/api/v1/information", auth.MustAuthorize(information.GetHandler))                        // list informations
-	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler))              // detail information
+	// User section
+	r.GET("/api/v1/information", auth.MustAuthorize(information.GetHandler))           // list informations
+	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler)) // detail information
 	// ===================== End Information Handler ====================
 
 	// ========================== Place Handler =========================

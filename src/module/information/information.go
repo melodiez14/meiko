@@ -95,7 +95,8 @@ func GetByID(informationID int64, column ...string) (Information, error) {
 }
 
 // GetScheduleIDByID func ...
-func GetScheduleIDByID(informationID int64) int64 {
+func GetScheduleIDByID(informationID int64) *int64 {
+	var id *int64
 	query := fmt.Sprintf(`
 		SELECT
 			schedules_id
@@ -106,10 +107,9 @@ func GetScheduleIDByID(informationID int64) int64 {
 		LIMIT 1
 		;`, informationID)
 
-	var id int64
-	err := conn.DB.Get(&id, query)
+	err := conn.DB.Get(id, query)
 	if err != nil {
-		return 0
+		return nil
 	}
 	return id
 }
