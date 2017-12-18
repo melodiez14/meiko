@@ -1,13 +1,12 @@
 package information
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 
-	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,62 +15,114 @@ import (
 	fs "github.com/melodiez14/meiko/src/module/file"
 	inf "github.com/melodiez14/meiko/src/module/information"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
-	"github.com/melodiez14/meiko/src/util/alias"
 	"github.com/melodiez14/meiko/src/util/auth"
 )
 
-// GetSummaryHandler func ...
-func GetSummaryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// GetHandler ...
+func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	// get enrolled course
-	schedulesID, err := course.SelectIDByUserID(sess.ID)
+	params := getParams{
+		total: r.FormValue("ttl"),
+		page:  r.FormValue("pg"),
+	}
+
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError("Internal server error"))
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid request"))
 		return
 	}
 
-	// get information list
-	informations, err := inf.SelectByScheduleID(schedulesID)
+	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError("Internal server error"))
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
 		return
 	}
 
-	// convert informations to response
-	var informationResponses []informationResponse
-	t2 := time.Now()
+	// get active course
+	courses, err := cs.SelectByScheduleID(scheduleID, cs.StatusScheduleActive)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	scheduleID = []int64{}
+	for _, val := range courses {
+		scheduleID = append(scheduleID, val.Schedule.ID)
+	}
+
+	offset := (args.page - 1) * args.total
+	informations, err := inf.SelectByPage(scheduleID, args.total, offset)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	informationsID := []string{}
 	for _, val := range informations {
-		informationResponses = append(informationResponses, informationResponse{
-			Title:       val.Title,
-			Date:        helper.DateToString(val.CreatedAt, t2),
-			Description: val.Description.String,
-		})
+		informationsID = append(informationsID, strconv.FormatInt(val.ID, 10))
 	}
 
-	// if informations has only 5, so last and recent will be the same
-	// else it has 5 last information and other is recent
-	var res getSummaryResponse
-	if len(informationResponses) <= alias.InformationMinimumLast {
-		res = getSummaryResponse{
-			Last:   informationResponses,
-			Recent: informationResponses,
+	thumbs, err := fs.SelectByRelation(fs.TypInfPictThumb, informationsID, &sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	tImg := map[string]fs.File{}
+	for _, val := range thumbs {
+		if val.TableID.Valid {
+			tImg[val.TableID.String] = val
 		}
-	} else {
-		res = getSummaryResponse{
-			Last:   informationResponses[:alias.InformationMinimumLast],
-			Recent: informationResponses[alias.InformationMinimumLast:],
+	}
+
+	images, err := fs.SelectByRelation(fs.TypInfPict, informationsID, &sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	mImg := map[string]fs.File{}
+	for _, val := range images {
+		if val.TableID.Valid {
+			mImg[val.TableID.String] = val
 		}
+	}
+
+	resp := []getResponse{}
+	var thumb, main string
+	for _, val := range informations {
+		thumb = fs.NoImgAvailable
+		main = fs.NoImgAvailable
+		if v, ok := tImg[strconv.FormatInt(val.ID, 10)]; ok {
+			thumb = fmt.Sprintf("/api/v1/file/information/%s.%s", v.ID, v.Extension)
+		}
+		if v, ok := mImg[strconv.FormatInt(val.ID, 10)]; ok {
+			main = fmt.Sprintf("/api/v1/file/information/%s.%s", v.ID, v.Extension)
+		}
+		resp = append(resp, getResponse{
+			ID:             val.ID,
+			Title:          val.Title,
+			Description:    val.Description.String,
+			Date:           val.CreatedAt.Format("Monday, 2 January 2006"),
+			Image:          main,
+			ImageThumbnail: thumb,
+		})
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetData(resp))
 	return
 }
 
@@ -276,26 +327,23 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 
 }
 
-// GetListHandler func ...
-func GetListHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// ReadHandler func ...
+func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
-	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleRead, rg.RoleXRead) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError("You don't have privilege"))
-		return
-	}
+
 	params := readListParams{
-		Total: r.FormValue("ttl"),
-		Page:  r.FormValue("pg"),
+		total: r.FormValue("ttl"),
+		page:  r.FormValue("pg"),
 	}
+
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
+			AddError("Invalid request"))
 		return
 	}
+
 	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -303,8 +351,9 @@ func GetListHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 			AddError(err.Error()))
 		return
 	}
-	offset := (args.Page - 1) * args.Total
-	result, err := inf.SelectByPage(scheduleID, args.Total, offset)
+
+	offset := (args.page - 1) * args.total
+	result, err := inf.SelectByPage(scheduleID, args.total, offset)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).

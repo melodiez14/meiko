@@ -29,8 +29,9 @@ const (
 	StatusDeleted = 0
 	StatusExist   = 1
 
-	NotFoundURL   = "/api/v1/file/default/notfound.png"
-	UsrNoPhotoURL = "/api/v1/file/default/usrnophoto.png"
+	NoImgAvailable = "/static/img/noimgavailable.png"
+	NotFoundURL    = "/api/v1/file/default/notfound.png"
+	UsrNoPhotoURL  = "/api/v1/file/default/usrnophoto.png"
 )
 
 type File struct {

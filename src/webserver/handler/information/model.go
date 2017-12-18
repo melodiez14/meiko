@@ -4,16 +4,25 @@ const (
 	TableNameInformation = "informations"
 )
 
-type informationResponse struct {
-	Title       string `json:"title"`
-	Date        string `json:"date"`
-	Description string `json:"description"`
+type getParams struct {
+	page  string
+	total string
 }
 
-type getSummaryResponse struct {
-	Last   []informationResponse `json:"last"`
-	Recent []informationResponse `json:"recent"`
+type getArgs struct {
+	page  int64
+	total int64
 }
+
+type getResponse struct {
+	ID             int64  `json:"id"`
+	Title          string `json:"title"`
+	Date           string `json:"date"`
+	Description    string `json:"description"`
+	Image          string `json:"image"`
+	ImageThumbnail string `json:"image_thumbnail"`
+}
+
 type detailInfromationParams struct {
 	ID string
 }
@@ -58,10 +67,11 @@ type deleteArgs struct {
 }
 
 type readListParams struct {
-	Total string
-	Page  string
+	total string
+	page  string
 }
+
 type readListArgs struct {
-	Total uint16
-	Page  uint16
+	total int64
+	page  int64
 }

@@ -253,7 +253,7 @@ func Delete(informationID int64) error {
 }
 
 //SelectByPage func ...
-func SelectByPage(scheduleID []int64, total, offset uint16, column ...string) ([]Information, error) {
+func SelectByPage(scheduleID []int64, total, offset int64, column ...string) ([]Information, error) {
 
 	var info []Information
 	var c []string

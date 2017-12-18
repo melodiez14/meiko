@@ -146,16 +146,13 @@ func (params deleteParams) validate() (deleteArgs, error) {
 
 func (params readListParams) validate() (readListArgs, error) {
 	var args readListArgs
-	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
-		return args, fmt.Errorf("page or total is empty")
-	}
 
-	page, err := strconv.ParseInt(params.Page, 10, 64)
+	page, err := strconv.ParseInt(params.page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("page must be numeric")
 	}
 
-	total, err := strconv.ParseInt(params.Total, 10, 64)
+	total, err := strconv.ParseInt(params.total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("total must be numeric")
 	}
@@ -165,9 +162,29 @@ func (params readListParams) validate() (readListArgs, error) {
 		return args, fmt.Errorf("page or total must be positive number")
 	}
 
+	if total > 100 {
+		return args, fmt.Errorf("total more than 100")
+	}
+
 	args = readListArgs{
-		Page:  uint16(page),
-		Total: uint16(total),
+		page:  page,
+		total: total,
 	}
 	return args, nil
+}
+
+func (params getParams) validate() (getArgs, error) {
+	var args getArgs
+	page, err := strconv.ParseInt(params.page, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	total, err := strconv.ParseInt(params.total, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return getArgs{
+		page:  page,
+		total: total,
+	}, nil
 }
