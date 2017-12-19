@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	ag "github.com/melodiez14/meiko/src/module/assignment"
 	cs "github.com/melodiez14/meiko/src/module/course"
+	fl "github.com/melodiez14/meiko/src/module/file"
 	pl "github.com/melodiez14/meiko/src/module/place"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	"github.com/melodiez14/meiko/src/module/user"
@@ -768,18 +770,39 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		}
 	}
 
+	tableID := helper.Int64ToStringSlice(uIDs)
+	thumbs, err := fl.SelectByRelation(fl.TypProfPictThumb, tableID, nil)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	tImg := map[string]fl.File{}
+	for _, val := range thumbs {
+		if val.TableID.Valid {
+			tImg[val.TableID.String] = val
+		}
+	}
+
+	var thumb string
 	res := []getAssistantResponse{}
 	for _, val := range users {
 		phone := "-"
+		thumb = fl.UsrNoPhotoURL
+		if v, ok := tImg[strconv.FormatInt(val.ID, 10)]; ok {
+			thumb = fmt.Sprintf("/api/v1/file/profile/%s.%s", v.ID, v.Extension)
+		}
 		if val.Phone.Valid {
 			phone = val.Phone.String
 		}
 
 		res = append(res, getAssistantResponse{
-			Name:  val.Name,
-			Email: val.Email,
-			Phone: phone,
-			Roles: "Assistant",
+			Name:         val.Name,
+			Email:        val.Email,
+			Phone:        phone,
+			Roles:        "Assistant",
+			URLThumbnail: thumb,
 		})
 	}
 

@@ -204,10 +204,11 @@ type getAssistantArgs struct {
 }
 
 type getAssistantResponse struct {
-	Name  string `json:"name"`
-	Roles string `json:"role"`
-	Phone string `json:"phone_number"`
-	Email string `json:"email"`
+	Name         string `json:"name"`
+	Roles        string `json:"role"`
+	Phone        string `json:"phone_number"`
+	Email        string `json:"email"`
+	URLThumbnail string `json:"url_thumbnail"`
 }
 
 type courseResponse struct {

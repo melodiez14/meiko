@@ -210,6 +210,49 @@ func Insert(id, name, mime, extension string, userID int64, typ string, tx *sqlx
 	return nil
 }
 
+func InsertImageProfile(id, name, mime, extension string, userID int64, typ string, tx *sqlx.Tx) error {
+
+	var result sql.Result
+	var err error
+	query := fmt.Sprintf(`
+		INSERT INTO
+		files (
+			id,
+			name,
+			mime,
+			extension,
+			type,
+			users_id,
+			table_id,
+			created_at,
+			updated_at
+		) VALUES (
+			('%s'),
+			('%s'),
+			('%s'),
+			('%s'),
+			('%s'),
+			(%d),
+			(%d),
+			NOW(),
+			NOW()
+		);`, id, name, mime, extension, typ, userID, userID)
+
+	if tx != nil {
+		result, err = tx.Exec(query)
+	} else {
+		result, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
 func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 
 	var result sql.Result

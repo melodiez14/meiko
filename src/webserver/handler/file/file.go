@@ -109,7 +109,7 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 
 	// insert main image
-	err = fl.Insert(mImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPict, tx)
+	err = fl.InsertImageProfile(mImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPict, tx)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
@@ -118,7 +118,7 @@ func UploadProfileImageHandler(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 
 	// insert thumbnail image
-	err = fl.Insert(tImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPictThumb, tx)
+	err = fl.InsertImageProfile(tImgID, args.FileName, args.Mime, args.Extension, sess.ID, fl.TypProfPictThumb, tx)
 	if err != nil {
 		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).

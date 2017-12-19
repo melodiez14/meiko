@@ -71,7 +71,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		informationsID = append(informationsID, strconv.FormatInt(val.ID, 10))
 	}
 
-	thumbs, err := fs.SelectByRelation(fs.TypInfPictThumb, informationsID, &sess.ID)
+	thumbs, err := fs.SelectByRelation(fs.TypInfPictThumb, informationsID, nil)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
@@ -85,7 +85,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		}
 	}
 
-	images, err := fs.SelectByRelation(fs.TypInfPict, informationsID, &sess.ID)
+	images, err := fs.SelectByRelation(fs.TypInfPict, informationsID, nil)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
