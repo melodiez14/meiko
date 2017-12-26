@@ -297,13 +297,7 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 			AddError(err.Error()))
 		return
 	}
-	// check is information id exist?
-	if !inf.IsInformationIDExist(args.ID) {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Information ID does not exist"))
-		return
-	}
+
 	res, err := inf.GetByID(args.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -312,6 +306,8 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 	id := res.ScheduleID.Int64
+	desc := "-"
+	courseName := ""
 	if id != 0 {
 		if !cs.IsEnrolled(sess.ID, id) {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -319,10 +315,32 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 				AddError("You does not have permission"))
 			return
 		}
+		courseID, err := cs.GetCourseID(id)
+		courseName, err = cs.GetName(courseID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError(err.Error()))
+			return
+		}
+	}
+
+	if res.Description.Valid {
+		desc = res.Description.String
+	}
+	response := respDetailInformation{
+		ID:          res.ID,
+		Title:       res.Title,
+		Description: desc,
+		CreatedDate: res.CreatedAt.Format("Monday, 2 January 2006 15:04:05"),
+		UpdatedDate: res.UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+		Date:        res.UpdatedAt,
+		ScheduleID:  id,
+		CourseName:  courseName,
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusBadRequest).
-		SetData(res))
+		SetData(response))
 	return
 
 }
@@ -343,7 +361,6 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			AddError("Invalid request"))
 		return
 	}
-
 	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusAssistant)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).

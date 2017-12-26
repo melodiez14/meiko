@@ -1,5 +1,9 @@
 package information
 
+import (
+	"time"
+)
+
 const (
 	TableNameInformation = "informations"
 )
@@ -28,6 +32,16 @@ type respListInformation struct {
 	CreatedDate string `json:"created_at"`
 	UpdatedDate string `json:"updated_at"`
 	CourseName  string `json:"course_name"`
+}
+type respDetailInformation struct {
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	CreatedDate string    `json:"created_at"`
+	UpdatedDate string    `json:"updated_at"`
+	Date        time.Time `json:"date"`
+	ScheduleID  int64     `json:"schedule_id"`
+	CourseName  string    `json:"course_name"`
 }
 
 type getDetailParams struct {
