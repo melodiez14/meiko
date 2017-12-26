@@ -52,21 +52,10 @@ func (params createParams) validate() (createArgs, error) {
 			return args, err
 		}
 	}
-	var filesID []string
-	// FilesID validation
-	if !helper.IsEmpty(params.FilesID) {
-		filesID = strings.Split(params.FilesID, "~")
-		for _, value := range filesID {
-			if !helper.IsValidFileID(value) {
-				return args, fmt.Errorf("Wrong Files ID")
-			}
-		}
-	}
 	return createArgs{
 		Title:       params.Title,
 		Description: params.Description,
 		ScheduleID:  scheduleID,
-		FilesID:     filesID,
 	}, nil
 
 }

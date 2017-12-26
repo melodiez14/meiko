@@ -30,6 +30,7 @@ type respListInformation struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
 	CreatedDate string `json:"created_at"`
+	Description string `json:"description"`
 	UpdatedDate string `json:"updated_at"`
 	CourseName  string `json:"course_name"`
 }
@@ -57,7 +58,6 @@ type getDetailResponse struct {
 	Title       string `json:"title"`
 	Date        string `json:"date"`
 	Description string `json:"description"`
-	Image       string `json:"image"`
 }
 
 type detailInfromationParams struct {
