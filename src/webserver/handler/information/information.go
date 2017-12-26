@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/melodiez14/meiko/src/util/conn"
-
 	"github.com/melodiez14/meiko/src/webserver/template"
 
 	"github.com/julienschmidt/httprouter"
@@ -138,8 +136,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	params := createParams{
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
-		ScheduleID:  r.FormValue("schedule_did"),
-		FilesID:     r.FormValue("file_id"),
+		ScheduleID:  r.FormValue("schedule_id"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -148,31 +145,19 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-	tx := conn.DB.MustBegin()
-	// Insert
-	tableID, err := inf.Insert(args.Title, args.Description, args.ScheduleID, tx)
+	if args.ScheduleID != 0 {
+		if !cs.IsAssistant(sess.ID, args.ScheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("You do not have privilage for this course!"))
+			return
+		}
+	}
+	err = inf.Insert(args.Title, args.Description, args.ScheduleID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError(err.Error()))
-		return
-	}
-	if args.FilesID != nil {
-		for _, fileID := range args.FilesID {
-			err := fs.UpdateRelation(fileID, fs.TypInf, tableID, tx)
-			if err != nil {
-				tx.Rollback()
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusBadRequest).
-					AddError("Wrong File ID"))
-				return
-			}
-		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
 		return
 	}
 
@@ -197,7 +182,6 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
 		ScheduleID:  r.FormValue("schedule_id"),
-		FilesID:     r.FormValue("file_id"),
 	}
 
 	args, err := params.validate()
@@ -207,14 +191,22 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-	// check is information id exist?
+	if args.ScheduleID != 0 {
+		if !cs.IsAssistant(sess.ID, args.ScheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Schedule ID forbidden!"))
+			return
+		}
+	}
+
 	if !inf.IsInformationIDExist(args.ID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Information ID does not exist"))
 		return
 	}
-	// check is shedule ID exist
+
 	if args.ScheduleID != 0 {
 		if !cs.IsExistScheduleID(args.ScheduleID) {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -223,55 +215,12 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 	}
-	tx := conn.DB.MustBegin()
-	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID, tx)
+	err = inf.Update(args.Title, args.Description, args.ScheduleID, args.ID)
 	if err != nil {
-		tx.Rollback()
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-	// Get All relations with
-	filesIDDB, err := fs.GetByStatus(fs.StatusExist, args.ID)
-	if err != nil {
-		tx.Rollback()
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
-		return
-	}
-	var tableID = strconv.FormatInt(args.ID, 10)
-	// Add new file
-	for _, fileID := range args.FilesID {
-		if !fs.IsExistID(fileID) {
-			filesIDDB = append(filesIDDB, fileID)
-			// Update relation
-			err := fs.UpdateRelation(fileID, fs.TypInf, tableID, tx)
-			if err != nil {
-				tx.Rollback()
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError))
-				return
-			}
-		}
-	}
-	for _, fileIDDB := range filesIDDB {
-		isSame := 0
-		for _, fileIDUser := range args.FilesID {
-			if fileIDUser == fileIDDB {
-				isSame = 1
-			}
-		}
-		if isSame == 0 {
-			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
-			if err != nil {
-				tx.Rollback()
-				template.RenderJSONResponse(w, new(template.Response).
-					SetCode(http.StatusInternalServerError))
-				return
-			}
-		}
-	}
-	err = tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Update information succesfully"))
@@ -427,19 +376,25 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-	// check is information id exist?
+
 	if !inf.IsInformationIDExist(args.ID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError("Information ID does not exist"))
 		return
 	}
-	// delete query
+	scheduleID := inf.GetScheduleIDByID(args.ID)
+	if scheduleID != 0 && !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("You do not privilage for this informations"))
+		return
+	}
+
 	err = inf.Delete(args.ID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError("Delete failed"))
+			SetCode(http.StatusInternalServerError))
 		return
 	}
 	template.RenderJSONResponse(w, new(template.Response).
@@ -465,13 +420,11 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	scheduleID := inf.GetScheduleIDByID(args.id)
-	if scheduleID != nil {
-		if !course.IsEnrolled(sess.ID, *scheduleID) {
-			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusBadRequest).
-				AddError("you do not have permission to this informations"))
-			return
-		}
+	if scheduleID != 0 && !course.IsEnrolled(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("you do not have permission to this informations"))
+		return
 	}
 
 	information, err := inf.GetByID(args.id)
@@ -480,18 +433,6 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 			SetCode(http.StatusBadRequest).
 			AddError("Information does not exist"))
 		return
-	}
-
-	images, err := fs.SelectByRelation(fs.TypInfPict, []string{params.id}, &sess.ID)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError))
-		return
-	}
-
-	mImg := fs.NoImgAvailable
-	if len(images) > 0 {
-		mImg = fmt.Sprintf("/api/v1/file/information/%s.%s", images[0].ID, images[0].Extension)
 	}
 
 	desc := "-"
@@ -504,7 +445,6 @@ func GetDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		Title:       information.Title,
 		Description: desc,
 		Date:        information.CreatedAt.Format("Monday, 2 January 2006"),
-		Image:       mImg,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

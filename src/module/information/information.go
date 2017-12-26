@@ -3,11 +3,8 @@ package information
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 	"github.com/melodiez14/meiko/src/util/helper"
@@ -95,8 +92,8 @@ func GetByID(informationID int64, column ...string) (Information, error) {
 }
 
 // GetScheduleIDByID func ...
-func GetScheduleIDByID(informationID int64) *int64 {
-	var id *int64
+func GetScheduleIDByID(informationID int64) int64 {
+	var id int64
 	query := fmt.Sprintf(`
 		SELECT
 			schedules_id
@@ -106,16 +103,15 @@ func GetScheduleIDByID(informationID int64) *int64 {
 			id = (%d)
 		LIMIT 1
 		;`, informationID)
-
-	err := conn.DB.Get(id, query)
+	err := conn.DB.Get(&id, query)
 	if err != nil {
-		return nil
+		return 0
 	}
 	return id
 }
 
 // Insert func ...
-func Insert(title, description string, scheduleID int64, tx *sqlx.Tx) (string, error) {
+func Insert(title, description string, scheduleID int64) error {
 	var c []string
 	var data string
 	var result sql.Result
@@ -152,29 +148,20 @@ func Insert(title, description string, scheduleID int64, tx *sqlx.Tx) (string, e
 			)
 		;`, cols, data)
 
-	if tx != nil {
-		result, err = tx.Exec(query)
-	} else {
-		result, err = conn.DB.Exec(query)
-	}
+	result, err = conn.DB.Exec(query)
+
 	if err != nil {
-		return "", err
+		return err
 	}
 	rows, err := result.RowsAffected()
 	if rows == 0 {
-		return "", fmt.Errorf("No rows affected")
+		return fmt.Errorf("No rows affected")
 	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return "", fmt.Errorf("Error get LastIsertedId")
-	}
-	ID := strconv.FormatInt(id, 10)
-	return ID, nil
+	return nil
 }
 
 // Update func ...
-func Update(title, description string, scheduleID, informationID int64, tx *sqlx.Tx) error {
+func Update(title, description string, scheduleID, informationID int64) error {
 	var data string
 	if scheduleID == 0 {
 		data = fmt.Sprintf(`
@@ -199,11 +186,9 @@ func Update(title, description string, scheduleID, informationID int64, tx *sqlx
 		;`, data, informationID)
 	var result sql.Result
 	var err error
-	if tx != nil {
-		result, err = tx.Exec(query)
-	} else {
-		result, err = conn.DB.Exec(query)
-	}
+
+	result, err = conn.DB.Exec(query)
+
 	if err != nil {
 		return err
 	}
