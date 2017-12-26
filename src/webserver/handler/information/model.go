@@ -22,6 +22,13 @@ type getResponse struct {
 	Image          string `json:"image"`
 	ImageThumbnail string `json:"image_thumbnail"`
 }
+type respListInformation struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	CreatedDate string `json:"created_at"`
+	UpdatedDate string `json:"updated_at"`
+	CourseName  string `json:"course_name"`
+}
 
 type getDetailParams struct {
 	id string

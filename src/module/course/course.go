@@ -1081,6 +1081,31 @@ func GetName(courseID string) (string, error) {
 	}
 	return res, nil
 }
+func SelectJoinScheduleCourse(scheduleID []int64) ([]CourseConcise, error) {
+	var res []CourseConcise
+	id := helper.Int64ToStringSlice(scheduleID)
+	queryID := strings.Join(id, ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			sc.id,
+			cs.name
+		FROM
+			schedules sc
+		INNER JOIN
+			courses cs
+		ON
+			sc.courses_id = cs.id
+		WHERE 
+			sc.id IN (%s)
+		;
+		`, queryID)
+	err := conn.DB.Select(&res, query)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+
+}
 
 // InsertAssistant ...
 func InsertAssistant(usersID []int64, scheduleID int64, tx *sqlx.Tx) error {

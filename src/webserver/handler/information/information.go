@@ -344,16 +344,41 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID)
+	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusAssistant)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
 			AddError(err.Error()))
 		return
 	}
-
+	courseConcise, err := cs.SelectJoinScheduleCourse(scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
 	offset := (args.page - 1) * args.total
 	result, err := inf.SelectByPage(scheduleID, args.total, offset)
+
+	res := []respListInformation{}
+	for _, value := range result {
+		courseName := "general"
+		if value.ScheduleID.Valid {
+			for _, val := range courseConcise {
+				if value.ScheduleID.Int64 == val.ID {
+					courseName = val.Name
+				}
+			}
+		}
+		res = append(res, respListInformation{
+			ID:          value.ID,
+			Title:       value.Title,
+			CreatedDate: value.CreatedAt.Format("Monday, 2 January 2006 15:04:05"),
+			UpdatedDate: value.UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+			CourseName:  courseName,
+		})
+	}
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -362,7 +387,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(result))
+		SetData(res))
 	return
 }
 
