@@ -53,6 +53,21 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		scheduleID = append(scheduleID, val.Schedule.ID)
 	}
 	offset := (args.page - 1) * args.total
+	rows, err := inf.CountInformation(scheduleID, args.total, offset)
+	totalPage := rows / 10
+	rest := rows % 10
+	if rest > 0 {
+		totalPage++
+	}
+	meta := meta{
+		TotalPage: totalPage,
+	}
+	links := links{
+		Self: args.page,
+		Next: (args.page + 1),
+		Prev: (args.page - 1),
+	}
+
 	informations, err := inf.SelectByPage(scheduleID, args.total, offset)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -75,7 +90,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		informationsID = append(informationsID, strconv.FormatInt(val.ID, 10))
 	}
 
-	resp := []respListInformation{}
+	data := []dataList{}
 	for _, val := range informations {
 		courseName := "general"
 		if val.ScheduleID.Int64 != 0 {
@@ -85,7 +100,7 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 				}
 			}
 		}
-		resp = append(resp, respListInformation{
+		data = append(data, dataList{
 			ID:          val.ID,
 			Title:       val.Title,
 			Description: val.Description.String,
@@ -93,10 +108,14 @@ func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			CourseName:  courseName,
 		})
 	}
-
+	res := respListInformation{
+		Data:  data,
+		Meta:  meta,
+		Links: links,
+	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(resp))
+		SetData(res))
 	return
 }
 
@@ -301,9 +320,28 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	offset := (args.page - 1) * args.total
+	rows, err := inf.CountInformation(scheduleID, args.total, offset)
+	totalPage := rows / 10
+	rest := rows % 10
+	if rest > 0 {
+		totalPage++
+	}
+	meta := meta{
+		TotalPage: totalPage,
+	}
+	links := links{
+		Self: args.page,
+		Next: (args.page + 1),
+		Prev: (args.page - 1),
+	}
 	result, err := inf.SelectByPage(scheduleID, args.total, offset)
-
-	res := []respListInformation{}
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	data := []dataList{}
 	for _, value := range result {
 		courseName := "general"
 		if value.ScheduleID.Valid {
@@ -313,7 +351,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 				}
 			}
 		}
-		res = append(res, respListInformation{
+		data = append(data, dataList{
 			ID:          value.ID,
 			Title:       value.Title,
 			CreatedDate: value.CreatedAt.Format("Monday, 2 January 2006 15:04:05"),
@@ -321,11 +359,10 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			CourseName:  courseName,
 		})
 	}
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
-		return
+	res := respListInformation{
+		Data:  data,
+		Meta:  meta,
+		Links: links,
 	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).

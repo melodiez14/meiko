@@ -248,6 +248,7 @@ func SelectByPage(scheduleID []int64, total, offset int64, column ...string) ([]
 			ColID,
 			ColTitle,
 			ColScheduleID,
+			ColDescription,
 			CreatedAt,
 			UpdatedAt,
 		}
@@ -326,4 +327,24 @@ func SelectByScheduleIDAndTime(scheduleID []int64, t []time.Time, column ...stri
 		return info, err
 	}
 	return info, nil
+}
+
+// CountInformation is
+func CountInformation(scheduleID []int64, total, offset int64, column ...string) (int64, error) {
+	var count int64
+	d := helper.Int64ToStringSlice(scheduleID)
+	ids := strings.Join(d, ", ")
+	query := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM
+			informations
+			WHERE
+			schedules_id IS NULL
+		OR
+			schedules_id IN (%s);`, ids)
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }

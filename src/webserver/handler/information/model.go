@@ -27,12 +27,25 @@ type getResponse struct {
 	ImageThumbnail string `json:"image_thumbnail"`
 }
 type respListInformation struct {
+	Data  []dataList `json:"data"`
+	Meta  meta       `json:"meta"`
+	Links links      `json:"links"`
+}
+type dataList struct {
 	ID          int64  `json:"id"`
 	Title       string `json:"title"`
 	CreatedDate string `json:"created_at"`
 	Description string `json:"description"`
 	UpdatedDate string `json:"updated_at"`
 	CourseName  string `json:"course_name"`
+}
+type meta struct {
+	TotalPage int64 `json:"total_page"`
+}
+type links struct {
+	Self int64 `json:"self"`
+	Next int64 `json:"next"`
+	Prev int64 `json:"prev"`
 }
 type respDetailInformation struct {
 	ID          int64     `json:"id"`
