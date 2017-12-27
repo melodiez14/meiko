@@ -222,6 +222,42 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// AvailableCourseInformation func
+func AvailableCourseInformation(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleInformation, rg.RoleCreate, rg.RoleXCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	scheduleID, err := cs.SelectScheduleIDByUserID(sess.ID, cs.PStatusAssistant)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	courseConcise, err := cs.SelectJoinScheduleCourse(scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	res := []respAvailableCourse{}
+	for _, val := range courseConcise {
+		res = append(res, respAvailableCourse{
+			ScheduleID: val.ID,
+			CourseName: val.Name,
+		})
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
 // GetDetailByAdminHandler func ...
 func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	sess := r.Context().Value("User").(*auth.User)
@@ -253,7 +289,7 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	desc := "-"
 	courseName := ""
 	if id != 0 {
-		if !cs.IsEnrolled(sess.ID, id) {
+		if !cs.IsAssistant(sess.ID, id) {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusBadRequest).
 				AddError("You does not have permission"))
@@ -283,7 +319,7 @@ func GetDetailByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprout
 		CourseName:  courseName,
 	}
 	template.RenderJSONResponse(w, new(template.Response).
-		SetCode(http.StatusBadRequest).
+		SetCode(http.StatusOK).
 		SetData(response))
 	return
 

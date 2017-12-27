@@ -57,6 +57,10 @@ type respDetailInformation struct {
 	ScheduleID  int64     `json:"schedule_id"`
 	CourseName  string    `json:"course_name"`
 }
+type respAvailableCourse struct {
+	ScheduleID int64  `json:"schedule_id"`
+	CourseName string `json:"course_name"`
+}
 
 type getDetailParams struct {
 	id string
