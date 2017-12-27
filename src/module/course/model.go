@@ -59,3 +59,7 @@ type GradeParameter struct {
 	ScheduleID   int64   `db:"schedules_id"`
 	StatusChange uint8   `db:"status_change"`
 }
+type CourseConcise struct {
+	ID   int64  `db:"id"`
+	Name string `db:"name"`
+}
