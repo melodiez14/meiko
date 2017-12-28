@@ -92,25 +92,27 @@ type read struct {
 }
 
 type createParams struct {
-	filesID     string
-	gpID        string
-	name        string
-	description string
-	status      string
-	dueDate     string
-	fileSize    string
-	fileType    string
+	filesID          string
+	gpID             string
+	name             string
+	description      string
+	status           string
+	dueDate          string
+	maxSizeFile      string
+	allowedTypesFile string
+	maxFile          string
 }
 
 type createArgs struct {
-	filesID     []string
-	gpID        int64
-	name        string
-	description sql.NullString
-	status      int8
-	dueDate     time.Time
-	fileSize    int64
-	fileType    []string
+	filesID          []string
+	gpID             int64
+	name             string
+	description      sql.NullString
+	status           int8
+	dueDate          time.Time
+	maxSizeFile      int64
+	allowedTypesFile []string
+	maxFile          int64
 }
 
 type deleteParams struct {

@@ -10,6 +10,8 @@ const (
 	MaxDesc                 = 1000
 	StatusUploadNotRequired = 0
 	StatusUploadRequired    = 1
+	MaxFile                 = 5
+	MaxSizeFile             = 100
 )
 
 // Assignment struct ...

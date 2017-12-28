@@ -253,6 +253,7 @@ func InsertImageProfile(id, name, mime, extension string, userID int64, typ stri
 	return nil
 }
 
+// UpdateRelation ..
 func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 
 	var result sql.Result
@@ -268,7 +269,6 @@ func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 			type = ('%s') AND
 			table_id IS NULL;
 		`, tableID, id, typ)
-
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -487,4 +487,55 @@ func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, er
 		return files, err
 	}
 	return files, nil
+}
+
+// SelectIDStatusByID ..
+func SelectIDStatusByID(filesID []string) ([]IDStatus, error) {
+	ids := strings.Join(filesID, ", ")
+
+	var result []IDStatus
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			status
+		FROM
+			files
+		WHERE
+			id
+		IN
+			('%s')
+		`, ids)
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// InsertType ..
+func InsertType(typ []string, assignmentID string, tx *sqlx.Tx) error {
+	var value []string
+	for _, val := range typ {
+		value = append(value, fmt.Sprintf(`('%s',%s)`, val, assignmentID))
+	}
+	valueQuery := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			types
+		(
+			name,
+			assignments_id
+		)
+		VALUES
+			%s
+		;`, valueQuery)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
 }

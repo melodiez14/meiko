@@ -65,45 +65,70 @@ func IsExistByGradeParameterID(gpID int64) bool {
 }
 
 // Insert function is ...
-func Insert(name string, desc sql.NullString, gps, maxSize int64, duedate time.Time, status int8, tx ...*sqlx.Tx) (int64, error) {
+func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, duedate time.Time, status int8, tx *sqlx.Tx) (int64, error) {
 
 	var id int64
 	queryDesc := fmt.Sprintf("(NULL)")
 	if desc.Valid {
 		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
-
-	query := fmt.Sprintf(`
-		INSERT INTO
-			assignments(
-				name,
-				description,
-				status,
-				due_date,
-				grade_parameters_id,
-				max_size,
-				created_at,
-				updated_at
-			)
-		VALUES(
-			('%s'),
-			%s,
-			('%d'),
-			('%s'),
-			(%d),
-			(%d),
-			NOW(),
-			NOW()
-		);
-		`, name, queryDesc, status, duedate, gps, maxSize)
+	layout := `2006-01-02 15:04:05`
+	timeQuery := duedate.Format(layout)
+	var query string
+	if gps == 1 {
+		query = fmt.Sprintf(`
+			INSERT INTO
+				assignments(
+					name,
+					description,
+					status,
+					due_date,
+					grade_parameters_id,
+					max_size,
+					max_file,
+					created_at,
+					updated_at
+				)
+			VALUES(
+				('%s'),
+				('%s'),
+				(%d),
+				('%s'),
+				(%d),
+				(%d),
+				(%d),
+				NOW(),
+				NOW()
+			);
+			`, name, queryDesc, status, timeQuery, gps, maxSize, maxFile)
+	} else {
+		query = fmt.Sprintf(`
+			INSERT INTO
+				assignments(
+					name,
+					description,
+					status,
+					due_date,
+					grade_parameters_id,
+					created_at,
+					updated_at
+				)
+			VALUES(
+				('%s'),
+				(%s),
+				(%d),
+				('%s'),
+				(%d),
+				(%d),
+				NOW(),
+				NOW()
+			);
+			`, name, queryDesc, status, timeQuery, gps, maxSize)
+	}
 
 	var result sql.Result
 	var err error
-	if len(tx) == 1 {
-		result, err = tx[0].Exec(query)
-	} else {
-		result, err = conn.DB.Exec(query)
-	}
+	result, err = tx.Exec(query)
 	if err != nil {
 		return id, err
 	}

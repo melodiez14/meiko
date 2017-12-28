@@ -468,8 +468,8 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	return
 }
 
+// CreateHandler ..
 func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
 	sess := r.Context().Value("User").(*auth.User)
 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -479,16 +479,16 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := createParams{
-		name:        r.FormValue("name"),
-		description: r.FormValue("description"),
-		gpID:        r.FormValue("gpid"),
-		dueDate:     r.FormValue("due_date"),
-		status:      r.FormValue("status"),
-		filesID:     r.FormValue("file_id"),
-		fileSize:    r.FormValue("file_size"),
-		fileType:    r.FormValue("file_type"),
+		name:             r.FormValue("name"),
+		description:      r.FormValue("description"),
+		dueDate:          r.FormValue("due_date"),
+		filesID:          r.FormValue("files_id"),
+		gpID:             r.FormValue("grade_parameter_id"),
+		status:           r.FormValue("status"),
+		allowedTypesFile: r.FormValue("allowed_types"),
+		maxFile:          r.FormValue("max_file"),
+		maxSizeFile:      r.FormValue("max_size"),
 	}
-
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -496,7 +496,6 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
-
 	scheduleID, err := cs.GetScheduleIDByGP(args.gpID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -512,31 +511,57 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	// validate file_id more ui friendly
-	// slow performance
-
+	if len(args.filesID) > 0 {
+		filesID, err := fl.SelectIDStatusByID(args.filesID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		for _, inFile := range args.filesID {
+			for _, dbFile := range filesID {
+				if inFile == dbFile.ID && dbFile.Status == fl.StatusDeleted {
+					template.RenderJSONResponse(w, new(template.Response).
+						SetCode(http.StatusBadRequest).
+						AddError("ID file has been deleted, you can not use it again"))
+					return
+				}
+			}
+		}
+	}
 	tx := conn.DB.MustBegin()
-	id, err := asg.Insert(args.name, args.description, args.gpID, args.fileSize, args.dueDate, args.status, tx)
+	id, err := asg.Insert(args.name, args.description, args.gpID, args.maxSizeFile, args.maxFile, args.dueDate, args.status, tx)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
-
 	idStr := strconv.FormatInt(id, 10)
-	for _, fileID := range args.filesID {
-		if fl.UpdateRelation(fileID, fl.TypAssignment, idStr, tx) != nil {
+	if len(args.filesID) > 0 {
+		for _, fileID := range args.filesID {
+			if fl.UpdateRelation(fileID, fl.TypAssignment, idStr, tx) != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusBadRequest).
+					AddError("Wrong File ID"))
+				return
+			}
+		}
+	}
+	if len(args.allowedTypesFile) > 0 {
+		err := fl.InsertType(args.allowedTypesFile, idStr, tx)
+		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
-				SetCode(http.StatusInternalServerError))
+				SetCode(http.StatusBadRequest).
+				AddError("Wrong File ID"))
 			return
 		}
 	}
-
 	tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Success"))
+		SetMessage("Assignment created successfully"))
 	return
 }
 

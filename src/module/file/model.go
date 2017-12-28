@@ -44,3 +44,9 @@ type File struct {
 	TableName sql.NullString `db:"table_name"`
 	TableID   sql.NullString `db:"table_id"`
 }
+
+// IDStatus ..
+type IDStatus struct {
+	ID     string `db:"id"`
+	Status int64  `db:"status"`
+}
