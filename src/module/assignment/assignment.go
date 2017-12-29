@@ -367,7 +367,7 @@ func SelectByGradeParametersID(gradeParametersID []int64) []Assignment {
 
 }
 
-// GetByID ...
+// GetByID ..
 func GetByID(id int64) (Assignment, error) {
 	var assignment Assignment
 	query := fmt.Sprintf(`
@@ -391,6 +391,22 @@ func GetByID(id int64) (Assignment, error) {
 		return assignment, err
 	}
 	return assignment, nil
+}
+
+// SelectCountByID ..
+func SelectCountByID(id int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			assignments
+		WHERE
+			id = (%d);
+		`, id)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }
 
 // IsAssignmentExist func ...

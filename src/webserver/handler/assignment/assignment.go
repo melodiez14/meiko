@@ -948,7 +948,6 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	params := deleteParams{
 		id: ps.ByName("id"),
 	}
-
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -956,17 +955,36 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("Invalid Request"))
 		return
 	}
-
+	countAsg, err := asg.SelectCountByID(args.id)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNoContent))
+		return
+	}
+	if countAsg == 0 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Assignment does not exist"))
+		return
+	}
 	assignment, err := asg.GetByID(args.id)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusNoContent))
 		return
 	}
-
-	// validate if there is submitted task
-	// asg.SelectSubmittedByUser
-
+	sbmtdAsg, err := asg.SelectCountUsrAsgByID(args.id)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if sbmtdAsg > 0 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("not allowed to delete this assignments"))
+		return
+	}
 	scheduleID, err := cs.GetScheduleIDByGP(assignment.GradeParameterID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -980,7 +998,55 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("You don't have privilege"))
 		return
 	}
+	tx := conn.DB.MustBegin()
+	typs, err := fl.SelectCountTypeByID(args.id)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if typs > 0 {
+		err = fl.DeleteAllTypeByID(args.id, tx)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
+	id := strconv.FormatInt(args.id, 10)
+	fls, err := fl.SelectCountIDByRelation(fl.TypAssignment, id, sess.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	if fls > 0 {
+		err := fl.DeleteByRelation(fl.TypAssignment, id, tx)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+	}
 
+	err = asg.DeleteAssignment(args.id, tx)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Assignment deleted successfully"))
+	return
 }
 
 // not finished yet

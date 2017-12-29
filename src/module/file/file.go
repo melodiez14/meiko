@@ -102,9 +102,8 @@ func DeleteByRelation(typ, tableID string, tx *sqlx.Tx) error {
 			status = (%d),
 			updated_at = NOW()
 		WHERE
-			table_name = ('%s') AND
+			type = ('%s') AND
 			table_id = ('%s');`, StatusDeleted, typ, tableID)
-
 	var err error
 	if tx != nil {
 		_, err = tx.Exec(query)
@@ -119,7 +118,7 @@ func DeleteByRelation(typ, tableID string, tx *sqlx.Tx) error {
 
 // Delete ...
 func Delete(id string, tx *sqlx.Tx) error {
-
+	var result sql.Result
 	query := fmt.Sprintf(`
 		UPDATE
 			files
@@ -128,15 +127,18 @@ func Delete(id string, tx *sqlx.Tx) error {
 			updated_at = NOW()
 		WHERE
 			id = ('%s');`, StatusDeleted, id)
-
 	var err error
 	if tx != nil {
-		_, err = tx.Exec(query)
+		result, err = tx.Exec(query)
 	} else {
-		_, err = conn.DB.Exec(query)
+		result, err = conn.DB.Exec(query)
 	}
 	if err != nil {
 		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
 	}
 	return nil
 }
@@ -396,6 +398,7 @@ func SelectByRelation(typ string, tablesID []string, userID *int64) ([]File, err
 	return files, nil
 }
 
+// SelectIDByRelation ..
 func SelectIDByRelation(typ string, tableID string, userID int64) ([]string, error) {
 
 	var filesID []string
@@ -410,12 +413,31 @@ func SelectIDByRelation(typ string, tableID string, userID int64) ([]string, err
 			type = ('%s') AND
 			table_id = ('%s');
 		`, userID, StatusExist, typ, tableID)
-
 	err := conn.DB.Select(&filesID, query)
 	if err != nil {
 		return filesID, err
 	}
 	return filesID, nil
+}
+
+// SelectCountIDByRelation ..
+func SelectCountIDByRelation(typ string, tableID string, userID int64) (int, error) {
+
+	var count int
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			files
+		WHERE
+			users_id = (%d) AND
+			status = (%d) AND
+			type = ('%s') AND
+			table_id = ('%s');
+		`, userID, StatusExist, typ, tableID)
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }
 
 // UpdateStatusFilesByNameID func ...
@@ -581,4 +603,39 @@ func DeleteTypeByID(typ []string, assignmentID int64, tx *sqlx.Tx) error {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+// DeleteAllTypeByID ..
+func DeleteAllTypeByID(assignmentID int64, tx *sqlx.Tx) error {
+	query := fmt.Sprintf(`
+		DELETE FROM 
+			types
+		WHERE
+			assignments_id = (%d);
+		`, assignmentID)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+//SelectCountTypeByID ..
+func SelectCountTypeByID(assignmentID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			types
+		WHERE
+			assignments_id =(%d);
+		`, assignmentID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }

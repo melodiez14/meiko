@@ -114,7 +114,7 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/assignment", auth.MustAuthorize(assignment.CreateHandler))
 	r.PATCH("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
-	// r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
+	r.DELETE("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DeleteHandler))
 	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
 	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
 	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
