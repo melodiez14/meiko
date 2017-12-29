@@ -549,7 +549,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		}
 	}
 	if len(args.allowedTypesFile) > 0 {
-		err := fl.InsertType(args.allowedTypesFile, idStr, tx)
+		err := fl.InsertType(args.allowedTypesFile, id, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
@@ -563,6 +563,216 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetCode(http.StatusOK).
 		SetMessage("Assignment created successfully"))
 	return
+}
+
+// UpdateHandler ..
+func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleUpdate, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := updateParams{
+		ID:               ps.ByName("id"),
+		name:             r.FormValue("name"),
+		description:      r.FormValue("description"),
+		dueDate:          r.FormValue("due_date"),
+		filesID:          r.FormValue("files_id"),
+		gpID:             r.FormValue("grade_parameter_id"),
+		status:           r.FormValue("status"),
+		allowedTypesFile: r.FormValue("allowed_types"),
+		maxFile:          r.FormValue("max_file"),
+		maxSizeFile:      r.FormValue("max_size"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	scheduleID, err := cs.GetScheduleIDByGP(args.gpID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	tx := conn.DB.MustBegin()
+	if len(args.filesID) > 0 {
+		filesID, err := fl.SelectIDStatusByID(args.filesID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		for _, inFile := range args.filesID {
+			for _, dbFile := range filesID {
+				if inFile == dbFile.ID && dbFile.Status == fl.StatusDeleted {
+					template.RenderJSONResponse(w, new(template.Response).
+						SetCode(http.StatusBadRequest).
+						AddError("ID file has been deleted, you can not use it again"))
+					return
+				}
+			}
+		}
+		activefilesID, err := fl.SelectIDByRelation(fl.TypAssignment, params.ID, sess.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		var uptFiles []string
+		var dltFiles []string
+		for _, val := range args.filesID {
+			isInActive := 0
+			for _, actFile := range activefilesID {
+				if actFile == val {
+					isInActive++
+					break
+				}
+			}
+			if isInActive == 0 {
+				uptFiles = append(uptFiles, val)
+			}
+		}
+		for _, actFile := range activefilesID {
+			isInActive := 0
+			for _, val := range args.filesID {
+				if actFile == val {
+					isInActive++
+					break
+				}
+			}
+			if isInActive == 0 {
+				dltFiles = append(dltFiles, actFile)
+			}
+		}
+		if len(uptFiles) > 0 {
+			for _, val := range uptFiles {
+				err := fl.UpdateRelation(val, fl.TypAssignment, params.ID, tx)
+				if err != nil {
+					tx.Rollback()
+					template.RenderJSONResponse(w, new(template.Response).
+						SetCode(http.StatusInternalServerError))
+					return
+				}
+			}
+		}
+		if len(dltFiles) > 0 {
+			for _, val := range dltFiles {
+				err := fl.Delete(val, tx)
+				if err != nil {
+					tx.Rollback()
+					template.RenderJSONResponse(w, new(template.Response).
+						SetCode(http.StatusInternalServerError))
+					return
+				}
+			}
+		}
+	}
+	if args.status == 0 {
+		addedTypes, err := fl.SelectTypeByID(args.ID)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		if len(addedTypes) > 0 {
+			err = fl.DeleteTypeByID(addedTypes, args.ID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+	if len(args.allowedTypesFile) > 0 && args.status > 0 {
+		addedTypes, err := fl.SelectTypeByID(args.ID)
+		if err != nil {
+			tx.Rollback()
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		var dltType []string
+		var uptType []string
+		if len(addedTypes) > 0 {
+			for _, addedType := range addedTypes {
+				count := 0
+				for _, alwdType := range args.allowedTypesFile {
+					if alwdType == addedType {
+						count++
+						break
+					}
+				}
+				if count == 0 {
+					dltType = append(dltType, addedType)
+				}
+			}
+		}
+		for _, alwdType := range args.allowedTypesFile {
+			count := 0
+			for _, addedType := range addedTypes {
+				if alwdType == addedType {
+					count++
+					break
+				}
+			}
+			if count == 0 {
+				uptType = append(uptType, alwdType)
+			}
+		}
+		if len(dltType) > 0 {
+			err := fl.DeleteTypeByID(dltType, args.ID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+		if len(uptType) > 0 {
+			err := fl.InsertType(uptType, args.ID, tx)
+			if err != nil {
+				tx.Rollback()
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+		}
+	}
+
+	err = asg.Update(args.name, args.description, args.ID, args.gpID, args.maxSizeFile, args.maxFile, args.dueDate, args.status, tx)
+	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	err = tx.Commit()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Assignment updated successfully"))
+	return
+
 }
 
 // not finished yet
@@ -988,118 +1198,6 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 // 		SetCode(http.StatusOK).
 // 		SetData(res))
 // 	return
-// }
-
-// // UpdateHandler func is ...
-// func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleUpdate, rg.RoleXRead) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("You don't have privilege"))
-// 		return
-// 	}
-
-// 	params := updatePrams{
-// 		ID:                ps.ByName("id"),
-// 		FilesID:           r.FormValue("file_id"),
-// 		GradeParametersID: r.FormValue("grade_parameter_id"),
-// 		Name:              r.FormValue("name"),
-// 		Description:       r.FormValue("description"),
-// 		Status:            r.FormValue("status"),
-// 		DueDate:           r.FormValue("due_date"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-// 	// Params ID is exist
-// 	if !as.IsAssignmentExist(args.ID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusNotFound))
-// 		return
-// 	}
-// 	// is grade_parameter exist
-// 	if !as.IsExistByGradeParameterID(args.GradeParametersID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Grade parameters id does not exist!"))
-// 		return
-// 	}
-
-// 	// Insert to table assignments
-// 	tx := conn.DB.MustBegin()
-// 	err = as.Update(
-// 		args.GradeParametersID,
-// 		args.ID,
-// 		args.Name,
-// 		args.Status,
-// 		args.DueDate,
-// 		args.Description,
-// 		tx,
-// 	)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-
-// 	var filesIDUser = strings.Split(args.FilesID, "~")
-// 	var tableID = strconv.FormatInt(args.ID, 10)
-// 	// Get All relations with
-// 	filesIDDB, err := fs.GetByStatus(fs.StatusExist, args.ID)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	// Add new file
-// 	for _, fileID := range filesIDUser {
-// 		if !fs.IsExistID(fileID) {
-// 			filesIDDB = append(filesIDDB, fileID)
-// 			// Update relation
-// 			err := fs.UpdateRelation(fileID, TableNameAssignments, tableID, tx)
-// 			if err != nil {
-// 				tx.Rollback()
-// 				template.RenderJSONResponse(w, new(template.Response).
-// 					SetCode(http.StatusInternalServerError))
-// 				return
-// 			}
-// 		}
-// 	}
-// 	for _, fileIDDB := range filesIDDB {
-// 		isSame := 0
-// 		for _, fileIDUser := range filesIDUser {
-// 			if fileIDUser == fileIDDB {
-// 				isSame = 1
-// 			}
-// 		}
-// 		if isSame == 0 {
-// 			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
-// 			if err != nil {
-// 				tx.Rollback()
-// 				template.RenderJSONResponse(w, new(template.Response).
-// 					SetCode(http.StatusInternalServerError))
-// 				return
-// 			}
-// 		}
-// 	}
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetMessage("Update Assignment Success!"))
-// 	return
-
 // }
 
 // // CreateHandlerByUser func ...

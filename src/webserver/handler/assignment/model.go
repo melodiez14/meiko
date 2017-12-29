@@ -114,6 +114,30 @@ type createArgs struct {
 	allowedTypesFile []string
 	maxFile          int64
 }
+type updateParams struct {
+	ID               string
+	filesID          string
+	gpID             string
+	name             string
+	description      string
+	status           string
+	dueDate          string
+	maxSizeFile      string
+	allowedTypesFile string
+	maxFile          string
+}
+type updateArgs struct {
+	ID               int64
+	filesID          []string
+	gpID             int64
+	name             string
+	description      sql.NullString
+	status           int8
+	dueDate          time.Time
+	maxSizeFile      int64
+	allowedTypesFile []string
+	maxFile          int64
+}
 
 type deleteParams struct {
 	id string
@@ -138,28 +162,6 @@ type getGradeResponse struct {
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 	Score string `json:"grade"`
-}
-
-// old
-
-type updatePrams struct {
-	ID                string
-	FilesID           string
-	GradeParametersID string
-	Name              string
-	Description       string
-	Status            string
-	DueDate           string
-}
-type updateArgs struct {
-	ID                int64
-	FilesID           string
-	GradeParametersID int64
-	Name              string
-	Description       sql.NullString
-	Status            string
-	DueDate           string
-	TableID           int64
 }
 
 type detailParams struct {

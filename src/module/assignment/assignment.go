@@ -143,28 +143,49 @@ func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, dueda
 	return id, nil
 }
 
-// Update func ...
-func Update(gradeParameters, id int64, name, status, dueDate string, description sql.NullString, tx *sqlx.Tx) error {
+// Update ..
+func Update(name string, desc sql.NullString, id, gps, maxSize, maxFile int64, duedate time.Time, status int8, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
 	queryDescription := fmt.Sprintf("NULL")
-	if description.Valid {
-		queryDescription = fmt.Sprintf(description.String)
+	if desc.Valid {
+		queryDescription = fmt.Sprintf(desc.String)
 	}
-	query := fmt.Sprintf(`
-		UPDATE 
-			assignments
-		SET
+	var query string
+	layout := `2006-01-02 15:04:05`
+	timeQuery := duedate.Format(layout)
+	if gps > 0 {
+		query = fmt.Sprintf(`
+			UPDATE 
+				assignments
+			SET
 			name = ('%s'),
-			status = ('%s'),
+			description = ('%s'),
+			status = (%d),
 			due_date = ('%s'),
 			grade_parameters_id = (%d),
-			description = ('%s'),
+			max_size = (%d),
+			max_file = (%d),
 			updated_at = NOW()
-		WHERE
-			id = (%d);
-		`, name, status, dueDate, gradeParameters, queryDescription, id)
+			WHERE
+				id = (%d);
+			`, name, queryDescription, status, timeQuery, gps, maxSize, maxFile, id)
+	} else {
+		query = fmt.Sprintf(`
+			UPDATE 
+				assignments
+			SET
+			name = ('%s'),
+			description = ('%s'),
+			status = (%d),
+			due_date = ('%s'),
+			grade_parameters_id = (%d),
+			updated_at = NOW()
+			WHERE
+				id = (%d);
+			`, name, queryDescription, status, timeQuery, gps, id)
+	}
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {

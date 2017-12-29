@@ -513,10 +513,10 @@ func SelectIDStatusByID(filesID []string) ([]IDStatus, error) {
 }
 
 // InsertType ..
-func InsertType(typ []string, assignmentID string, tx *sqlx.Tx) error {
+func InsertType(typ []string, assignmentID int64, tx *sqlx.Tx) error {
 	var value []string
 	for _, val := range typ {
-		value = append(value, fmt.Sprintf(`('%s',%s)`, val, assignmentID))
+		value = append(value, fmt.Sprintf(`('%s',%d)`, val, assignmentID))
 	}
 	valueQuery := strings.Join(value, ", ")
 	query := fmt.Sprintf(`
@@ -529,6 +529,49 @@ func InsertType(typ []string, assignmentID string, tx *sqlx.Tx) error {
 		VALUES
 			%s
 		;`, valueQuery)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+//SelectTypeByID ..
+func SelectTypeByID(assignmentID int64) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			name
+		FROM
+			types
+		WHERE
+		assignments_id = (%d);
+		`, assignmentID)
+	var typs []string
+	err := conn.DB.Select(&typs, query)
+	if err != nil {
+		return typs, err
+	}
+	return typs, nil
+}
+
+// DeleteTypeByID ..
+func DeleteTypeByID(typ []string, assignmentID int64, tx *sqlx.Tx) error {
+	var listTyp []string
+
+	for _, val := range typ {
+		listTyp = append(listTyp, fmt.Sprintf(`'%s'`, val))
+	}
+	queryTyp := strings.Join(listTyp, ", ")
+	query := fmt.Sprintf(`
+		DELETE FROM 
+			types
+		WHERE
+			assignments_id = (%d) AND name IN (%s);
+		`, assignmentID, queryTyp)
 	result, err := tx.Exec(query)
 	if err != nil {
 		return err
