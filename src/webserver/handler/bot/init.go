@@ -21,6 +21,7 @@ func Init() {
 // initRgxAssistant gets assistant lists from database and put it into rgxassistant
 func initRgxAsistant() {
 	var name []string
+	var nameFilter []string
 	var nameGroup []string
 	userID, err := cs.SelectAllAssistantID()
 	if err != nil {
@@ -38,8 +39,15 @@ func initRgxAsistant() {
 		name = append(name, strings.Split(str, " ")...)
 	}
 
-	// make []string{"risal", "falah"} into []string{"(risal)", "(falah)"} for regex purpose
+	// filter course which has less than 5 character
 	for _, val := range name {
+		if len(val) >= 5 {
+			nameFilter = append(nameFilter, val)
+		}
+	}
+
+	// make []string{"risal", "falah"} into []string{"(risal)", "(falah)"} for regex purpose
+	for _, val := range nameFilter {
 		str := fmt.Sprintf("(%s)", val)
 		if !helper.IsStringInSlice(str, nameGroup) {
 			nameGroup = append(nameGroup, str)
@@ -52,6 +60,7 @@ func initRgxAsistant() {
 // initRgxCourse gets course lists from database and put it into rgxcourse
 func initRgxCourse() {
 	var name []string
+	var nameFilter []string
 	var nameGroup []string
 	courseName, err := cs.SelectAllName()
 	if err != nil {
@@ -64,8 +73,15 @@ func initRgxCourse() {
 		name = append(name, strings.Split(str, " ")...)
 	}
 
-	// make []string{"data", "warehouse"} into []string{"(data)", "(warehouse)"} for regex purpose
+	// filter course which has less than 5 character
 	for _, val := range name {
+		if len(val) >= 5 {
+			nameFilter = append(nameFilter, val)
+		}
+	}
+
+	// make []string{"data", "warehouse"} into []string{"(data)", "(warehouse)"} for regex purpose
+	for _, val := range nameFilter {
 		str := fmt.Sprintf("(%s)", val)
 		if !helper.IsStringInSlice(str, nameGroup) {
 			nameGroup = append(nameGroup, str)

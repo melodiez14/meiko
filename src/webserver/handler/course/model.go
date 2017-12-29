@@ -4,14 +4,36 @@ import (
 	"database/sql"
 )
 
+const (
+	SheduleStatusAssistant = 2
+	SheduleStatusPraktikan = 1
+)
+
 type readParams struct {
-	Page  string
-	Total string
+	page  string
+	total string
 }
 
 type readArgs struct {
-	Page  uint16
-	Total uint16
+	page  int
+	total int
+}
+
+type readCourse struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Class      string `json:"class"`
+	StartTime  string `json:"start_time"`
+	EndTime    string `json:"end_time"`
+	Day        string `json:"day"`
+	Status     string `json:"status"`
+	ScheduleID int64  `json:"schedule_id"`
+}
+
+type readResponse struct {
+	Page      int          `json:"page"`
+	TotalPage int          `json:"total_page"`
+	Courses   []readCourse `json:"courses"`
 }
 
 type searchParams struct {
@@ -27,17 +49,6 @@ type searchResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	UCU         int8   `json:"ucu"`
-}
-
-type readResponse struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	StartTime  string `json:"start_time"`
-	EndTime    string `json:"end_time"`
-	Day        string `json:"day"`
-	Status     string `json:"status"`
-	ScheduleID int64  `json:"schedule_id"`
 }
 
 type readDetailParams struct {
@@ -161,22 +172,43 @@ type getResponse struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Class       string `json:"class"`
+	Status      string `json:"status"`
 	Semester    int8   `json:"semester"`
+	Time        string `json:"time"`
+	Day         string `json:"day"`
+	Place       string `json:"place"`
+}
+
+type getDetailParams struct {
+	scheduleID string
+}
+
+type getDetailArgs struct {
+	scheduleID int64
+}
+
+type getDetailResponse struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type getAssistantParams struct {
-	ScheduleID string
+	scheduleID string
+	payload    string
 }
 
 type getAssistantArgs struct {
-	ScheduleID int64
+	scheduleID int64
+	payload    string
 }
 
 type getAssistantResponse struct {
-	Name  string `json:"name"`
-	Roles string `json:"role"`
-	Phone string `json:"phone_number"`
-	Email string `json:"email"`
+	Name         string `json:"name"`
+	Roles        string `json:"role"`
+	Phone        string `json:"phone_number"`
+	Email        string `json:"email"`
+	URLThumbnail string `json:"url_thumbnail"`
 }
 
 type courseResponse struct {
@@ -219,4 +251,60 @@ type listStudentArgs struct {
 type listStudentResponse struct {
 	UserIdentityCode int64  `json:"id"`
 	UserName         string `json:"name"`
+}
+
+type gradeParameterResponse struct {
+	ID         int64   `json:"id"`
+	Type       string  `json:"type"`
+	Percentage float32 `json:"percentage"`
+	Nilai      float32 `json:"nilai"`
+}
+type scheduleGrade struct {
+	ScheduleID int64   `json:"schedule_id"`
+	Name       string  `json:"name"`
+	Attendance float32 `json:"attendance"`
+	Quiz       float32 `json:"quiz"`
+	Assignment float32 `json:"assignment"`
+	Mid        float32 `json:"mid"`
+	Final      float32 `json:"final"`
+	Total      float32 `json:"total"`
+}
+type responseGradeSummary struct {
+	UsersID  int64           `json:"npm"`
+	Schedule []scheduleGrade `json:"schedules"`
+}
+
+type addAssistantParams struct {
+	assistentIdentityCodes string
+	scheduleID             string
+}
+
+type addAssistantArgs struct {
+	assistentIdentityCodes []int64
+	scheduleID             int64
+}
+
+type getTodayParams struct {
+	scheduleID string
+}
+
+type getTodayArgs struct {
+	scheduleID int64
+}
+
+type getTodayResponse struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Time  string `json:"time"`
+	Place string `json:"place"`
+}
+
+type enrollRequestParams struct {
+	scheduleID string
+	payload    string
+}
+
+type enrollRequestArgs struct {
+	scheduleID int64
+	payload    string
 }

@@ -1,12 +1,12 @@
 {
     "webserver": {
-        "port": "9000"
+        "port": "80"
     },
     "database": {
         "host": "localhost",
         "port": "3306",
         "username": "meiko",
-        "password": "meiko",
+        "password": "Meiko@123",
         "driver": "mysql",
         "database": "meiko"
     },
@@ -15,8 +15,8 @@
         "password": ""
     },
     "email": {
-        "username": "",
-        "password": "",
+        "username": "meikodevelopment@gmail.com",
+        "password": "sandiaman01",
         "address": "smtp.gmail.com",
         "port": 587
     },
@@ -25,7 +25,7 @@
     },
     "directory": {
         "static": "/var/www/meiko/static",
-        "profile": "/var/www/meiko/data/users",
-        "email": "/var/www/meiko/email"
+        "email": "/var/www/meiko/email",
+        "data": "/var/www/meiko/data"
     }
 }

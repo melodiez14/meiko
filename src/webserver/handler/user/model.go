@@ -213,11 +213,11 @@ type getVerifiedParams struct {
 	@return
 */
 type getVerifiedArgs struct {
-	Page  uint16
-	Total uint16
+	Page  int
+	Total int
 }
 
-// getVeriviedResponse Response to server from application to get verified content.
+// getVerifiedUser is a struct of user which is used for getVerifiedResponse as an slice
 /*
 	@params:
 		IdentityCode	= int64
@@ -231,11 +231,29 @@ type getVerifiedArgs struct {
 		Status			= 1
 	@return
 */
-type getVerifiedResponse struct {
+type getVerifiedUser struct {
 	IdentityCode int64  `json:"id"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Status       string `json:"status"`
+}
+
+// getVerifiedResponse Response to server from application to get verified content.
+/*
+	@params:
+		Page			= int
+		TotalPage		= int
+		Users			= []getVerifiedUser
+	@example:
+		IdentityCode	= 10
+		Name			= 100
+		Users			= []getVerifiedUser{}
+	@return
+*/
+type getVerifiedResponse struct {
+	Page      int               `json:"page"`
+	TotalPage int               `json:"total_page"`
+	Users     []getVerifiedUser `json:"users"`
 }
 
 // updateProfileParams Parameter that needed to update user profile.

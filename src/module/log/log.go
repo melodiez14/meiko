@@ -37,9 +37,11 @@ func Insert(text string, userID int64, status uint8, tx *sqlx.Tx) (int64, error)
 	if err != nil {
 		return 0, err
 	}
+
 	lastInsertID, err := result.LastInsertId()
 	if err != nil {
 		return 0, fmt.Errorf("No rows affected")
 	}
+
 	return lastInsertID, nil
 }

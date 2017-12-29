@@ -15,28 +15,28 @@ import (
 func (params readParams) validate() (readArgs, error) {
 
 	var args readArgs
-	if helper.IsEmpty(params.Page) || helper.IsEmpty(params.Total) {
+	if helper.IsEmpty(params.page) || helper.IsEmpty(params.total) {
 		return args, fmt.Errorf("page or total is empty")
 	}
 
-	page, err := strconv.ParseInt(params.Page, 10, 64)
+	page, err := strconv.ParseInt(params.page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("page must be numeric")
 	}
 
-	total, err := strconv.ParseInt(params.Total, 10, 64)
+	total, err := strconv.ParseInt(params.total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("total must be numeric")
 	}
 
 	// should be positive number
-	if page < 0 || total < 0 {
+	if page < 1 || total < 1 {
 		return args, fmt.Errorf("page or total must be positive number")
 	}
 
 	args = readArgs{
-		Page:  uint16(page),
-		Total: uint16(total),
+		page:  int(page),
+		total: int(total),
 	}
 	return args, nil
 }
@@ -247,13 +247,14 @@ func (params getParams) validate() (getArgs, error) {
 func (params getAssistantParams) validate() (getAssistantArgs, error) {
 
 	var args getAssistantArgs
-	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	args = getAssistantArgs{
-		ScheduleID: scheduleID,
+		payload:    params.payload,
+		scheduleID: scheduleID,
 	}
 	return args, nil
 }
@@ -541,4 +542,71 @@ func (params listStudentParams) validate() (listStudentArgs, error) {
 	}
 
 	return listStudentArgs{scheduleID: scheduleID}, nil
+}
+
+func (params addAssistantParams) validate() (addAssistantArgs, error) {
+
+	var args addAssistantArgs
+	idInt64 := []int64{}
+
+	if !helper.IsEmpty(params.assistentIdentityCodes) {
+		idString := strings.Split(params.assistentIdentityCodes, "~")
+		for _, val := range idString {
+			id, err := strconv.ParseInt(val, 10, 64)
+			if err != nil {
+				return args, err
+			}
+			idInt64 = append(idInt64, id)
+		}
+	}
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return addAssistantArgs{
+		assistentIdentityCodes: idInt64,
+		scheduleID:             scheduleID,
+	}, nil
+}
+
+func (params getTodayParams) validate() (getTodayArgs, error) {
+	var args getTodayArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return getTodayArgs{
+		scheduleID: scheduleID,
+	}, nil
+}
+
+func (params getDetailParams) validate() (getDetailArgs, error) {
+	var args getDetailArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return getDetailArgs{
+		scheduleID: scheduleID,
+	}, nil
+}
+
+func (params enrollRequestParams) validate() (enrollRequestArgs, error) {
+	var args enrollRequestArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return enrollRequestArgs{
+		payload:    params.payload,
+		scheduleID: scheduleID,
+	}, nil
 }

@@ -9,7 +9,7 @@ import (
 	nw "github.com/jinzhu/now"
 )
 
-func (params *sEntity) getTime() ([]time.Time, error) {
+func (params *sEntity) getTime() []time.Time {
 
 	date := []time.Time{}
 	now := time.Now()
@@ -114,11 +114,11 @@ func (params *sEntity) getTime() ([]time.Time, error) {
 
 	// word expression
 	patternWord := map[string]time.Time{
-		`kemaren\s*lusa`:  now.AddDate(0, 0, -1),
+		`kemaren\s*lusa`:  now.AddDate(0, 0, -2),
 		`pekan\s*kemarin`: now.AddDate(0, 0, -7),
-		`kemarin`:         now.AddDate(0, 0, -2),
-		`kemaren`:         now.AddDate(0, 0, -2),
-		`hari\s*ini`:      now.AddDate(0, 0, -1),
+		`kemarin`:         now.AddDate(0, 0, -1),
+		`kemaren`:         now.AddDate(0, 0, -1),
+		`hari\s*ini`:      now.AddDate(0, 0, 0),
 	}
 
 	for i, val := range patternWord {
@@ -158,7 +158,7 @@ func (params *sEntity) getTime() ([]time.Time, error) {
 		date = []time.Time{startDate, endDate}
 	}
 
-	return date, nil
+	return date
 }
 
 func (params *sEntity) getDay() []int8 {

@@ -1,12 +1,14 @@
 package rolegroup
 
 const (
-	ModuleUser       = "users"
-	ModuleCourse     = "courses"
-	ModuleRole       = "roles"
-	ModuleAttendance = "attendances"
-	ModuleSchedule   = "schedules"
-	ModuleAssignment = "assignments"
+	ModuleUser        = "users"
+	ModuleCourse      = "courses"
+	ModuleRole        = "roles"
+	ModuleAttendance  = "attendances"
+	ModuleSchedule    = "schedules"
+	ModuleAssignment  = "assignments"
+	ModuleInformation = "informations"
+	ModuleTutorial    = "tutorials"
 
 	RoleCreate  = "CREATE"
 	RoleRead    = "READ"
@@ -21,4 +23,10 @@ const (
 type RoleGroup struct {
 	ID   int64  `db:"id"`
 	Name string `db:"name"`
+}
+
+type Privilege struct {
+	ID      int64  `db:"id"`
+	Module  string `db:"module"`
+	Ability string `db:"ability"`
 }

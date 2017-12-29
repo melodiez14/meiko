@@ -32,18 +32,18 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	intent, _ := getIntent(args.NormalizedText)
 
 	// convert intent into assistant
-	var data interface{}
+	data := []map[string]interface{}{}
 	switch intent {
 	case intentAssistant:
 		data, err = handleAssistant(args.NormalizedText, sess.ID)
 	case intentGrade:
-		break
+		data, err = handleGrade(args.NormalizedText, sess.ID)
 	case intentAssignment:
-		break
+		data, err = handleAssignment(args.NormalizedText, sess.ID)
 	case intentInformation:
 		data, err = handleInformation(args.NormalizedText, sess.ID)
 	case intentSchedule:
-		break
+		data, err = handleSchedule(args.NormalizedText, sess.ID)
 	case intentUnknown:
 		break
 	default:
@@ -67,13 +67,21 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	_, err = log.Insert(args.Text, sess.ID, bot.StatusUser, tx)
 	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
 		return
 	}
 
 	lastInsertID, err := log.Insert(jsnStr, sess.ID, bot.StatusBot, tx)
 	if err != nil {
+		tx.Rollback()
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
 		return
 	}
+
+	tx.Commit()
 
 	// prepare for response
 	respData["id"] = lastInsertID
@@ -101,7 +109,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -118,7 +126,7 @@ func LoadHistoryHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	var resp []map[string]interface{}
+	resp := []map[string]interface{}{}
 	for _, val := range log {
 		if val.Status == bot.StatusUser {
 			resp = append(resp, map[string]interface{}{

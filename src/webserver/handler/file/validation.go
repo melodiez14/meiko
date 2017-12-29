@@ -3,6 +3,7 @@ package file
 import (
 	"fmt"
 	"html"
+	"strconv"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 )
@@ -41,24 +42,37 @@ func (params uploadImageParams) validate() (uploadImageArgs, error) {
 	}, nil
 }
 
-func (params uploadAssignmentParams) validate() (uploadAssignmentArgs, error) {
-	var args uploadAssignmentArgs
-	params = uploadAssignmentParams{
-		FileName:  html.EscapeString(params.FileName),
-		Extension: params.Extension,
-		Mime:      params.Mime,
+func (params uploadFileParams) validate() (uploadFileArgs, error) {
+
+	id, _ := strconv.ParseInt(params.id, 10, 64)
+
+	// validate mime and extension
+
+	return uploadFileArgs{
+		id:      id,
+		payload: params.payload,
+		role:    params.role,
+	}, nil
+}
+
+func (params metaParams) validate() (metaArgs, error) {
+	var args metaArgs
+	params = metaParams{
+		fileName:  html.EscapeString(params.fileName),
+		extension: params.extension,
+		mime:      params.mime,
 	}
 
-	if helper.IsEmpty(params.FileName) {
+	if helper.IsEmpty(params.fileName) {
 		return args, fmt.Errorf("Filename is empty")
 	}
 
 	// validate mime and extension
 
-	return uploadAssignmentArgs{
-		FileName:  params.FileName,
-		Extension: params.Extension,
-		Mime:      params.Mime,
+	return metaArgs{
+		fileName:  params.fileName,
+		extension: params.extension,
+		mime:      params.mime,
 	}, nil
 }
 
@@ -69,5 +83,20 @@ func (params getFileParams) validate() (getFileArgs, error) {
 	return getFileArgs{
 		payload:  params.payload,
 		filename: params.filename,
+	}, nil
+}
+
+func (params routerParams) validate() (routerArgs, error) {
+
+	var args routerArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return routerArgs{
+		payload: params.payload,
+		role:    params.role,
+		id:      id,
 	}, nil
 }

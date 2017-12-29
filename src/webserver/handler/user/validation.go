@@ -81,7 +81,7 @@ func (params signUpParams) validate() (signUpArgs, error) {
 // Function to validate email verification parameter to be used
 /*
 	@params:
-		Code			= required if resend is empty, numeric, characters=4	
+		Code			= required if resend is empty, numeric, characters=4
 		Email			= required, email format, 0<characters<45
 		IsResendCode	= optional, value=true or empty
 	@example:
@@ -157,12 +157,12 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	page, err := strconv.ParseInt(params.Page, 10, 64)
+	page, err := strconv.ParseUint(params.Page, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
 
-	total, err := strconv.ParseInt(params.Total, 10, 64)
+	total, err := strconv.ParseUint(params.Total, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Invalid request")
 	}
@@ -173,8 +173,8 @@ func (params getVerifiedParams) validate() (getVerifiedArgs, error) {
 	}
 
 	args = getVerifiedArgs{
-		Page:  uint16(page),
-		Total: uint16(total),
+		Page:  int(page),
+		Total: int(total),
 	}
 	return args, nil
 }
@@ -196,7 +196,7 @@ func (params activationParams) validate() (activationArgs, error) {
 	var args activationArgs
 	// Check is params empty
 	if helper.IsEmpty(params.IdentityCode) || helper.IsEmpty(params.Status) {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
@@ -309,13 +309,13 @@ func (params updateProfileParams) validate() (updateProfileArgs, error) {
 	// Identity code validation
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Email validation
 	email, err := helper.NormalizeEmail(params.Email)
 	if err != nil {
-		return args, fmt.Errorf("Bad Request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Name validation
@@ -410,13 +410,13 @@ func (params changePasswordParams) validate() (changePasswordArgs, error) {
 	// Identity Code validation
 	identityCode, err := helper.NormalizeIdentity(params.IdentityCode)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Email validation
 	email, err := helper.NormalizeEmail(params.Email)
 	if err != nil {
-		return args, fmt.Errorf("Bad request")
+		return args, fmt.Errorf("Invalid Request")
 	}
 
 	// Old password validation

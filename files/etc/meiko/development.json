@@ -3,10 +3,10 @@
         "port": "9000"
     },
     "database": {
-        "host": "localhost",
+        "host": "47.74.149.190",
         "port": "3306",
-        "username": "meiko",
-        "password": "meiko",
+        "username": "azmi",
+        "password": "Qwerty@123",
         "driver": "mysql",
         "database": "meiko"
     },
@@ -25,7 +25,7 @@
     },
     "directory": {
         "static": "files/var/www/meiko/static",
-        "profile": "files/var/www/meiko/data/profile",
-        "email": "files/var/www/meiko/email"
+        "email": "files/var/www/meiko/email",
+        "data": "files/var/www/meiko/data"
     }
 }

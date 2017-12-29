@@ -713,3 +713,186 @@ func TestTimeToDayInt(t *testing.T) {
 		})
 	}
 }
+
+func TestFloat64Round(t *testing.T) {
+	type args struct {
+		value float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "1.1234",
+			args: args{
+				value: 1.1234,
+			},
+			want: 1,
+		},
+		{
+			name: "1.5",
+			args: args{
+				value: 1.51,
+			},
+			want: 2,
+		},
+		{
+			name: "1.9",
+			args: args{
+				value: 1.9,
+			},
+			want: 2,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.234,
+			},
+			want: -102,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.534,
+			},
+			want: -103,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Float64Round(tt.args.value); got != tt.want {
+				t.Errorf("Float64Round() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFloat32Round(t *testing.T) {
+	type args struct {
+		value float32
+	}
+	tests := []struct {
+		name string
+		args args
+		want float32
+	}{
+		{
+			name: "1.1234",
+			args: args{
+				value: 1.1234,
+			},
+			want: 1,
+		},
+		{
+			name: "1.5",
+			args: args{
+				value: 1.51,
+			},
+			want: 2,
+		},
+		{
+			name: "1.9",
+			args: args{
+				value: 1.9,
+			},
+			want: 2,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.234,
+			},
+			want: -102,
+		},
+		{
+			name: "-102.234",
+			args: args{
+				value: -102.534,
+			},
+			want: -103,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Float32Round(tt.args.value); got != tt.want {
+				t.Errorf("Float32Round() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMimeToThumbnail(t *testing.T) {
+	type args struct {
+		mime string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "NULL",
+			args: args{
+				mime: "",
+			},
+			want: "/static/img/unknown.png",
+		},
+		{
+			name: "DOC1",
+			args: args{
+				mime: "application/msword",
+			},
+			want: "/static/img/doc.png",
+		},
+		{
+			name: "DOC2",
+			args: args{
+				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			},
+			want: "/static/img/doc.png",
+		},
+		{
+			name: "DOC3",
+			args: args{
+				mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+			},
+			want: "/static/img/doc.png",
+		},
+		{
+			name: "IMG1",
+			args: args{
+				mime: "image/jpg",
+			},
+			want: "/static/img/image.png",
+		},
+		{
+			name: "IMG2",
+			args: args{
+				mime: "image/png",
+			},
+			want: "/static/img/image.png",
+		},
+		{
+			name: "IMG3",
+			args: args{
+				mime: "image/gif",
+			},
+			want: "/static/img/image.png",
+		},
+		{
+			name: "PDF1",
+			args: args{
+				mime: "application/pdf",
+			},
+			want: "/static/img/pdf.png",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MimeToThumbnail(tt.args.mime); got != tt.want {
+				t.Errorf("MimeToThumbnail() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

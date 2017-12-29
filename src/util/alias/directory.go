@@ -6,11 +6,7 @@ import (
 )
 
 // DirectoryConfig is loaded from json configuration
-type DirectoryConfig struct {
-	Static  string `json:"static"`
-	Profile string `json:"profile"`
-	Email   string `json:"email"`
-}
+type DirectoryConfig map[string]string
 
 // Dir is the list of directory
 var Dir DirectoryConfig
@@ -19,19 +15,11 @@ var Dir DirectoryConfig
 func InitDirectory(cfg DirectoryConfig) {
 	log.Println("Initializing directory")
 
-	if _, err := os.Stat(cfg.Static); os.IsNotExist(err) {
-		log.Fatalf("Static: %s is not exist", cfg.Static)
-		return
-	}
-
-	if _, err := os.Stat(cfg.Profile); os.IsNotExist(err) {
-		log.Fatalf("Profile: %s is not exist", cfg.Profile)
-		return
-	}
-
-	if _, err := os.Stat(cfg.Email); os.IsNotExist(err) {
-		log.Fatalf("Email: %s is not exist", cfg.Email)
-		return
+	for i, val := range cfg {
+		if _, err := os.Stat(val); os.IsNotExist(err) {
+			log.Fatalf("%s: %s is not exist", i, val)
+			return
+		}
 	}
 
 	Dir = cfg

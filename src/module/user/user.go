@@ -471,14 +471,47 @@ func UpdateStatus(identityCode int64, status int8) error {
 		Phone			= 082214467300
 		RoleGroupsID	= 0
 */
-func SelectDashboard(id int64, limit, offset uint16) ([]User, error) {
+func SelectDashboard(id int64, limit, offset int, isCount bool) ([]User, int, error) {
 	var user []User
-	query := fmt.Sprintf(querySelectDashboard, StatusVerified, StatusActivated, id, limit, offset)
+	var count int
+	query := fmt.Sprintf(`
+		SELECT
+			identity_code,
+			name,
+			email,
+			status
+		FROM
+			users
+		WHERE
+			(status = (%d) OR status = (%d)) AND
+			id != (%d)
+		LIMIT %d
+		OFFSET %d;	
+	`, StatusVerified, StatusActivated, id, limit, offset)
 	err := conn.DB.Select(&user, query)
 	if err != nil {
-		return user, err
+		return user, count, err
 	}
-	return user, nil
+
+	if !isCount {
+		return user, count, nil
+	}
+
+	query = fmt.Sprintf(`
+		SELECT
+		COUNT(*)
+		FROM
+		users
+		WHERE
+		(status = (%d) OR status = (%d)) AND
+		id != (%d);	
+		`, StatusVerified, StatusActivated, id)
+	err = conn.DB.Get(&count, query)
+	if err != nil {
+		return user, count, err
+	}
+
+	return user, count, nil
 }
 
 // ChangePassword function to change user password account
@@ -667,4 +700,167 @@ func Create(identityCode int64, name, email string) error {
 		return fmt.Errorf("No rows affected")
 	}
 	return nil
+}
+
+// IsUserExist func ...
+func IsUserExist(identityCode int64) bool {
+
+	var x string
+	query := fmt.Sprintf(`
+			SELECT
+				'x'
+			FROM
+				users
+			WHERE
+				identity_code = (%d)
+			LIMIT 1;`, identityCode)
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// IsUserTakeSchedule func ...
+func IsUserTakeSchedule(id, scheduleID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			p_users_schedules
+		WHERE
+			users_id = (%d) AND schedules_id = (%d)
+		LIMIT 1;`, id, scheduleID)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// SelectIDByIdentityCode ...
+func SelectIDByIdentityCode(identityCode []int64) ([]int64, error) {
+	var ids []int64
+	queryIdentity := strings.Join(helper.Int64ToStringSlice(identityCode), ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			id
+		FROM
+			users
+		WHERE
+			identity_code IN (%s)
+		;`, queryIdentity)
+	err := conn.DB.Select(&ids, query)
+	if err != nil {
+		return ids, err
+	}
+	return ids, nil
+
+}
+
+// SelectIDByScheduleID ..
+func SelectIDByScheduleID(scheduleID int64, limit, offset int) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d)
+		ORDER BY 
+			users_id 
+		ASC
+		LIMIT %d
+		OFFSET %d;
+		`, scheduleID, limit, offset)
+	var result []int64
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// SelectCountByScheduleID ..
+func SelectCountByScheduleID(scheduleID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d)
+		`, scheduleID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
+// IsExistRolegroupID ...
+func IsExistRolegroupID(rolegroupID int64) bool {
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			users
+		WHERE
+			rolegroups_id = (%d)
+		LIMIT 1;
+	`, rolegroupID)
+
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// SelectDistinctRolegroupID ...
+func SelectDistinctRolegroupID() ([]int64, error) {
+	var rolegroupsID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			DISTINCT rolegroups_id
+		FROM
+			users
+		WHERE rolegroups_id IS NOT NULL;
+	`)
+	err := conn.DB.Select(&rolegroupsID, query)
+	if err != nil {
+		return rolegroupsID, err
+	}
+
+	return rolegroupsID, nil
+}
+
+// SelectConciseUserByID ..
+func SelectConciseUserByID(ids []int64) ([]ConciseUsers, error) {
+	var idsSt []string
+	for _, val := range ids {
+		idsSt = append(idsSt, fmt.Sprintf(`%d`, val))
+	}
+	queryIDs := strings.Join(idsSt, ",")
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			identity_code,
+			name
+		FROM
+			users
+		WHERE
+			id
+		IN
+			(%s)
+		`, queryIDs)
+	var result []ConciseUsers
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }

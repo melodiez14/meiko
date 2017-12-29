@@ -14,8 +14,6 @@ const (
 	ExtJPEG  = "jpg"
 	MimeZIP  = "zip"
 	MimeRAR  = ""
-
-	notFoundURL = "/api/v1/files/error/not-found.png"
 )
 
 type uploadImageMapper struct {
@@ -54,16 +52,16 @@ type getProfileArgs struct {
 	Payload string
 }
 
-type uploadAssignmentParams struct {
-	FileName  string
-	Mime      string
-	Extension string
+type metaParams struct {
+	fileName  string
+	mime      string
+	extension string
 }
 
-type uploadAssignmentArgs struct {
-	FileName  string
-	Mime      string
-	Extension string
+type metaArgs struct {
+	fileName  string
+	mime      string
+	extension string
 }
 
 type getFileParams struct {
@@ -74,4 +72,37 @@ type getFileParams struct {
 type getFileArgs struct {
 	payload  string
 	filename string
+}
+
+type routerParams struct {
+	payload string
+	role    string
+	id      string
+}
+
+type routerArgs struct {
+	payload string
+	role    string
+	id      int64
+}
+
+type uploadFileParams struct {
+	id      string
+	payload string
+	role    string
+}
+
+type uploadFileArgs struct {
+	id      int64
+	payload string
+	role    string
+}
+
+type fileResponse struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	URLThumbnail string `json:"url_thumbnail"`
+}
+type availableTypesResponse struct {
+	Types []string `json:"types"`
 }

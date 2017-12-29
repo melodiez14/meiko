@@ -14,12 +14,25 @@ const (
 	ColTableName = "table_name"
 	ColTableID   = "table_id"
 
-	TypProfPict      = "PL-IMG-M"
-	TypProfPictThumb = "PL-IMG-T"
-	TypAssignment    = "ASG-FILE"
+	TypProfPict         = "PL-IMG-M"
+	TypProfPictThumb    = "PL-IMG-T"
+	TypAssignment       = "ASG-FILE"
+	TypAssignmentUpload = "ASG-UPL"
+	TypTutorial         = "TT-FILE"
+	TypInfPict          = "INF-IMG-M"
+	TypInfPictThumb     = "INF-IMG-T"
+	TypInf              = "INF-FILE"
+
+	TableAssignment = "assignments"
+	TableTutorial   = "tutorials"
 
 	StatusDeleted = 0
 	StatusExist   = 1
+
+	NoImgAvailable     = "/static/img/noimgavailable.png"
+	NotFoundURL        = "/api/v1/file/default/notfound.png"
+	UsrNoPhotoURL      = "/api/v1/file/default/usrnophoto.png"
+	AvailableTypesFile = "jpg~pdf~mp3~wav~rar~zip~csv~db~sql~jpeg~png~svg~pptx~xlsx~avi~mp4~docx~txt"
 )
 
 type File struct {
@@ -31,4 +44,10 @@ type File struct {
 	Type      string         `db:"type"`
 	TableName sql.NullString `db:"table_name"`
 	TableID   sql.NullString `db:"table_id"`
+}
+
+// IDStatus ..
+type IDStatus struct {
+	ID     string `db:"id"`
+	Status int64  `db:"status"`
 }

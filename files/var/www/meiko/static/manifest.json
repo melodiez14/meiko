@@ -1,0 +1,13 @@
+{
+    "short_name": "OWL",
+    "name": "OWL Assistant",
+    "icons": [{
+        "src": "/static/img/logo256.png",
+        "sizes": "256x256",
+        "type": "image/png"
+    }],
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#3e9dcf",
+    "background_color": "#3e9dcf"
+}

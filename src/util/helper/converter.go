@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -45,9 +46,9 @@ func ExtractExtension(fileName string) (string, string, error) {
 	}
 	if strings.Replace(splitted[length-1], " ", "", -1) == "" {
 		return "", "", fmt.Errorf("Doesn't have extension")
-	} else {
-		splitted[length-1] = strings.Replace(splitted[length-1], " ", "", -1)
 	}
+
+	splitted[length-1] = strings.Replace(splitted[length-1], " ", "", -1)
 
 	lastIndex := length - 1
 	fn := strings.Join(splitted[:lastIndex], ".")
@@ -185,6 +186,7 @@ func DayStringToInt(day string) (int8, error) {
 	}
 }
 
+// Int64ToStringSlice ...
 func Int64ToStringSlice(value []int64) []string {
 	var str []string
 	for _, val := range value {
@@ -210,11 +212,34 @@ func TimeToDayInt(time ...time.Time) []int8 {
 	return days
 }
 
+// Float64Round ...
 func Float64Round(value float64) float64 {
 	return math.Ceil(value - 0.5)
 }
 
+// Float32Round ...
 func Float32Round(value float32) float32 {
 	v := float64(value)
 	return float32(math.Ceil(v - 0.5))
+}
+
+// MimeToThumbnail ...
+func MimeToThumbnail(mime string) string {
+	imageMaps := map[string]string{
+		"^image/[a-z]*":     "/static/img/image.png",
+		"^application/pdf$": "/static/img/pdf.png",
+		"^application/vnd.(ms-powerpoint|openxmlformats-officedocument.presentationml)": "/static/img/ppt.png",
+		"^video/[a-z]*": "/static/img/video.png",
+		"^application/(msword|vnd.openxmlformats-officedocument.wordprocessingml|vnd.ms-word)": "/static/img/doc.png",
+		"^application/vnd.(ms-excel|openxmlformats-officedocument.spreadsheetml)":              "/static/img/xls.png",
+		"^application/(x-rar-compressed|zip|x-7z-compressed|x-bzip|x-bzip2|x-tar)$":            "/static/img/archive.png",
+	}
+
+	for i, val := range imageMaps {
+		if valid, _ := regexp.MatchString(i, mime); valid {
+			return val
+		}
+	}
+
+	return "/static/img/unknown.png"
 }

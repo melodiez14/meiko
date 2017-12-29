@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/melodiez14/meiko/src/util/helper"
 
@@ -163,9 +164,6 @@ func EmailVerificationHandler(w http.ResponseWriter, r *http.Request, ps httprou
 
 		go email.SendEmailValidation(u.Name, args.Email, verification.Code)
 
-		// for debugging purpose
-		fmt.Println(verification.Code)
-
 		template.RenderJSONResponse(w, new(template.Response).
 			SetMessage(fmt.Sprintf("Code has been sent to email")).
 			SetCode(http.StatusOK))
@@ -223,24 +221,47 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if args.Total > 100 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Max total should be less than or equal to 100"))
+		return
+	}
+
 	// get verified user by page
 	offset := (args.Page - 1) * args.Total
-	u, _ := user.SelectDashboard(sess.ID, args.Total, offset)
+	u, count, err := user.SelectDashboard(sess.ID, args.Total, offset, true)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
 
+	respUser := []getVerifiedUser{}
 	var status string
-	res := []getVerifiedResponse{}
 	for _, val := range u {
 		if val.Status == alias.UserStatusActivated {
 			status = "active"
 		} else {
 			status = "inactive"
 		}
-		res = append(res, getVerifiedResponse{
+		respUser = append(respUser, getVerifiedUser{
 			Name:         val.Name,
 			Email:        val.Email,
 			IdentityCode: val.IdentityCode,
 			Status:       status,
 		})
+	}
+
+	totalPage := count / int(args.Total)
+	if count%int(args.Total) > 0 {
+		totalPage++
+	}
+
+	res := getVerifiedResponse{
+		Page:      int(args.Page),
+		TotalPage: totalPage,
+		Users:     respUser,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
@@ -272,14 +293,14 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	params := activationParams{
 		IdentityCode: ps.ByName("id"),
-		Status:       r.FormValue("status"),
+		Status:       ps.ByName("status"),
 	}
 
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -300,7 +321,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	if u.Status != oldStatus || u.ID == sess.ID {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -311,7 +332,7 @@ func ActivationHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 		roles := make(map[string][]string)
 		if u.RoleGroupsID.Valid {
-			roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+			roles, _ = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
 		}
 
 		sess = &auth.User{
@@ -375,7 +396,6 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("Invalid email or password"))
 		return
 	}
-
 	// check whether user activated
 	switch u.Status {
 	case alias.UserStatusUnverified:
@@ -399,7 +419,12 @@ func SignInHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -574,16 +599,16 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	sess := r.Context().Value("User").(*auth.User)
 
-	u, err := user.GetByIdentityCode(sess.IdentityCode)
-	if err != nil {
-		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusForbidden).
-			AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
-		return
-	}
+	// u, err := user.GetByIdentityCode(sess.IdentityCode)
+	// if err != nil {
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusForbidden).
+	// 		AddError(fmt.Sprintf("%d has been registered!", sess.ID)))
+	// 	return
+	// }
 
 	var gender string
-	switch u.Gender {
+	switch sess.Gender {
 	case user.GenderMale:
 		gender = "male"
 	case user.GenderFemale:
@@ -591,13 +616,13 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	res := getProfileResponse{
-		Name:                  u.Name,
-		Email:                 u.Email,
+		Name:                  sess.Name,
+		Email:                 sess.Email,
 		Gender:                gender,
-		Phone:                 u.Phone.String,
-		IdentityCode:          u.IdentityCode,
-		LineID:                u.LineID.String,
-		Note:                  u.Note,
+		Phone:                 sess.Phone,
+		IdentityCode:          sess.IdentityCode,
+		LineID:                sess.LineID,
+		Note:                  sess.Note,
 		ImageProfile:          alias.URLProfile,
 		ImageProfileThumbnail: alias.URLProfileThumbnail,
 	}
@@ -651,7 +676,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -690,7 +715,12 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -753,7 +783,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	if args.IdentityCode != sess.IdentityCode || args.Email != sess.Email {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -921,7 +951,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if sess.IdentityCode == args.IdentityCode {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			SetMessage("Bad Request"))
+			SetMessage("Invalid Request"))
 		return
 	}
 
@@ -961,7 +991,12 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	roles := make(map[string][]string)
 	if u.RoleGroupsID.Valid {
-		roles = rg.GetModuleAccess(u.RoleGroupsID.Int64)
+		roles, err = rg.SelectModuleAccess(u.RoleGroupsID.Int64)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
 	}
 
 	sess = &auth.User{
@@ -1018,7 +1053,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if sess.IdentityCode == args.IdentityCode {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError("Bad Request"))
+			AddError("Invalid Request"))
 		return
 	}
 
@@ -1125,6 +1160,20 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetMessage("User successfully created").
+		SetCode(http.StatusOK))
+	return
+}
+
+// GetTimeHandler handles http request for serving the server time
+/*
+	@params:
+	@example:
+	@return:
+*/
+func GetTimeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	t := time.Now().Unix()
+	template.RenderJSONResponse(w, new(template.Response).
+		SetData(t).
 		SetCode(http.StatusOK))
 	return
 }
