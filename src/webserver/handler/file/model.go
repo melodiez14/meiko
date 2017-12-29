@@ -103,3 +103,6 @@ type fileResponse struct {
 	Name         string `json:"name"`
 	URLThumbnail string `json:"url_thumbnail"`
 }
+type availableTypesResponse struct {
+	Types []string `json:"types"`
+}

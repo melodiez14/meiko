@@ -10,6 +10,7 @@ import (
 	"time"
 
 	asg "github.com/melodiez14/meiko/src/module/assignment"
+	fl "github.com/melodiez14/meiko/src/module/file"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
 
@@ -172,7 +173,19 @@ func (params createParams) validate() (createArgs, error) {
 			return args, fmt.Errorf("types can not be empty")
 		}
 		allowedTypes = strings.Split(params.allowedTypesFile, "~")
-
+		availableTypes := strings.Split(fl.AvailableTypesFile, "~")
+		for _, val := range allowedTypes {
+			count := 0
+			for _, typeFile := range availableTypes {
+				if typeFile == val {
+					count++
+					continue
+				}
+			}
+			if count == 0 {
+				return args, fmt.Errorf(fmt.Sprintf("%s Denied type", val))
+			}
+		}
 		if helper.IsEmpty(params.maxFile) {
 			return args, fmt.Errorf("Max file can not be empty")
 		}
