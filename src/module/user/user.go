@@ -760,6 +760,45 @@ func SelectIDByIdentityCode(identityCode []int64) ([]int64, error) {
 
 }
 
+// SelectIDByScheduleID ..
+func SelectIDByScheduleID(scheduleID int64, limit, offset int) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d)
+		ORDER BY 
+			users_id 
+		ASC
+		LIMIT %d
+		OFFSET %d;
+		`, scheduleID, limit, offset)
+	var result []int64
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// SelectCountByScheduleID ..
+func SelectCountByScheduleID(scheduleID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d)
+		`, scheduleID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
 // IsExistRolegroupID ...
 func IsExistRolegroupID(rolegroupID int64) bool {
 	var x string
@@ -797,4 +836,31 @@ func SelectDistinctRolegroupID() ([]int64, error) {
 	}
 
 	return rolegroupsID, nil
+}
+
+// SelectConciseUserByID ..
+func SelectConciseUserByID(ids []int64) ([]ConciseUsers, error) {
+	var idsSt []string
+	for _, val := range ids {
+		idsSt = append(idsSt, fmt.Sprintf(`%d`, val))
+	}
+	queryIDs := strings.Join(idsSt, ",")
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			identity_code,
+			name
+		FROM
+			users
+		WHERE
+			id
+		IN
+			(%s)
+		`, queryIDs)
+	var result []ConciseUsers
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }

@@ -165,11 +165,15 @@ type getGradeResponse struct {
 }
 
 type detailParams struct {
-	IdentityCode string
+	ID    string
+	page  string
+	total string
 }
 
 type detailArgs struct {
-	IdentityCode int64
+	ID    int64
+	page  int
+	total int
 }
 
 type detailResponse struct {
@@ -183,6 +187,22 @@ type detailResponse struct {
 	FilesName        string `json:"files_name"`
 	Mime             string `json:"mime"`
 	Type             string `json:"type"`
+}
+type detAsgUser struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	UploadedAt  string `json:"uploaded_at"`
+	Link        string `json:"url"`
+}
+type respDetAsgUser struct {
+	TotalPage   int          `json:"total_page"`
+	CurrentPage int          `json:"current_page"`
+	ID          int64        `json:"id"`
+	Name        string       `json:"name"`
+	DueDate     string       `json:"due_date"`
+	Status      string       `json:"status"`
+	DetAsgUser  []detAsgUser `json:"users"`
 }
 
 type file struct {

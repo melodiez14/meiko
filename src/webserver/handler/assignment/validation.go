@@ -396,13 +396,33 @@ func (params deleteParams) validate() (deleteArgs, error) {
 
 func (params detailParams) validate() (detailArgs, error) {
 	var args detailArgs
-	identityCode, err := strconv.ParseInt(params.IdentityCode, 10, 64)
+	ID, err := strconv.ParseInt(params.ID, 10, 64)
 	if err != nil {
 		return args, fmt.Errorf("Error validation: ID should be numeric")
 	}
+	if helper.IsEmpty(params.page) || helper.IsEmpty(params.total) {
+		return args, fmt.Errorf("page or total is empty")
+	}
+
+	page, err := strconv.ParseInt(params.page, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("page must be numeric")
+	}
+
+	total, err := strconv.ParseInt(params.total, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("total must be numeric")
+	}
+
+	// should be positive number
+	if page < 0 || total < 0 {
+		return args, fmt.Errorf("page or total must be positive number")
+	}
 
 	args = detailArgs{
-		IdentityCode: identityCode,
+		ID:    ID,
+		page:  int(page),
+		total: int(total),
 	}
 	return args, nil
 }

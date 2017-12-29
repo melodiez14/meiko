@@ -12,6 +12,7 @@ const (
 	StatusUploadRequired    = 1
 	MaxFile                 = 5
 	MaxSizeFile             = 100
+	MaxPage                 = 10
 )
 
 // Assignment struct ...
@@ -24,6 +25,14 @@ type Assignment struct {
 	DueDate          time.Time      `db:"due_date"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
+}
+
+// ConciseAssignment ..
+type ConciseAssignment struct {
+	ID      int64     `db:"id"`
+	Name    string    `db:"name"`
+	DueDate time.Time `db:"due_date"`
+	Status  int8      `db:"status"`
 }
 
 // UserAssignment struct ...

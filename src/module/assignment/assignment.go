@@ -64,6 +64,39 @@ func IsExistByGradeParameterID(gpID int64) bool {
 	return true
 }
 
+// GetGradeParameterID ..
+func GetGradeParameterID(assignmentID int64) int64 {
+	query := fmt.Sprintf(`
+		SELECT
+			grade_parameters_id
+		FROM
+			assignments
+		WHERE
+			id=(%d);
+		`, assignmentID)
+	var result int64
+	_ = conn.DB.Get(&result, query)
+	return result
+}
+
+// GetAssignmentByID ..
+func GetAssignmentByID(assignmentID int64) ConciseAssignment {
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			due_date,
+			name,
+			status
+		FROM
+			assignments
+		WHERE
+			id=(%d)
+		`, assignmentID)
+	var result ConciseAssignment
+	_ = conn.DB.Get(&result, query)
+	return result
+}
+
 // Insert function is ...
 func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, duedate time.Time, status int8, tx *sqlx.Tx) (int64, error) {
 
@@ -570,6 +603,47 @@ func SelectSubmittedByUser(id []int64, userID int64) ([]UserAssignment, error) {
 		return nil, err
 	}
 	return assignment, nil
+}
+
+// SelectUserAssignmentByID ..
+func SelectUserAssignmentByID(assignmentID int64, limit, offset int) ([]UserAssignment, error) {
+	var assignment []UserAssignment
+	query := fmt.Sprintf(`
+		SELECT
+			assignments_id,
+			users_id,
+			score,
+			description,
+			created_at,
+			updated_at
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		LIMIT %d
+		OFFSET %d`, assignmentID, limit, offset)
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return nil, err
+	}
+	return assignment, nil
+}
+
+// SelectCountUsrAsgByID ..
+func SelectCountUsrAsgByID(assignmentID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		`, assignmentID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }
 
 // IsExistSubmitted used for check that are there any student which have uploaded it assignments

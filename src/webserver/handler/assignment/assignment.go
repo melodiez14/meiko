@@ -14,6 +14,7 @@ import (
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	usr "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/util/helper"
 	"github.com/melodiez14/meiko/src/webserver/template"
@@ -775,7 +776,165 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 }
 
-// not finished yet
+// DetailHandler ..
+func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+
+	params := detailParams{
+		ID:    ps.ByName("id"),
+		total: r.FormValue("ttl"),
+		page:  r.FormValue("pg"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	if !asg.IsAssignmentExist(args.ID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Assignment does not exist"))
+		return
+	}
+	gp := asg.GetGradeParameterID(args.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+	scheduleID, err := cs.GetScheduleIDByGP(gp)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	offset := (args.page - 1) * args.total
+	assignment := asg.GetAssignmentByID(args.ID)
+	var res respDetAsgUser
+	var asgUser []detAsgUser
+	var totalPg int
+	if assignment.Status == 0 {
+		total, err := usr.SelectCountByScheduleID(scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		totalPg = total / asg.MaxPage
+		if total%asg.MaxPage > 0 {
+			totalPg++
+		}
+		ids, err := usr.SelectIDByScheduleID(scheduleID, args.total, offset)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		users, err := usr.SelectConciseUserByID(ids)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		if len(users) > 0 {
+			for _, val := range users {
+				asgUser = append(asgUser, detAsgUser{
+					ID:          val.IdentityCode,
+					Name:        val.Name,
+					Description: "-",
+					UploadedAt:  "-",
+					Link:        "-",
+				})
+			}
+		}
+	} else {
+		total, err := asg.SelectCountUsrAsgByID(args.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		totalPg = total / asg.MaxPage
+		if total%asg.MaxPage > 0 {
+			totalPg++
+		}
+		sbmtdAsg, err := asg.SelectUserAssignmentByID(args.ID, args.total, offset)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		if len(sbmtdAsg) > 0 {
+			var usersID []int64
+			for _, val := range sbmtdAsg {
+				usersID = append(usersID, val.UserID)
+			}
+			users, err := usr.SelectConciseUserByID(usersID)
+			if err != nil {
+				template.RenderJSONResponse(w, new(template.Response).
+					SetCode(http.StatusInternalServerError))
+				return
+			}
+			for _, val := range sbmtdAsg {
+				var desc string
+				if val.Description.Valid {
+					desc = val.Description.String
+				}
+				asgUser = append(asgUser, detAsgUser{
+					ID:          val.UserID,
+					Description: desc,
+					UploadedAt:  val.UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+					Link:        "-",
+				})
+			}
+			for _, a := range asgUser {
+				for i, u := range users {
+					if a.ID == u.ID {
+						asgUser[i].ID = u.IdentityCode
+						asgUser[i].Name = u.Name
+					}
+				}
+			}
+		}
+	}
+	status := "must_upload"
+	if assignment.Status == 0 {
+		status = "upload_not_required"
+	}
+	res = respDetAsgUser{
+		TotalPage:   totalPg,
+		CurrentPage: args.page,
+		ID:          assignment.ID,
+		Name:        assignment.Name,
+		Status:      status,
+		DueDate:     assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+		DetAsgUser:  asgUser,
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// DeleteHandler ..
 func DeleteHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	sess := r.Context().Value("User").(*auth.User)
@@ -1148,56 +1307,6 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 // 		SetData(res))
 // 	return
 
-// }
-
-// // DetailHandler func is ...
-// func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("You don't have privilege"))
-// 		return
-// 	}
-
-// 	params := detailParams{
-// 		IdentityCode: ps.ByName("id"),
-// 	}
-
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-
-// 	assignment, err := as.GetByAssignementID(args.IdentityCode)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusNotFound))
-// 		return
-// 	}
-
-// 	desc := "-"
-// 	if assignment.Description.Valid {
-// 		desc = assignment.Description.String
-// 	}
-
-// 	res := detailResponse{
-// 		ID:               assignment.ID,
-// 		Status:           assignment.Status,
-// 		Name:             assignment.Name,
-// 		GradeParameterID: assignment.GradeParameterID,
-// 		Description:      desc,
-// 		DueDate:          assignment.DueDate.Format("Monday, 2 January 2006 15:04:05"),
-// 	}
-
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
 // }
 
 // // CreateHandlerByUser func ...
