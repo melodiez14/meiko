@@ -380,6 +380,20 @@ func (params readParams) validate() (readArgs, error) {
 	return args, nil
 
 }
+func (params availableParams) validate() (availableArgs, error) {
+
+	var args availableArgs
+	id, err := strconv.ParseInt(params.id, 10, 64)
+	if err != nil {
+		return args, fmt.Errorf("scheduleID must be numeric")
+	}
+
+	args = availableArgs{
+		id: id,
+	}
+	return args, nil
+
+}
 
 func (params deleteParams) validate() (deleteArgs, error) {
 	var args deleteArgs
