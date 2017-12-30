@@ -830,7 +830,7 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	offset := (args.page - 1) * args.total
 	assignment := asg.GetAssignmentByID(args.ID)
 	var res respDetAsgUser
-	var asgUser []detAsgUser
+	asgUser := []detAsgUser{}
 	var totalPg int
 	if assignment.Status == 0 {
 		total, err := usr.SelectCountByScheduleID(scheduleID)
