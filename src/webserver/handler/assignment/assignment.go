@@ -382,6 +382,7 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// ReadHandler ..
 func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	resp := readResponse{Assignments: []read{}}

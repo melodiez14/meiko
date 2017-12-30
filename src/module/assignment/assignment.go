@@ -291,9 +291,7 @@ func SelectByPage(gpID []int64, limit, offset int, isCount bool) ([]Assignment, 
 			assignments
 		WHERE
 			grade_parameters_id IN (%s)
-		LIMIT %d
-		OFFSET %d;`, queryGP, limit, offset)
-
+		;`, queryGP)
 	err = conn.DB.Get(&count, query)
 	if err != nil {
 		return assignment, count, err
