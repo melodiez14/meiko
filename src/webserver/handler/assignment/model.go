@@ -146,6 +146,13 @@ type deleteParams struct {
 type deleteArgs struct {
 	id int64
 }
+type availableParams struct {
+	id string
+}
+
+type availableArgs struct {
+	id int64
+}
 
 type getReportResponse struct {
 	ScheduleID int64  `json:"schedule_id"`
@@ -365,4 +372,8 @@ type responseScoreSchedule struct {
 	Mid        string `json:"mid"`
 	Final      string `json:"final"`
 	Total      string `json:"total"`
+}
+type respGP struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }

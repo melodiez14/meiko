@@ -111,6 +111,7 @@ func loadRouter(r *httprouter.Router) {
 
 	// ========================= Assignment Handler ========================
 	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.ReadHandler))
+	r.GET("/api/admin/v1/assignment/:id/available", auth.MustAuthorize(assignment.GetAvailableGP))
 	r.POST("/api/admin/v1/assignment", auth.MustAuthorize(assignment.CreateHandler))
 	r.PATCH("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))

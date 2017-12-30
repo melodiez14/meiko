@@ -382,6 +382,53 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	return
 }
 
+// GetAvailableGP ..
+func GetAvailableGP(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := availableParams{
+		id: ps.ByName("id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if !cs.IsAssistant(sess.ID, args.id) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	gps, err := cs.SelectGPBySchedule([]int64{args.id})
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	res := []respGP{}
+	for _, gp := range gps {
+		res = append(res, respGP{
+			ID:   gp.ID,
+			Name: gp.Type,
+		})
+	}
+	fmt.Println(gps)
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).SetData(res))
+	return
+
+}
+
 // ReadHandler ..
 func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
