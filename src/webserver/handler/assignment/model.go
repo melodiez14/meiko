@@ -109,7 +109,7 @@ type createArgs struct {
 	name             string
 	description      sql.NullString
 	status           int8
-	dueDate          time.Time
+	dueDate          string
 	maxSizeFile      int64
 	allowedTypesFile []string
 	maxFile          int64
@@ -214,16 +214,16 @@ type respDetAsgUser struct {
 	DetAsgUser  []detAsgUser `json:"users"`
 }
 type respDetailUpdate struct {
-	ID               int64    `json:"id"`
-	Name             string   `json:"name"`
-	Description      string   `json:"description"`
-	DueDate          string   `json:"due_date"`
-	GradeParameterID int64    `json:"grade_parameter_id"`
-	Status           int8     `json:"status"`
-	MaxSize          int8     `json:"max_size"`
-	MaxFile          int8     `json:"max_file"`
-	Type             []string `json:"types"`
-	FilesID          []string `json:"files_id"`
+	ID               int64     `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	DueDate          time.Time `json:"due_date"`
+	GradeParameterID int64     `json:"grade_parameter_id"`
+	Status           int8      `json:"status"`
+	MaxSize          int8      `json:"max_size"`
+	MaxFile          int8      `json:"max_file"`
+	Type             []string  `json:"types"`
+	FilesID          []file    `json:"files"`
 }
 
 type file struct {
