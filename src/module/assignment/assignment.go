@@ -108,7 +108,7 @@ func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, dueda
 	layout := `2006-01-02 15:04:05`
 	timeQuery := duedate.Format(layout)
 	var query string
-	if gps == 1 {
+	if status == 1 {
 		query = fmt.Sprintf(`
 			INSERT INTO
 				assignments(
@@ -152,13 +152,11 @@ func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, dueda
 				(%d),
 				('%s'),
 				(%d),
-				(%d),
 				NOW(),
 				NOW()
 			);
-			`, name, queryDesc, status, timeQuery, gps, maxSize)
+			`, name, queryDesc, status, timeQuery, gps)
 	}
-
 	var result sql.Result
 	var err error
 	result, err = tx.Exec(query)
@@ -272,6 +270,7 @@ func SelectByPage(gpID []int64, limit, offset int, isCount bool) ([]Assignment, 
 			assignments
 		WHERE
 			grade_parameters_id IN (%s)
+		ORDER BY updated_at DESC
 		LIMIT %d
 		OFFSET %d;`, queryGP, limit, offset)
 
@@ -376,6 +375,8 @@ func GetByID(id int64) (Assignment, error) {
 			description,
 			grade_parameters_id,
 			due_date,
+			max_size,
+			max_file,
 			created_at,
 			updated_at
 		FROM

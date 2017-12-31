@@ -166,7 +166,10 @@ func (params createParams) validate() (createArgs, error) {
 			return args, fmt.Errorf("Can not parse from size string to size int64")
 		}
 		if size >= asg.MaxSizeFile {
-			return args, fmt.Errorf("Max size too large. It should be below 100MB")
+			return args, fmt.Errorf("Max size should be below 100MB")
+		}
+		if size < asg.MinSizeFile {
+			return args, fmt.Errorf("Max size should be above or equal 1MB")
 		}
 
 		if helper.IsEmpty(params.allowedTypesFile) {
@@ -189,12 +192,16 @@ func (params createParams) validate() (createArgs, error) {
 		if helper.IsEmpty(params.maxFile) {
 			return args, fmt.Errorf("Max file can not be empty")
 		}
-		maxFile, err = strconv.ParseInt(params.maxSizeFile, 10, 64)
+		maxFile, err = strconv.ParseInt(params.maxFile, 10, 64)
 		if err != nil {
 			return args, fmt.Errorf("Can not convert max file to int64")
 		}
+		fmt.Println("ini max :", maxFile)
 		if maxFile > asg.MaxFile {
-			return args, fmt.Errorf("Max file can not more than 5")
+			return args, fmt.Errorf("Max file should be bellow or equal 5")
+		}
+		if maxFile < asg.MinFile {
+			return args, fmt.Errorf("Max file should be above or equal 1")
 		}
 	}
 	if helper.IsEmpty(params.dueDate) {
@@ -434,9 +441,10 @@ func (params detailParams) validate() (detailArgs, error) {
 	}
 
 	args = detailArgs{
-		ID:    ID,
-		page:  int(page),
-		total: int(total),
+		ID:      ID,
+		page:    int(page),
+		total:   int(total),
+		payload: params.payload,
 	}
 	return args, nil
 }
