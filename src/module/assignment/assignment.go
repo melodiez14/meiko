@@ -98,15 +98,12 @@ func GetAssignmentByID(assignmentID int64) ConciseAssignment {
 }
 
 // Insert function is ...
-func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, duedate time.Time, status int8, tx *sqlx.Tx) (int64, error) {
-
+func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, duedate string, status int8, tx *sqlx.Tx) (int64, error) {
 	var id int64
 	queryDesc := fmt.Sprintf("(NULL)")
 	if desc.Valid {
 		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
-	layout := `2006-01-02 15:04:05`
-	timeQuery := duedate.Format(layout)
 	var query string
 	if status == 1 {
 		query = fmt.Sprintf(`
@@ -133,7 +130,7 @@ func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, dueda
 				NOW(),
 				NOW()
 			);
-			`, name, queryDesc, status, timeQuery, gps, maxSize, maxFile)
+			`, name, queryDesc, status, duedate, gps, maxSize, maxFile)
 	} else {
 		query = fmt.Sprintf(`
 			INSERT INTO
@@ -155,7 +152,7 @@ func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, dueda
 				NOW(),
 				NOW()
 			);
-			`, name, queryDesc, status, timeQuery, gps)
+			`, name, queryDesc, status, duedate, gps)
 	}
 	var result sql.Result
 	var err error

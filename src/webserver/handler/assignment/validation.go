@@ -207,11 +207,6 @@ func (params createParams) validate() (createArgs, error) {
 	if helper.IsEmpty(params.dueDate) {
 		return args, fmt.Errorf("Due date can not be empty")
 	}
-	layout := `2006-01-02 15:04:05`
-	dueDate, err := time.Parse(layout, params.dueDate)
-	if err != nil {
-		return args, fmt.Errorf(err.Error())
-	}
 
 	return createArgs{
 		filesID:          filesID,
@@ -219,7 +214,7 @@ func (params createParams) validate() (createArgs, error) {
 		name:             name,
 		description:      desc,
 		status:           int8(status),
-		dueDate:          dueDate,
+		dueDate:          params.dueDate,
 		maxSizeFile:      size,
 		allowedTypesFile: allowedTypes,
 		maxFile:          maxFile,

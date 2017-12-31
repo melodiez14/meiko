@@ -875,7 +875,6 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	if args.payload == "update" {
 		typs := []string{}
-		fls := []string{}
 		assignment, err := asg.GetByID(args.ID)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
@@ -888,12 +887,23 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 				SetCode(http.StatusInternalServerError))
 			return
 		}
-		id := strconv.FormatInt(args.ID, 10)
-		fls, err = fl.SelectIDByRelation(fl.TypAssignment, id, sess.ID)
+		tableID := []string{strconv.FormatInt(args.ID, 10)}
+		asgFile, err := fl.SelectByRelation(fl.TypAssignment, tableID, nil)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
 			return
+		}
+
+		// file from assistant
+		rAsgFile := []file{}
+		for _, val := range asgFile {
+			rAsgFile = append(rAsgFile, file{
+				ID:           val.ID,
+				Name:         fmt.Sprintf("%s.%s", val.Name, val.Extension),
+				URL:          fmt.Sprintf("/api/v1/file/assignment/%s.%s", val.ID, val.Extension),
+				URLThumbnail: helper.MimeToThumbnail(val.Mime),
+			})
 		}
 		desc := "-"
 		if assignment.Description.Valid {
@@ -913,23 +923,23 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 				ID:               assignment.ID,
 				Name:             assignment.Name,
 				Description:      desc,
-				DueDate:          assignment.DueDate.Format("2006-01-02 15:04:05"),
+				DueDate:          assignment.DueDate,
 				GradeParameterID: assignment.GradeParameterID,
 				Status:           assignment.Status,
 				MaxFile:          max,
 				MaxSize:          size,
 				Type:             typs,
-				FilesID:          fls,
+				FilesID:          rAsgFile,
 			}
 		} else {
 			res = respDetailUpdate{
 				ID:               assignment.ID,
 				Name:             assignment.Name,
 				Description:      desc,
-				DueDate:          assignment.DueDate.Format("2006-01-02 15:04:05"),
+				DueDate:          assignment.DueDate,
 				GradeParameterID: assignment.GradeParameterID,
 				Status:           assignment.Status,
-				FilesID:          fls,
+				FilesID:          rAsgFile,
 			}
 		}
 		template.RenderJSONResponse(w, new(template.Response).
