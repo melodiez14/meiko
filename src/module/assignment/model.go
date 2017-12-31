@@ -11,7 +11,9 @@ const (
 	StatusUploadNotRequired = 0
 	StatusUploadRequired    = 1
 	MaxFile                 = 5
+	MinFile                 = 1
 	MaxSizeFile             = 100
+	MinSizeFile             = 1
 	MaxPage                 = 10
 )
 
@@ -23,6 +25,8 @@ type Assignment struct {
 	Description      sql.NullString `db:"description"`
 	GradeParameterID int64          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
+	MaxSize          sql.NullInt64  `db:"max_size"`
+	MaxFile          sql.NullInt64  `db:"max_file"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
 }

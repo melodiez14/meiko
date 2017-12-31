@@ -172,15 +172,17 @@ type getGradeResponse struct {
 }
 
 type detailParams struct {
-	ID    string
-	page  string
-	total string
+	ID      string
+	page    string
+	total   string
+	payload string
 }
 
 type detailArgs struct {
-	ID    int64
-	page  int
-	total int
+	ID      int64
+	page    int
+	total   int
+	payload string
 }
 
 type detailResponse struct {
@@ -210,6 +212,18 @@ type respDetAsgUser struct {
 	DueDate     string       `json:"due_date"`
 	Status      string       `json:"status"`
 	DetAsgUser  []detAsgUser `json:"users"`
+}
+type respDetailUpdate struct {
+	ID               int64    `json:"id"`
+	Name             string   `json:"name"`
+	Description      string   `json:"description"`
+	DueDate          string   `json:"due_date"`
+	GradeParameterID int64    `json:"grade_parameter_id"`
+	Status           int8     `json:"status"`
+	MaxSize          int8     `json:"max_size"`
+	MaxFile          int8     `json:"max_file"`
+	Type             []string `json:"types"`
+	FilesID          []string `json:"files_id"`
 }
 
 type file struct {

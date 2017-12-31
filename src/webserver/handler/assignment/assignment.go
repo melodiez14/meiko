@@ -422,7 +422,6 @@ func GetAvailableGP(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 			Name: gp.Type,
 		})
 	}
-	fmt.Println(gps)
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).SetData(res))
 	return
@@ -559,7 +558,6 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError("You don't have privilege"))
 		return
 	}
-
 	if len(args.filesID) > 0 {
 		filesID, err := fl.SelectIDStatusByID(args.filesID)
 		if err != nil {
@@ -836,9 +834,10 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	params := detailParams{
-		ID:    ps.ByName("id"),
-		total: r.FormValue("ttl"),
-		page:  r.FormValue("pg"),
+		ID:      ps.ByName("id"),
+		total:   r.FormValue("ttl"),
+		page:    r.FormValue("pg"),
+		payload: r.FormValue("payload"),
 	}
 	args, err := params.validate()
 	if err != nil {
@@ -873,6 +872,71 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			SetCode(http.StatusForbidden).
 			AddError("You don't have privilege"))
 		return
+	}
+	if args.payload == "update" {
+		typs := []string{}
+		fls := []string{}
+		assignment, err := asg.GetByID(args.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		typs, err = fl.SelectTypeByID(args.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		id := strconv.FormatInt(args.ID, 10)
+		fls, err = fl.SelectIDByRelation(fl.TypAssignment, id, sess.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		desc := "-"
+		if assignment.Description.Valid {
+			desc = assignment.Description.String
+		}
+		res := respDetailUpdate{}
+		if assignment.Status == 1 {
+			var size int8
+			var max int8
+			if assignment.MaxFile.Valid {
+				max = int8(assignment.MaxFile.Int64)
+			}
+			if assignment.MaxSize.Valid {
+				size = int8(assignment.MaxSize.Int64)
+			}
+			res = respDetailUpdate{
+				ID:               assignment.ID,
+				Name:             assignment.Name,
+				Description:      desc,
+				DueDate:          assignment.DueDate.Format("2006-01-02 15:04:05"),
+				GradeParameterID: assignment.GradeParameterID,
+				Status:           assignment.Status,
+				MaxFile:          max,
+				MaxSize:          size,
+				Type:             typs,
+				FilesID:          fls,
+			}
+		} else {
+			res = respDetailUpdate{
+				ID:               assignment.ID,
+				Name:             assignment.Name,
+				Description:      desc,
+				DueDate:          assignment.DueDate.Format("2006-01-02 15:04:05"),
+				GradeParameterID: assignment.GradeParameterID,
+				Status:           assignment.Status,
+				FilesID:          fls,
+			}
+		}
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(res))
+		return
+
 	}
 	offset := (args.page - 1) * args.total
 	assignment := asg.GetAssignmentByID(args.ID)
