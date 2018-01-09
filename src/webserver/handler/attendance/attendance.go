@@ -614,7 +614,7 @@ func ReadMeetingDetailHandler(w http.ResponseWriter, r *http.Request, ps httprou
 		Subject:       meeting.Subject,
 		Description:   meeting.Description.String,
 		MeetingNumber: meeting.Number,
-		Date:          meeting.Date.UnixNano(),
+		Date:          meeting.Date.Unix(),
 		Student:       std,
 	}
 

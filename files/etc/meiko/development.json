@@ -3,10 +3,10 @@
         "port": "9000"
     },
     "database": {
-        "host": "47.74.149.190",
+        "host": "localhost",
         "port": "3306",
-        "username": "azmi",
-        "password": "Qwerty@123",
+        "username": "meiko",
+        "password": "meiko",
         "driver": "mysql",
         "database": "meiko"
     },

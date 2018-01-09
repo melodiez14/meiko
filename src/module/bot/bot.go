@@ -2,7 +2,11 @@ package bot
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +15,47 @@ import (
 
 	"github.com/melodiez14/meiko/src/util/conn"
 )
+
+func GetIntent(text string) (string, error) {
+
+	data := url.Values{}
+	data.Set("text", text)
+
+	params := data.Encode()
+	req, err := http.NewRequest("POST", "http://13.229.165.87/api/v1/predict", strings.NewReader(params))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(len(params)))
+
+	client := http.Client{
+		Timeout: time.Second * 2,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	res := GetIntentHttpResponse{}
+	err = json.Unmarshal(body, &res)
+	if err != nil {
+		return "", err
+	}
+
+	if res.Confident < 0.5 {
+		return "", nil
+	}
+
+	return res.Intent, nil
+}
 
 func LoadByUserID(userID int64) ([]Log, error) {
 
@@ -340,15 +385,12 @@ func SelectInfoWithFile(scheduleID []int64, t []time.Time) ([]Information, error
 	ids := strings.Join(d, ", ")
 	query := fmt.Sprintf(`
 		SELECT
-			i.id,
-			i.title,
-			i.description,
-			i.created_at,
-			f.id as files_id,
-			f.extension as files_ext
+			id,
+			title,
+			description,
+			created_at
 		FROM
 			informations i
-		LEFT JOIN files f ON f.table_id = i.id AND f.type = 'INF-IMG-T' AND f.status = 1
 		WHERE
 			(
 				schedules_id IS NULL OR

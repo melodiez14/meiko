@@ -130,15 +130,10 @@ func handleInformation(text string, userID int64) ([]map[string]interface{}, err
 	}
 
 	for _, val := range info {
-		image := fl.NotFoundURL
-		if val.FileID.Valid {
-			image = fmt.Sprintf("/api/v1/file/information/%s.%s", val.FileID.String, val.FileExt.String)
-		}
 		args = append(args, map[string]interface{}{
 			"id":          val.ID,
 			"title":       val.Title,
 			"description": val.Description.String,
-			"image":       image,
 			"posted_at":   val.CreatedAt.Unix(),
 		})
 	}

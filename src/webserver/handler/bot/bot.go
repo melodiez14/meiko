@@ -29,7 +29,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// get text intent
-	intent, _ := getIntent(args.NormalizedText)
+	intent, _ := bot.GetIntent(args.NormalizedText)
 
 	// convert intent into assistant
 	data := []map[string]interface{}{}

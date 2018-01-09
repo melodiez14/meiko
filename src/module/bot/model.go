@@ -10,6 +10,11 @@ const (
 	StatusBot  = 1
 )
 
+type GetIntentHttpResponse struct {
+	Intent    string  `json:"intent"`
+	Confident float64 `json:"confident"`
+}
+
 type Log struct {
 	ID        uint64    `db:"id"`
 	Message   string    `db:"message"`

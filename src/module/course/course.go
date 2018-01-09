@@ -366,10 +366,16 @@ func InsertSchedule(userID int64, startTime, endTime, year int16, semester, day,
 	return id, nil
 }
 
-func SelectByPage(limit, offset int, isCount bool) ([]CourseSchedule, int, error) {
+func SelectByPage(limit, offset int, isCount bool, scheduleID []int64) ([]CourseSchedule, int, error) {
 
 	var course []CourseSchedule
 	var count int
+
+	if len(scheduleID) < 1 {
+		return course, count, nil
+	}
+
+	scid := strings.Join(helper.Int64ToStringSlice(scheduleID), ", ")
 	query := fmt.Sprintf(`
 		SELECT
 			cs.id,
@@ -388,11 +394,9 @@ func SelectByPage(limit, offset int, isCount bool) ([]CourseSchedule, int, error
 			sc.created_by
 		FROM
 			courses cs
-		RIGHT JOIN
-			schedules sc
-		ON
-			cs.id = sc.courses_id
-		LIMIT %d OFFSET %d;`, limit, offset)
+		RIGHT JOIN schedules sc ON cs.id = sc.courses_id
+		WHERE sc.id IN (%s)
+		LIMIT %d OFFSET %d;`, scid, limit, offset)
 	rows, err := conn.DB.Queryx(query)
 	defer rows.Close()
 	if err != nil {
@@ -442,7 +446,8 @@ func SelectByPage(limit, offset int, isCount bool) ([]CourseSchedule, int, error
 		SELECT
 			COUNT(*)
 		FROM
-			schedules`)
+			schedules
+		WHERE id IN (%s)`, scid)
 	err = conn.DB.Get(&count, query)
 	if err != nil {
 		return course, count, err

@@ -222,8 +222,15 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	scid, err := cs.SelectIDByUserID(sess.ID, cs.PStatusAssistant)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
 	offset := (args.page - 1) * args.total
-	courses, count, err := cs.SelectByPage(args.total, offset, true)
+	courses, count, err := cs.SelectByPage(args.total, offset, true, scid)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
