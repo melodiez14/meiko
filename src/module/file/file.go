@@ -102,9 +102,8 @@ func DeleteByRelation(typ, tableID string, tx *sqlx.Tx) error {
 			status = (%d),
 			updated_at = NOW()
 		WHERE
-			table_name = ('%s') AND
+			type = ('%s') AND
 			table_id = ('%s');`, StatusDeleted, typ, tableID)
-
 	var err error
 	if tx != nil {
 		_, err = tx.Exec(query)
@@ -119,7 +118,7 @@ func DeleteByRelation(typ, tableID string, tx *sqlx.Tx) error {
 
 // Delete ...
 func Delete(id string, tx *sqlx.Tx) error {
-
+	var result sql.Result
 	query := fmt.Sprintf(`
 		UPDATE
 			files
@@ -128,15 +127,18 @@ func Delete(id string, tx *sqlx.Tx) error {
 			updated_at = NOW()
 		WHERE
 			id = ('%s');`, StatusDeleted, id)
-
 	var err error
 	if tx != nil {
-		_, err = tx.Exec(query)
+		result, err = tx.Exec(query)
 	} else {
-		_, err = conn.DB.Exec(query)
+		result, err = conn.DB.Exec(query)
 	}
 	if err != nil {
 		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
 	}
 	return nil
 }
@@ -253,6 +255,7 @@ func InsertImageProfile(id, name, mime, extension string, userID int64, typ stri
 	return nil
 }
 
+// UpdateRelation ..
 func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 
 	var result sql.Result
@@ -268,7 +271,6 @@ func UpdateRelation(id, typ, tableID string, tx *sqlx.Tx) error {
 			type = ('%s') AND
 			table_id IS NULL;
 		`, tableID, id, typ)
-
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -396,6 +398,7 @@ func SelectByRelation(typ string, tablesID []string, userID *int64) ([]File, err
 	return files, nil
 }
 
+// SelectIDByRelation ..
 func SelectIDByRelation(typ string, tableID string, userID int64) ([]string, error) {
 
 	var filesID []string
@@ -410,12 +413,31 @@ func SelectIDByRelation(typ string, tableID string, userID int64) ([]string, err
 			type = ('%s') AND
 			table_id = ('%s');
 		`, userID, StatusExist, typ, tableID)
-
 	err := conn.DB.Select(&filesID, query)
 	if err != nil {
 		return filesID, err
 	}
 	return filesID, nil
+}
+
+// SelectCountIDByRelation ..
+func SelectCountIDByRelation(typ string, tableID string, userID int64) (int, error) {
+
+	var count int
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			files
+		WHERE
+			users_id = (%d) AND
+			status = (%d) AND
+			type = ('%s') AND
+			table_id = ('%s');
+		`, userID, StatusExist, typ, tableID)
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }
 
 // UpdateStatusFilesByNameID func ...
@@ -487,4 +509,133 @@ func GetByUserIDTableIDName(UserID, TableID int64, TableName string) ([]File, er
 		return files, err
 	}
 	return files, nil
+}
+
+// SelectIDStatusByID ..
+func SelectIDStatusByID(filesID []string) ([]IDStatus, error) {
+	ids := strings.Join(filesID, ", ")
+
+	var result []IDStatus
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			status
+		FROM
+			files
+		WHERE
+			id
+		IN
+			('%s')
+		`, ids)
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+// InsertType ..
+func InsertType(typ []string, assignmentID int64, tx *sqlx.Tx) error {
+	var value []string
+	for _, val := range typ {
+		value = append(value, fmt.Sprintf(`('%s',%d)`, val, assignmentID))
+	}
+	valueQuery := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			types
+		(
+			name,
+			assignments_id
+		)
+		VALUES
+			%s
+		;`, valueQuery)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+//SelectTypeByID ..
+func SelectTypeByID(assignmentID int64) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			name
+		FROM
+			types
+		WHERE
+		assignments_id = (%d);
+		`, assignmentID)
+	var typs []string
+	err := conn.DB.Select(&typs, query)
+	if err != nil {
+		return typs, err
+	}
+	return typs, nil
+}
+
+// DeleteTypeByID ..
+func DeleteTypeByID(typ []string, assignmentID int64, tx *sqlx.Tx) error {
+	var listTyp []string
+
+	for _, val := range typ {
+		listTyp = append(listTyp, fmt.Sprintf(`'%s'`, val))
+	}
+	queryTyp := strings.Join(listTyp, ", ")
+	query := fmt.Sprintf(`
+		DELETE FROM 
+			types
+		WHERE
+			assignments_id = (%d) AND name IN (%s);
+		`, assignmentID, queryTyp)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+// DeleteAllTypeByID ..
+func DeleteAllTypeByID(assignmentID int64, tx *sqlx.Tx) error {
+	query := fmt.Sprintf(`
+		DELETE FROM 
+			types
+		WHERE
+			assignments_id = (%d);
+		`, assignmentID)
+	result, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+	return nil
+}
+
+//SelectCountTypeByID ..
+func SelectCountTypeByID(assignmentID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			types
+		WHERE
+			assignments_id =(%d);
+		`, assignmentID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }

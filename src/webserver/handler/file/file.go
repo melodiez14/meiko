@@ -529,3 +529,23 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	return
 }
+
+// AvailableTypes ..
+func AvailableTypes(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXCreate, rg.RoleCreate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	types := strings.Split(fl.AvailableTypesFile, "~")
+	res := availableTypesResponse{}
+	for _, val := range types {
+		res.Types = append(res.Types, val)
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}

@@ -57,6 +57,7 @@ func loadRouter(r *httprouter.Router) {
 	// ========================== File Handler ==========================
 	r.GET("/api/v1/filerouter", auth.OptionalAuthorize(file.RouterFileHandler))
 	r.GET("/api/v1/file/:payload/:filename", file.GetFileHandler)
+	r.GET("/api/v1/admin/file/types/available", auth.MustAuthorize(file.AvailableTypes))
 	r.GET("/api/v1/image/:payload", auth.MustAuthorize(file.GetProfileHandler))
 	r.POST("/api/v1/image/profile", auth.MustAuthorize(file.UploadProfileImageHandler))
 	r.POST("/api/admin/v1/image/information", auth.MustAuthorize(file.UploadInformationImageHandler))
@@ -110,10 +111,11 @@ func loadRouter(r *httprouter.Router) {
 
 	// ========================= Assignment Handler ========================
 	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.ReadHandler))
-	// r.POST("/api/admin/v1/assignment/create", auth.MustAuthorize(assignment.CreateHandler))
-	// r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
-	// r.POST("/api/admin/v1/assignment/update/:id", auth.MustAuthorize(assignment.UpdateHandler))
-	// r.POST("/api/admin/v1/assignment/delete/:assignment_id", auth.MustAuthorize(assignment.DeleteAssignmentHandler))
+	r.GET("/api/admin/v1/assignment/:id/available", auth.MustAuthorize(assignment.GetAvailableGP))
+	r.POST("/api/admin/v1/assignment", auth.MustAuthorize(assignment.CreateHandler))
+	r.PATCH("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandler))
+	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
+	r.DELETE("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DeleteHandler))
 	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
 	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
 	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score

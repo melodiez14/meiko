@@ -61,7 +61,7 @@ const (
 
 type (
 	// QueryGet struct for get query data from database
-	QueryGet    struct{ string }
+	QueryGet struct{ string }
 	// QuerySelect struct for show query data from database
 	QuerySelect struct{ string }
 	// QueryInsert struct for send query data to database
@@ -146,4 +146,11 @@ type Confirmation struct {
 	ID      int64         `db:"id"`
 	Code    sql.NullInt64 `db:"email_verification_code"`
 	Attempt sql.NullInt64 `db:"email_verification_attempt"`
+}
+
+// ConciseUsers ..
+type ConciseUsers struct {
+	ID           int64  `db:"id"`
+	Name         string `db:"name"`
+	IdentityCode int64  `db:"identity_code"`
 }
