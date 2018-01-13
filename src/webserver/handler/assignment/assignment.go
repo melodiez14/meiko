@@ -1352,6 +1352,179 @@ func GetReportHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	return
 }
 
+// GetGradeByAdmin ..
+func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	// get schedule, assignment
+	params := detailScoreParams{
+		AssignmentID: r.FormValue("assignment_id"),
+	}
+	// validate
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	// is schedule_id match with assignments_id?
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	scheduleID, err := cs.GetScheduleIDByGP(gradeParameterID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	if !asg.IsAssignmentExist(args.AssignmentID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+	// is user (admin) took that course?
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("You dont have privillage"))
+		return
+	}
+
+	// get assignment detail
+	assignments := asg.GetAssignmentByID(args.AssignmentID)
+
+	// assignment must upload
+	res := detailAssignmentResponse{}
+	us := []userAssignment{}
+	res = detailAssignmentResponse{
+		ID:      assignments.ID,
+		Name:    assignments.Name,
+		DueDate: assignments.DueDate.Format("Monday, 2 January 2006 15:04:05"),
+	}
+	if assignments.Status == 1 || (asg.IsExistSubmitted(assignments.ID) && assignments.Status == 0) {
+		ids := []int64{}
+		users, err := asg.SelectUserScoreByID(assignments.ID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		for _, val := range users {
+			ids = append(ids, val.UserID)
+		}
+		usrDetail, err := usr.SelectConciseUserByID(ids)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		if users != nil {
+			for i := 0; i < len(usrDetail); i++ {
+				var score float32
+				if users[i].Score.Valid {
+					score = float32(users[i].Score.Float64)
+				}
+				us = append(us, userAssignment{
+					ID:        usrDetail[i].IdentityCode,
+					Name:      usrDetail[i].Name,
+					Submitted: users[i].UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
+					Grade:     score,
+				})
+			}
+		}
+		res.User = us
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(res))
+		return
+	}
+	if !asg.IsExistSubmitted(assignments.ID) {
+		ids, err := cs.SelectIDBySchedule(scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		usrDetail, err := usr.SelectConciseUserByID(ids)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+		for i := 0; i < len(usrDetail); i++ {
+			us = append(us, userAssignment{
+				ID:   usrDetail[i].IdentityCode,
+				Name: usrDetail[i].Name,
+			})
+		}
+		res.User = us
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(res))
+		return
+	}
+
+	// userList := []userAssignment{}
+	// is assingment must upload or not?
+	// if asg.IsAssignmentMustUpload(args.AssignmentID) {
+	// 	userAssignments, err := as.SelectUserAssignmentsByStatusID(args.AssignmentID)
+	// 	if err != nil {
+	// 		template.RenderJSONResponse(w, new(template.Response).
+	// 			SetCode(http.StatusInternalServerError))
+	// 		return
+	// 	}
+	// 	for _, value := range userAssignments {
+	// 		userList = append(userList, userAssignment{
+	// 			UserID: value.UserID,
+	// 			Name:   value.Name,
+	// 			Grade:  0,
+	// 		})
+	// 	}
+	// 	res = detailAssignmentResponse{
+	// 		Name:          assignments.Name,
+	// 		Description:   assignments.Description,
+	// 		DueDate:       assignments.DueDate,
+	// 		IsCreateScore: false,
+	// 		Praktikan:     userList,
+	// 	}
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusOK).
+	// 		SetData(res))
+	// 	return
+	// }
+	// userAssignments, err := usr.SelectUserByScheduleID(args.ScheduleID)
+	// if err != nil {
+	// 	template.RenderJSONResponse(w, new(template.Response).
+	// 		SetCode(http.StatusInternalServerError))
+	// 	return
+	// }
+
+	// for _, value := range userAssignments {
+	// 	userList = append(userList, userAssignment{
+	// 		UserID: value.UserID,
+	// 		Name:   value.Name,
+	// 		Grade:  0,
+	// 	})
+	// }
+	// res = detailAssignmentResponse{
+	// 	Name:          assignments.Name,
+	// 	Description:   assignments.Description,
+	// 	DueDate:       assignments.DueDate,
+	// 	IsCreateScore: true,
+	// 	Praktikan:     userList,
+	// }
+	// template.RenderJSONResponse(w, new(template.Response).
+	// 	SetCode(http.StatusOK).
+	// 	SetData(res))
+	// return
+
+}
+
 // // CreateHandler function is
 // func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	sess := r.Context().Value("User").(*auth.User)

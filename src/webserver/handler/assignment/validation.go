@@ -196,7 +196,6 @@ func (params createParams) validate() (createArgs, error) {
 		if err != nil {
 			return args, fmt.Errorf("Can not convert max file to int64")
 		}
-		fmt.Println("ini max :", maxFile)
 		if maxFile > asg.MaxFile {
 			return args, fmt.Errorf("Max file should be bellow or equal 5")
 		}
@@ -628,6 +627,20 @@ func (params updateScoreParams) validate() (updateScoreArgs, error) {
 	}, nil
 }
 
+func (params detailScoreParams) validate() (detailScoreArgs, error) {
+	var args detailScoreArgs
+	// Assignment ID validation
+	if helper.IsEmpty(params.AssignmentID) {
+		return args, fmt.Errorf("Assignment ID can not be empty")
+	}
+	assignmentID, err := strconv.ParseInt(params.AssignmentID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+	return detailScoreArgs{
+		AssignmentID: assignmentID,
+	}, nil
+}
 func (params detailAssignmentParams) validate() (detailAssignmentArgs, error) {
 	var args detailAssignmentArgs
 	//Schedule ID validation

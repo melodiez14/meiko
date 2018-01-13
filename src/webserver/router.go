@@ -110,16 +110,16 @@ func loadRouter(r *httprouter.Router) {
 	// ========================= End Bot Handler ========================
 
 	// ========================= Assignment Handler ========================
+	// Admin section
 	r.GET("/api/admin/v1/assignment", auth.MustAuthorize(assignment.ReadHandler))
 	r.GET("/api/admin/v1/assignment/:id/available", auth.MustAuthorize(assignment.GetAvailableGP))
 	r.POST("/api/admin/v1/assignment", auth.MustAuthorize(assignment.CreateHandler))
 	r.PATCH("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.UpdateHandler))
 	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
 	r.DELETE("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DeleteHandler))
-	// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
-	// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
-	// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score
+	r.GET("/api/admin/v1/grade", auth.MustAuthorize(assignment.GetGradeByAdmin))
 
+	// User section
 	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetHandler))           // assignment list
 	r.GET("/api/v1/assignment/:id", auth.MustAuthorize(assignment.GetDetailHandler)) // assignment detail
 	r.PUT("/api/v1/assignment/:id", auth.MustAuthorize(assignment.SubmitHandler))    // assignment submit
@@ -152,3 +152,7 @@ func loadRouter(r *httprouter.Router) {
 	r.NotFound = http.HandlerFunc(file.IndexHandler)
 	// r.MethodNotAllowed = http.RedirectHandler("/", http.StatusPermanentRedirect)
 }
+
+// r.GET("/api/admin/v1/assignment/:id/:assignment_id", auth.MustAuthorize(assignment.GetUploadedAssignmentByAdminHandler))
+// r.GET("/api/admin/v1/score/:schedule_id/:assignment_id", auth.MustAuthorize(assignment.GetDetailAssignmentByAdmin))
+// r.POST("/api/admin/v1/score/:schedule_id/:assignment_id/create", auth.MustAuthorize(assignment.CreateScoreHandler)) // update score

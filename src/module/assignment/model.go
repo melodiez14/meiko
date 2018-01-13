@@ -49,6 +49,13 @@ type UserAssignment struct {
 	UpdatedAt    time.Time       `db:"updated_at"`
 }
 
+// UserScore  struct ...
+type UserScore struct {
+	UserID    int64           `db:"users_id"`
+	Score     sql.NullFloat64 `db:"score"`
+	UpdatedAt time.Time       `db:"updated_at"`
+}
+
 // File struct ...
 type File struct {
 	ID        string         `db:"id"`

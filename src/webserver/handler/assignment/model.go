@@ -325,23 +325,29 @@ type detailAssignmentParams struct {
 	ScheduleID   string
 	AssignmentID string
 }
+type detailScoreParams struct {
+	AssignmentID string
+}
+type detailScoreArgs struct {
+	AssignmentID int64
+}
 type detailAssignmentArgs struct {
 	ScheduleID   int64
 	AssignmentID int64
 }
 
 type userAssignment struct {
-	UserID int64   `json:"user_id"`
-	Name   string  `json:"name"`
-	Grade  float32 `json:"grade"`
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	Grade     float32 `json:"grade"`
+	Submitted string  `json:"submitted_at"`
 }
 
 type detailAssignmentResponse struct {
-	Name          string         `json:"name"`
-	Description   sql.NullString `json:"description"`
-	DueDate       time.Time      `json:"due_date"`
-	IsCreateScore bool           `json:"is_create_score"`
-	Praktikan     []userAssignment
+	ID      int64            `json:"id"`
+	Name    string           `json:"name"`
+	DueDate string           `json:"due_date"`
+	User    []userAssignment `json:"users"`
 }
 type createScoreParams struct {
 	ScheduleID   string

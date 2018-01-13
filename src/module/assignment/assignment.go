@@ -641,6 +641,27 @@ func SelectUserAssignmentByID(assignmentID int64, limit, offset int) ([]UserAssi
 	return assignment, nil
 }
 
+// SelectUserScoreByID ..
+func SelectUserScoreByID(assignmentID int64) ([]UserScore, error) {
+	var assignment []UserScore
+	query := fmt.Sprintf(`
+		SELECT
+			users_id,
+			score,
+			updated_at
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		ORDER BY users_id;
+		`, assignmentID)
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return nil, err
+	}
+	return assignment, nil
+}
+
 // SelectCountUsrAsgByID ..
 func SelectCountUsrAsgByID(assignmentID int64) (int, error) {
 	query := fmt.Sprintf(`

@@ -856,6 +856,7 @@ func SelectConciseUserByID(ids []int64) ([]ConciseUsers, error) {
 			id
 		IN
 			(%s)
+		ORDER BY id
 		`, queryIDs)
 	var result []ConciseUsers
 	err := conn.DB.Select(&result, query)
