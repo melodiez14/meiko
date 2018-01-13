@@ -118,6 +118,7 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DetailHandler))
 	r.DELETE("/api/admin/v1/assignment/:id", auth.MustAuthorize(assignment.DeleteHandler))
 	r.GET("/api/admin/v1/grade", auth.MustAuthorize(assignment.GetGradeByAdmin))
+	r.POST("/api/admin/v1/grade", auth.MustAuthorize(assignment.UpdateScoreHandler))
 
 	// User section
 	r.GET("/api/v1/assignment", auth.MustAuthorize(assignment.GetHandler))           // assignment list

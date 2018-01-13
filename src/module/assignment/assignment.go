@@ -867,41 +867,41 @@ func IsAssignmentMustUpload(assingmentID int64) bool {
 // 	return assignment, nil
 // }
 
-// // CreateScore func ...
-// func CreateScore(assignmentID int64, usersID []int64, score []float32, tx *sqlx.Tx) error {
+// CreateScore func ...
+func CreateScore(assignmentID int64, usersID []int64, score []float32, tx *sqlx.Tx) error {
 
-// 	var value []string
-// 	length := len(usersID)
-// 	for i := 0; i < length; i++ {
-// 		value = append(value, fmt.Sprintf("(%d, %d, %v, NOW(), NOW())", assignmentID, usersID[i], score[i]))
-// 	}
-// 	queryValue := strings.Join(value, ", ")
-// 	query := fmt.Sprintf(`
-// 		INSERT INTO
-// 			p_users_assignments
-// 			(
-// 				assignments_id,
-// 				users_id,
-// 				score,
-// 				created_at,
-// 				updated_at
-// 			)
-// 		VALUES %s
-// 		ON DUPLICATE KEY UPDATE
-// 		score=VALUES(score), updated_at=VALUES(updated_at)
-// 		;`, queryValue)
-// 	var err error
-// 	if tx != nil {
-// 		_, err = tx.Exec(query)
-// 	} else {
-// 		_, err = conn.DB.Exec(query)
-// 	}
-// 	if err != nil {
-// 		return err
-// 	}
+	var value []string
+	length := len(usersID)
+	for i := 0; i < length; i++ {
+		value = append(value, fmt.Sprintf("(%d, %d, %v, NOW(), NOW())", assignmentID, usersID[i], score[i]))
+	}
+	queryValue := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			p_users_assignments
+			(
+				assignments_id,
+				users_id,
+				score,
+				created_at,
+				updated_at
+			)
+		VALUES %s
+		ON DUPLICATE KEY UPDATE
+		score=VALUES(score), updated_at=VALUES(updated_at)
+		;`, queryValue)
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 // // GetDueDateAssignment func ...
 // func GetDueDateAssignment(assignmentID int64) (time.Time, error) {

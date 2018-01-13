@@ -316,8 +316,8 @@ type updateScoreParams struct {
 	AssignmentID string
 }
 type updateScoreArgs struct {
-	Score        float32
-	UserID       int64
+	Score        []float32
+	UserID       []int64
 	ScheduleID   int64
 	AssignmentID int64
 }

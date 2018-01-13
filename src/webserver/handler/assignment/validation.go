@@ -587,14 +587,6 @@ func (params listAssignmentsParams) validate() (listAssignmentsArgs, error) {
 
 func (params updateScoreParams) validate() (updateScoreArgs, error) {
 	var args updateScoreArgs
-	//Schedule ID validation
-	if helper.IsEmpty(params.ScheduleID) {
-		return args, fmt.Errorf("Schedule ID can not be empty")
-	}
-	scheduleID, err := strconv.ParseInt(params.ScheduleID, 10, 64)
-	if err != nil {
-		return args, err
-	}
 	// Assignment ID validation
 	if helper.IsEmpty(params.AssignmentID) {
 		return args, fmt.Errorf("Assignment ID can not be empty")
@@ -607,23 +599,36 @@ func (params updateScoreParams) validate() (updateScoreArgs, error) {
 	if helper.IsEmpty(params.UserID) {
 		return args, fmt.Errorf("User ID can not be empty")
 	}
-	userID, err := strconv.ParseInt(params.UserID, 10, 64)
-	if err != nil {
-		return args, err
+	ids := strings.Split(params.UserID, "~")
+	var idi []int64
+	for _, val := range ids {
+		id, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return args, fmt.Errorf("Wrong ID")
+		}
+		idi = append(idi, id)
 	}
+
 	// Score Validation
 	if helper.IsEmpty(params.Score) {
 		return args, fmt.Errorf("Score can not be empty")
 	}
-	score, err := strconv.ParseFloat(params.Score, 64)
-	if err != nil {
-		return args, err
+	scores := strings.Split(params.Score, "~")
+	var scf []float32
+	for _, val := range scores {
+		sc, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return args, fmt.Errorf("Wrong ID")
+		}
+		scf = append(scf, float32(sc))
+	}
+	if len(scf) != len(idi) {
+		return args, fmt.Errorf("Bad Request")
 	}
 	return updateScoreArgs{
-		ScheduleID:   scheduleID,
 		AssignmentID: assignmentID,
-		UserID:       userID,
-		Score:        float32(score),
+		UserID:       idi,
+		Score:        scf,
 	}, nil
 }
 

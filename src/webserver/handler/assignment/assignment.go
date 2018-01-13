@@ -1361,11 +1361,9 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			AddError("You don't have privilege"))
 		return
 	}
-	// get schedule, assignment
 	params := detailScoreParams{
 		AssignmentID: r.FormValue("assignment_id"),
 	}
-	// validate
 	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
@@ -1373,7 +1371,6 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			AddError(err.Error()))
 		return
 	}
-	// is schedule_id match with assignments_id?
 	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
 	scheduleID, err := cs.GetScheduleIDByGP(gradeParameterID)
 	if err != nil {
@@ -1387,7 +1384,6 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			SetCode(http.StatusNotFound))
 		return
 	}
-	// is user (admin) took that course?
 	if !cs.IsAssistant(sess.ID, scheduleID) {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -1395,10 +1391,7 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		return
 	}
 
-	// get assignment detail
 	assignments := asg.GetAssignmentByID(args.AssignmentID)
-
-	// assignment must upload
 	res := detailAssignmentResponse{}
 	us := []userAssignment{}
 	res = detailAssignmentResponse{
@@ -1468,61 +1461,71 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 			SetData(res))
 		return
 	}
+}
 
-	// userList := []userAssignment{}
-	// is assingment must upload or not?
-	// if asg.IsAssignmentMustUpload(args.AssignmentID) {
-	// 	userAssignments, err := as.SelectUserAssignmentsByStatusID(args.AssignmentID)
-	// 	if err != nil {
-	// 		template.RenderJSONResponse(w, new(template.Response).
-	// 			SetCode(http.StatusInternalServerError))
-	// 		return
-	// 	}
-	// 	for _, value := range userAssignments {
-	// 		userList = append(userList, userAssignment{
-	// 			UserID: value.UserID,
-	// 			Name:   value.Name,
-	// 			Grade:  0,
-	// 		})
-	// 	}
-	// 	res = detailAssignmentResponse{
-	// 		Name:          assignments.Name,
-	// 		Description:   assignments.Description,
-	// 		DueDate:       assignments.DueDate,
-	// 		IsCreateScore: false,
-	// 		Praktikan:     userList,
-	// 	}
-	// 	template.RenderJSONResponse(w, new(template.Response).
-	// 		SetCode(http.StatusOK).
-	// 		SetData(res))
-	// 	return
-	// }
-	// userAssignments, err := usr.SelectUserByScheduleID(args.ScheduleID)
-	// if err != nil {
-	// 	template.RenderJSONResponse(w, new(template.Response).
-	// 		SetCode(http.StatusInternalServerError))
-	// 	return
-	// }
-
-	// for _, value := range userAssignments {
-	// 	userList = append(userList, userAssignment{
-	// 		UserID: value.UserID,
-	// 		Name:   value.Name,
-	// 		Grade:  0,
-	// 	})
-	// }
-	// res = detailAssignmentResponse{
-	// 	Name:          assignments.Name,
-	// 	Description:   assignments.Description,
-	// 	DueDate:       assignments.DueDate,
-	// 	IsCreateScore: true,
-	// 	Praktikan:     userList,
-	// }
-	// template.RenderJSONResponse(w, new(template.Response).
-	// 	SetCode(http.StatusOK).
-	// 	SetData(res))
-	// return
-
+// UpdateScoreHandler ...
+func UpdateScoreHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleXUpdate, rg.RoleUpdate) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := updateScoreParams{
+		AssignmentID: r.FormValue("assignment_id"),
+		UserID:       r.FormValue("users_id"),
+		Score:        r.FormValue("scores"),
+	}
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
+	scheduleID, err := cs.GetScheduleIDByGP(gradeParameterID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	if !asg.IsAssignmentExist(args.AssignmentID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusNotFound))
+		return
+	}
+	if !cs.IsAssistant(sess.ID, scheduleID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("You dont have privillage"))
+		return
+	}
+	if !cs.IsAllUsersEnrolled(scheduleID, args.UserID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Wrong user list"))
+		return
+	}
+	tx, err := conn.DB.Beginx()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	err = asg.CreateScore(args.AssignmentID, args.UserID, args.Score, tx)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	tx.Commit()
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Score Updated"))
+	return
 }
 
 // // CreateHandler function is
@@ -1617,519 +1620,6 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 // 	return
 
 // }
-
-// // GetAllAssignmentHandler func is ...
-// func GetAllAssignmentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("You don't have privilege"))
-// 		return
-// 	}
-// 	params := readParams{
-// 		Page:  r.FormValue("pg"),
-// 		Total: r.FormValue("ttl"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("Invalid request"))
-// 		return
-// 	}
-// 	offset := (args.Page - 1) * args.Total
-// 	assignments, err := as.SelectByPage(args.Total, offset)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	var status string
-// 	var res []readResponse
-// 	for _, val := range assignments {
-
-// 		if val.Status == as.StatusAssignmentActive {
-// 			status = "active"
-// 		} else {
-// 			status = "inactive"
-// 		}
-
-// 		res = append(res, readResponse{
-// 			Name:             val.Name,
-// 			Description:      val.Description,
-// 			Status:           status,
-// 			DueDate:          val.DueDate,
-// 			GradeParameterID: val.GradeParameterID,
-// 		})
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
-
-// }
-
-// // CreateHandlerByUser func ...
-// func CreateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	params := uploadAssignmentParams{
-// 		UserID:       sess.ID,
-// 		AssignmentID: r.FormValue("assignment_id"),
-// 		Description:  r.FormValue("description"),
-// 		FileID:       r.FormValue("file_id"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-
-// 	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
-// 	scheduleID := cs.GetScheduleID(gradeParameterID)
-// 	isValidAssignment := usr.IsUserTakeSchedule(args.UserID, scheduleID)
-// 	if !isValidAssignment {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Invalid Assignment ID"))
-// 		return
-// 	}
-// 	// due date checking
-// 	dueDate, err := as.GetDueDateAssignment(args.AssignmentID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	overdue := !time.Now().Before(dueDate)
-// 	if overdue {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusOK).
-// 			SetMessage("Assignment has been overdue"))
-// 		return
-// 	}
-// 	// Insert
-// 	tx := conn.DB.MustBegin()
-// 	err = as.UploadAssignment(args.AssignmentID, args.UserID, args.Description, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("You can only submit once for this assignment"))
-// 		return
-// 	}
-
-// 	tableID := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
-// 	//Update Relations
-// 	if args.FileID != nil {
-// 		for _, fileID := range args.FileID {
-// 			err := fs.UpdateRelation(fileID, TableNameUserAssignments, tableID, tx)
-// 			if err != nil {
-// 				tx.Rollback()
-// 				template.RenderJSONResponse(w, new(template.Response).
-// 					SetCode(http.StatusBadRequest).
-// 					AddError("Wrong File ID"))
-// 				return
-// 			}
-// 		}
-// 	}
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetMessage("Insert Assignment Success!"))
-// 	return
-// }
-
-// // UpdateHandlerByUser func ...
-// func UpdateHandlerByUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	params := uploadAssignmentParams{
-// 		FileID:       r.FormValue("file_id"),
-// 		AssignmentID: ps.ByName("id"),
-// 		UserID:       sess.ID,
-// 		Description:  r.FormValue("description"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-// 	// Get grade parameters id
-// 	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
-// 	scheduleID := cs.GetScheduleID(gradeParameterID)
-// 	isValidAssignment := usr.IsUserTakeSchedule(args.UserID, scheduleID)
-// 	if !isValidAssignment {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Invalid Assignment ID"))
-// 		return
-// 	}
-// 	// Update
-// 	tx := conn.DB.MustBegin()
-// 	err = as.UpdateUploadAssignment(args.AssignmentID, args.UserID, args.Description, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Update Failed"))
-// 		return
-// 	}
-// 	key := fmt.Sprintf("%d%d", args.AssignmentID, args.UserID)
-// 	tableID, err := strconv.ParseInt(key, 10, 64)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Can not convert to int64"))
-// 		return
-// 	}
-// 	// Get All relations with
-// 	filesIDDB, err := fs.GetByStatus(fs.StatusExist, tableID)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	// Add new file
-// 	for _, fileID := range args.FileID {
-// 		if !fs.IsExistID(fileID) {
-// 			filesIDDB = append(filesIDDB, fileID)
-// 			// Update relation
-// 			err := fs.UpdateRelation(fileID, TableNameUserAssignments, key, tx)
-// 			if err != nil {
-// 				tx.Rollback()
-// 				template.RenderJSONResponse(w, new(template.Response).
-// 					SetCode(http.StatusInternalServerError))
-// 				return
-// 			}
-// 		}
-// 	}
-// 	for _, fileIDDB := range filesIDDB {
-// 		isSame := 0
-// 		for _, fileIDUser := range args.FileID {
-// 			if fileIDUser == fileIDDB {
-// 				isSame = 1
-// 			}
-// 		}
-// 		if isSame == 0 {
-// 			err := fs.UpdateStatusFiles(fileIDDB, fs.StatusDeleted, tx)
-// 			if err != nil {
-// 				tx.Rollback()
-// 				template.RenderJSONResponse(w, new(template.Response).
-// 					SetCode(http.StatusInternalServerError))
-// 				return
-// 			}
-// 		}
-// 	}
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetMessage("Update Assignment Success!"))
-// 	return
-// }
-
-// // GetAssignmentByScheduleHandler func ...
-// func GetAssignmentByScheduleHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	params := listAssignmentsParams{
-// 		ScheduleID: r.FormValue("id"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Bad Request"))
-// 		return
-// 	}
-// 	// is correct schedule id
-// 	if !cs.IsExistScheduleID(args.ScheduleID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("You do not took this course"))
-// 		return
-// 	}
-// 	gradeParamsID, err := cs.GetGradeParametersIDByScheduleID(args.ScheduleID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Error"))
-// 		return
-// 	}
-// 	assignments := as.SelectByGradeParametersID(gradeParamsID)
-// 	res := []listAssignmentResponse{}
-// 	for _, val := range assignments {
-// 		status := "must_not_upload"
-// 		submited := false
-// 		var description string
-// 		if val.Description.Valid {
-// 			description = fmt.Sprintf(val.Description.String)
-// 		}
-// 		if val.Status == 1 {
-// 			status = "must_upload"
-// 			if as.IsUploaded(val.ID) {
-// 				submited = true
-// 			}
-// 		}
-// 		res = append(res, listAssignmentResponse{
-// 			Submitted:   submited,
-// 			ID:          val.ID,
-// 			Name:        val.Name,
-// 			Status:      status,
-// 			Description: description,
-// 			DueDate:     val.DueDate.Format("Monday, 2 January 2006 15:04:05"),
-// 		})
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).SetData(res))
-// 	return
-// }
-
-// // GetUploadedDetailHandler func ...
-// func GetUploadedDetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	params := readUploadedDetailParams{
-// 		UserID:       ps.ByName("id"),
-// 		ScheduleID:   ps.ByName("schedule_id"),
-// 		AssignmentID: ps.ByName("assignment_id"),
-// 	}
-
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).AddError(err.Error()))
-// 		return
-// 	}
-// 	// Is Valid User ID
-// 	if sess.ID != args.UserID {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).AddError("Wrong User ID"))
-// 		return
-// 	}
-// 	if !usr.IsUserTakeSchedule(sess.ID, args.ScheduleID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).AddError("Wrong Schedule ID"))
-// 		return
-// 	}
-// 	// Get Assignments Detail
-// 	assignment, err := as.GetUploadedAssignmentByID(args.AssignmentID, sess.ID)
-// 	key := fmt.Sprintf("%d%d", args.AssignmentID, sess.ID)
-// 	tableID, err := strconv.ParseInt(key, 10, 64)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).AddError(err.Error()))
-// 		return
-// 	}
-
-// 	// Get File
-// 	files, err := fs.GetByUserIDTableIDName(sess.ID, tableID, TableNameUserAssignments)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-
-// 	res := readUploadedDetailArgs{
-// 		UserID:       args.UserID,
-// 		ScheduleID:   args.ScheduleID,
-// 		AssignmentID: args.AssignmentID,
-// 		Name:         assignment.Name,
-// 		Description:  assignment.DescriptionAssignment,
-// 		PathFile:     files,
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
-
-// }
-
-// // CreateScoreHandler func ...
-// func CreateScoreHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	// get schedule, assignment
-// 	params := createScoreParams{
-// 		ScheduleID:   ps.ByName("schedule_id"),
-// 		AssignmentID: ps.ByName("assignment_id"),
-// 		Users:        r.FormValue("users"),
-// 	}
-// 	// validate
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-// 	// is schedule_id match with assignments_id?
-// 	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
-// 	if !as.IsAssignmentExistByGradeParameterID(args.AssignmentID, gradeParameterID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusNotFound))
-// 		return
-// 	}
-
-// 	// is user (admin) took that course?
-// 	if !cs.IsAssistant(sess.ID, args.ScheduleID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("you do not took this course!"))
-// 		return
-// 	}
-// 	usersID, err := usr.SelectIDByIdentityCode(args.IdentityCode)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	if len(usersID) != len(args.IdentityCode) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("There is invalid identity code"))
-// 		return
-// 	}
-// 	if !cs.IsAllUsersEnrolled(args.ScheduleID, usersID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("There is a invalid identity code"))
-// 		return
-// 	}
-// 	tx := conn.DB.MustBegin()
-// 	// Insert
-// 	err = as.CreateScore(args.AssignmentID, usersID, args.Score, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetMessage("Add score assignment successfully"))
-// 	return
-
-// }
-
-// // GetDetailAssignmentByAdmin func ...
-// func GetDetailAssignmentByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	// get schedule, assignment
-// 	params := detailAssignmentParams{
-// 		ScheduleID:   ps.ByName("schedule_id"),
-// 		AssignmentID: ps.ByName("assignment_id"),
-// 	}
-// 	// validate
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-// 	// is schedule_id match with assignments_id?
-// 	gradeParameterID := cs.GetGradeParametersID(args.AssignmentID)
-// 	if !as.IsAssignmentExistByGradeParameterID(args.AssignmentID, gradeParameterID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusNotFound))
-// 		return
-// 	}
-
-// 	// is user (admin) took that course?
-// 	if !cs.IsAssistant(sess.ID, args.ScheduleID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("you do not took this course!"))
-// 		return
-// 	}
-
-// 	// get assignment detail
-// 	assignments, err := as.GetAssignmentByID(args.AssignmentID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	res := detailAssignmentResponse{}
-// 	userList := []userAssignment{}
-// 	// is assingment must upload or not?
-// 	if as.IsAssignmentMustUpload(args.AssignmentID) {
-// 		userAssignments, err := as.SelectUserAssignmentsByStatusID(args.AssignmentID)
-// 		if err != nil {
-// 			template.RenderJSONResponse(w, new(template.Response).
-// 				SetCode(http.StatusInternalServerError))
-// 			return
-// 		}
-// 		for _, value := range userAssignments {
-// 			userList = append(userList, userAssignment{
-// 				UserID: value.UserID,
-// 				Name:   value.Name,
-// 				Grade:  0,
-// 			})
-// 		}
-// 		res = detailAssignmentResponse{
-// 			Name:          assignments.Name,
-// 			Description:   assignments.Description,
-// 			DueDate:       assignments.DueDate,
-// 			IsCreateScore: false,
-// 			Praktikan:     userList,
-// 		}
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusOK).
-// 			SetData(res))
-// 		return
-// 	}
-// 	userAssignments, err := usr.SelectUserByScheduleID(args.ScheduleID)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-
-// 	for _, value := range userAssignments {
-// 		userList = append(userList, userAssignment{
-// 			UserID: value.UserID,
-// 			Name:   value.Name,
-// 			Grade:  0,
-// 		})
-// 	}
-// 	res = detailAssignmentResponse{
-// 		Name:          assignments.Name,
-// 		Description:   assignments.Description,
-// 		DueDate:       assignments.DueDate,
-// 		IsCreateScore: true,
-// 		Praktikan:     userList,
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).
-// 		SetData(res))
-// 	return
-
-// }
-
 // //ScoreHandler func ...
 // func ScoreHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	params := updateScoreParams{
@@ -2183,115 +1673,6 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 // 	template.RenderJSONResponse(w, new(template.Response).
 // 		SetCode(http.StatusOK).
 // 		SetMessage("Score Updated"))
-// 	return
-// }
-
-// // GetUploadedAssignmentByAdminHandler func ...
-// func GetUploadedAssignmentByAdminHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleRead, rg.RoleXRead) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("You don't have privilege"))
-// 		return
-// 	}
-// 	params := readUploadedAssignmentParams{
-// 		ScheduleID:   ps.ByName("id"),
-// 		AssignmentID: ps.ByName("assignment_id"),
-// 		Page:         r.FormValue("pg"),
-// 		Total:        r.FormValue("ttl"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).AddError(err.Error()))
-// 		return
-// 	}
-// 	offset := (args.Page - 1) * args.Total
-// 	// Check schedule id
-// 	if !cs.IsExistScheduleID(args.ScheduleID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Schdule ID does not exist"))
-// 		return
-// 	}
-// 	// Check assignment id
-// 	if !as.IsAssignmentExist(args.AssignmentID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Assignment ID does not exist"))
-// 		return
-// 	}
-// 	// Get all data p_users_assignment
-// 	assignments, err := as.GetAllUserAssignmentByAssignmentID(args.AssignmentID, args.Total, offset)
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	//files, err := fs.GetByTableIDName(args.AssignmentID, TableNameUserAssignments)
-// 	// get all data files relations
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK).SetData(assignments))
-// 	// serve json
-// }
-
-// // DeleteAssignmentHandler func ...
-// func DeleteAssignmentHandler(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
-
-// 	sess := r.Context().Value("User").(*auth.User)
-// 	if !sess.IsHasRoles(rg.ModuleAssignment, rg.RoleDelete, rg.RoleXDelete) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusForbidden).
-// 			AddError("You don't have privilege"))
-// 		return
-// 	}
-// 	params := deleteParams{
-// 		ID: pr.ByName("assignment_id"),
-// 	}
-// 	args, err := params.validate()
-// 	if err != nil {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError(err.Error()))
-// 		return
-// 	}
-// 	if !as.IsAssignmentExist(args.ID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Wrong Assignment ID"))
-// 		return
-// 	}
-// 	if as.IsUserHaveUploadedAsssignment(args.ID) {
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusBadRequest).
-// 			AddError("Forbiden to delete this assignments"))
-// 		return
-// 	}
-// 	tx := conn.DB.MustBegin()
-// 	err = as.DeleteAssignment(args.ID, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	err = fs.UpdateStatusFilesByNameID(TableNameAssignments, fs.StatusDeleted, args.ID, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		tx.Rollback()
-// 		template.RenderJSONResponse(w, new(template.Response).
-// 			SetCode(http.StatusInternalServerError))
-// 		return
-// 	}
-// 	template.RenderJSONResponse(w, new(template.Response).
-// 		SetCode(http.StatusOK))
 // 	return
 // }
 
