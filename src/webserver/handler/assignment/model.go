@@ -337,6 +337,7 @@ type detailAssignmentArgs struct {
 }
 
 type userAssignment struct {
+	NPM       int64   `json:"npm"`
 	ID        int64   `json:"id"`
 	Name      string  `json:"name"`
 	Grade     float32 `json:"grade"`

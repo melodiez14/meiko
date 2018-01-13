@@ -1423,7 +1423,8 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 					score = float32(users[i].Score.Float64)
 				}
 				us = append(us, userAssignment{
-					ID:        usrDetail[i].IdentityCode,
+					ID:        usrDetail[i].ID,
+					NPM:       usrDetail[i].IdentityCode,
 					Name:      usrDetail[i].Name,
 					Submitted: users[i].UpdatedAt.Format("Monday, 2 January 2006 15:04:05"),
 					Grade:     score,
@@ -1451,7 +1452,8 @@ func GetGradeByAdmin(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		}
 		for i := 0; i < len(usrDetail); i++ {
 			us = append(us, userAssignment{
-				ID:   usrDetail[i].IdentityCode,
+				ID:   usrDetail[i].ID,
+				NPM:  usrDetail[i].IdentityCode,
 				Name: usrDetail[i].Name,
 			})
 		}
