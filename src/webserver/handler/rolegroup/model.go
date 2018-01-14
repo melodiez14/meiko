@@ -70,3 +70,15 @@ type updateArgs struct {
 	name    string
 	modules map[string][]string
 }
+
+type searchParams struct {
+	Text string
+}
+
+type searchArgs struct {
+	Text string
+}
+type searchResponse struct {
+	ID        int64  `json:"id"`
+	Rolegroup string `json:"role"`
+}

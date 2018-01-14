@@ -382,3 +382,41 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		SetMessage("Rolegroup has been updated"))
 	return
 }
+
+// SearchHandler ..
+func SearchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	params := searchParams{
+		Text: r.FormValue("q"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("Invalid request"))
+		return
+	}
+	if len(args.Text) < 1 || len(args.Text) > 15 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData([]searchResponse{}))
+		return
+	}
+	roles, err := rg.Search(args.Text)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(roles))
+	return
+}
