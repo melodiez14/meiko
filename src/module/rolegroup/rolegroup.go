@@ -39,7 +39,8 @@ func SelectByPage(limit, offset int, isCount bool) ([]RoleGroup, int, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			id,
-			name
+			name,
+			updated_at
 		FROM
 			rolegroups
 		LIMIT %d

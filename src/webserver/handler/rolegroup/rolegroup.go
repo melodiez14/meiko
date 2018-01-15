@@ -182,6 +182,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			ID:            val.ID,
 			Name:          val.Name,
 			IsDeleteAllow: isDeleteAllow,
+			CreatedAt:     val.CreatedAt.Format("Monday, 1 January 2006"),
 		})
 	}
 
