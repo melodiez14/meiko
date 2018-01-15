@@ -308,3 +308,14 @@ func Delete(rolegroupID int64, tx *sqlx.Tx) error {
 
 	return nil
 }
+
+// Search ..
+func Search(name string) ([]RoleGroup, error) {
+	roles := []RoleGroup{}
+	query := fmt.Sprintf("SELECT id, name FROM rolegroups WHERE name LIKE ('%%%s%%')", name)
+	err := conn.DB.Select(&roles, query)
+	if err != nil {
+		return roles, err
+	}
+	return roles, nil
+}

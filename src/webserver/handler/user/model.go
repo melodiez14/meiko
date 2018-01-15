@@ -481,6 +481,7 @@ type detailResponse struct {
 	IdentityCode int64  `json:"id"`
 	LineID       string `json:"line_id"`
 	Note         string `json:"about_me"`
+	Status       string `json:"status"`
 }
 
 // updateParams Parameter that will be needed to update user information.
