@@ -888,7 +888,10 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	case user.GenderFemale:
 		gender = "female"
 	}
-
+	status := "active"
+	if u.Status == 1 {
+		status = "inactive"
+	}
 	res := detailResponse{
 		Name:         u.Name,
 		Email:        u.Email,
@@ -897,6 +900,7 @@ func DetailHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		IdentityCode: u.IdentityCode,
 		LineID:       u.LineID.String,
 		Note:         u.Note,
+		Status:       status,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

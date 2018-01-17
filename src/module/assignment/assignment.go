@@ -64,46 +64,99 @@ func IsExistByGradeParameterID(gpID int64) bool {
 	return true
 }
 
-// Insert function is ...
-func Insert(name string, desc sql.NullString, gps, maxSize int64, duedate time.Time, status int8, tx ...*sqlx.Tx) (int64, error) {
+// GetGradeParameterID ..
+func GetGradeParameterID(assignmentID int64) int64 {
+	query := fmt.Sprintf(`
+		SELECT
+			grade_parameters_id
+		FROM
+			assignments
+		WHERE
+			id=(%d);
+		`, assignmentID)
+	var result int64
+	_ = conn.DB.Get(&result, query)
+	return result
+}
 
+// GetAssignmentByID ..
+func GetAssignmentByID(assignmentID int64) ConciseAssignment {
+	query := fmt.Sprintf(`
+		SELECT
+			id,
+			due_date,
+			name,
+			status
+		FROM
+			assignments
+		WHERE
+			id=(%d)
+		`, assignmentID)
+	var result ConciseAssignment
+	_ = conn.DB.Get(&result, query)
+	return result
+}
+
+// Insert function is ...
+func Insert(name string, desc sql.NullString, gps, maxSize, maxFile int64, duedate string, status int8, tx *sqlx.Tx) (int64, error) {
 	var id int64
 	queryDesc := fmt.Sprintf("(NULL)")
 	if desc.Valid {
 		queryDesc = fmt.Sprintf("('%s')", desc.String)
 	}
-
-	query := fmt.Sprintf(`
-		INSERT INTO
-			assignments(
-				name,
-				description,
-				status,
-				due_date,
-				grade_parameters_id,
-				max_size,
-				created_at,
-				updated_at
-			)
-		VALUES(
-			('%s'),
-			%s,
-			('%d'),
-			('%s'),
-			(%d),
-			(%d),
-			NOW(),
-			NOW()
-		);
-		`, name, queryDesc, status, duedate, gps, maxSize)
-
+	var query string
+	if status == 1 {
+		query = fmt.Sprintf(`
+			INSERT INTO
+				assignments(
+					name,
+					description,
+					status,
+					due_date,
+					grade_parameters_id,
+					max_size,
+					max_file,
+					created_at,
+					updated_at
+				)
+			VALUES(
+				('%s'),
+				('%s'),
+				(%d),
+				('%s'),
+				(%d),
+				(%d),
+				(%d),
+				NOW(),
+				NOW()
+			);
+			`, name, queryDesc, status, duedate, gps, maxSize, maxFile)
+	} else {
+		query = fmt.Sprintf(`
+			INSERT INTO
+				assignments(
+					name,
+					description,
+					status,
+					due_date,
+					grade_parameters_id,
+					created_at,
+					updated_at
+				)
+			VALUES(
+				('%s'),
+				(%s),
+				(%d),
+				('%s'),
+				(%d),
+				NOW(),
+				NOW()
+			);
+			`, name, queryDesc, status, duedate, gps)
+	}
 	var result sql.Result
 	var err error
-	if len(tx) == 1 {
-		result, err = tx[0].Exec(query)
-	} else {
-		result, err = conn.DB.Exec(query)
-	}
+	result, err = tx.Exec(query)
 	if err != nil {
 		return id, err
 	}
@@ -118,28 +171,49 @@ func Insert(name string, desc sql.NullString, gps, maxSize int64, duedate time.T
 	return id, nil
 }
 
-// Update func ...
-func Update(gradeParameters, id int64, name, status, dueDate string, description sql.NullString, tx *sqlx.Tx) error {
+// Update ..
+func Update(name string, desc sql.NullString, id, gps, maxSize, maxFile int64, duedate time.Time, status int8, tx *sqlx.Tx) error {
 
 	var result sql.Result
 	var err error
 	queryDescription := fmt.Sprintf("NULL")
-	if description.Valid {
-		queryDescription = fmt.Sprintf(description.String)
+	if desc.Valid {
+		queryDescription = fmt.Sprintf(desc.String)
 	}
-	query := fmt.Sprintf(`
-		UPDATE 
-			assignments
-		SET
+	var query string
+	layout := `2006-01-02 15:04:05`
+	timeQuery := duedate.Format(layout)
+	if gps > 0 {
+		query = fmt.Sprintf(`
+			UPDATE 
+				assignments
+			SET
 			name = ('%s'),
-			status = ('%s'),
+			description = ('%s'),
+			status = (%d),
 			due_date = ('%s'),
 			grade_parameters_id = (%d),
-			description = ('%s'),
+			max_size = (%d),
+			max_file = (%d),
 			updated_at = NOW()
-		WHERE
-			id = (%d);
-		`, name, status, dueDate, gradeParameters, queryDescription, id)
+			WHERE
+				id = (%d);
+			`, name, queryDescription, status, timeQuery, gps, maxSize, maxFile, id)
+	} else {
+		query = fmt.Sprintf(`
+			UPDATE 
+				assignments
+			SET
+			name = ('%s'),
+			description = ('%s'),
+			status = (%d),
+			due_date = ('%s'),
+			grade_parameters_id = (%d),
+			updated_at = NOW()
+			WHERE
+				id = (%d);
+			`, name, queryDescription, status, timeQuery, gps, id)
+	}
 	if tx != nil {
 		result, err = tx.Exec(query)
 	} else {
@@ -193,6 +267,7 @@ func SelectByPage(gpID []int64, limit, offset int, isCount bool) ([]Assignment, 
 			assignments
 		WHERE
 			grade_parameters_id IN (%s)
+		ORDER BY updated_at DESC
 		LIMIT %d
 		OFFSET %d;`, queryGP, limit, offset)
 
@@ -212,9 +287,7 @@ func SelectByPage(gpID []int64, limit, offset int, isCount bool) ([]Assignment, 
 			assignments
 		WHERE
 			grade_parameters_id IN (%s)
-		LIMIT %d
-		OFFSET %d;`, queryGP, limit, offset)
-
+		;`, queryGP)
 	err = conn.DB.Get(&count, query)
 	if err != nil {
 		return assignment, count, err
@@ -288,7 +361,7 @@ func SelectByGradeParametersID(gradeParametersID []int64) []Assignment {
 
 }
 
-// GetByID ...
+// GetByID ..
 func GetByID(id int64) (Assignment, error) {
 	var assignment Assignment
 	query := fmt.Sprintf(`
@@ -299,6 +372,8 @@ func GetByID(id int64) (Assignment, error) {
 			description,
 			grade_parameters_id,
 			due_date,
+			max_size,
+			max_file,
 			created_at,
 			updated_at
 		FROM
@@ -312,6 +387,22 @@ func GetByID(id int64) (Assignment, error) {
 		return assignment, err
 	}
 	return assignment, nil
+}
+
+// SelectCountByID ..
+func SelectCountByID(id int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) FROM
+			assignments
+		WHERE
+			id = (%d);
+		`, id)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
 }
 
 // IsAssignmentExist func ...
@@ -526,6 +617,68 @@ func SelectSubmittedByUser(id []int64, userID int64) ([]UserAssignment, error) {
 	return assignment, nil
 }
 
+// SelectUserAssignmentByID ..
+func SelectUserAssignmentByID(assignmentID int64, limit, offset int) ([]UserAssignment, error) {
+	var assignment []UserAssignment
+	query := fmt.Sprintf(`
+		SELECT
+			assignments_id,
+			users_id,
+			score,
+			description,
+			created_at,
+			updated_at
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		LIMIT %d
+		OFFSET %d`, assignmentID, limit, offset)
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return nil, err
+	}
+	return assignment, nil
+}
+
+// SelectUserScoreByID ..
+func SelectUserScoreByID(assignmentID int64) ([]UserScore, error) {
+	var assignment []UserScore
+	query := fmt.Sprintf(`
+		SELECT
+			users_id,
+			score,
+			updated_at
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		ORDER BY users_id;
+		`, assignmentID)
+	err := conn.DB.Select(&assignment, query)
+	if err != nil {
+		return nil, err
+	}
+	return assignment, nil
+}
+
+// SelectCountUsrAsgByID ..
+func SelectCountUsrAsgByID(assignmentID int64) (int, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM
+			p_users_assignments
+		WHERE
+			assignments_id = (%d)
+		`, assignmentID)
+	var count int
+	err := conn.DB.Get(&count, query)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
 // IsExistSubmitted used for check that are there any student which have uploaded it assignments
 func IsExistSubmitted(id int64) bool {
 	var x string
@@ -714,41 +867,41 @@ func IsAssignmentMustUpload(assingmentID int64) bool {
 // 	return assignment, nil
 // }
 
-// // CreateScore func ...
-// func CreateScore(assignmentID int64, usersID []int64, score []float32, tx *sqlx.Tx) error {
+// CreateScore func ...
+func CreateScore(assignmentID int64, usersID []int64, score []float32, tx *sqlx.Tx) error {
 
-// 	var value []string
-// 	length := len(usersID)
-// 	for i := 0; i < length; i++ {
-// 		value = append(value, fmt.Sprintf("(%d, %d, %v, NOW(), NOW())", assignmentID, usersID[i], score[i]))
-// 	}
-// 	queryValue := strings.Join(value, ", ")
-// 	query := fmt.Sprintf(`
-// 		INSERT INTO
-// 			p_users_assignments
-// 			(
-// 				assignments_id,
-// 				users_id,
-// 				score,
-// 				created_at,
-// 				updated_at
-// 			)
-// 		VALUES %s
-// 		ON DUPLICATE KEY UPDATE
-// 		score=VALUES(score), updated_at=VALUES(updated_at)
-// 		;`, queryValue)
-// 	var err error
-// 	if tx != nil {
-// 		_, err = tx.Exec(query)
-// 	} else {
-// 		_, err = conn.DB.Exec(query)
-// 	}
-// 	if err != nil {
-// 		return err
-// 	}
+	var value []string
+	length := len(usersID)
+	for i := 0; i < length; i++ {
+		value = append(value, fmt.Sprintf("(%d, %d, %v, NOW(), NOW())", assignmentID, usersID[i], score[i]))
+	}
+	queryValue := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+			p_users_assignments
+			(
+				assignments_id,
+				users_id,
+				score,
+				created_at,
+				updated_at
+			)
+		VALUES %s
+		ON DUPLICATE KEY UPDATE
+		score=VALUES(score), updated_at=VALUES(updated_at)
+		;`, queryValue)
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 // // GetDueDateAssignment func ...
 // func GetDueDateAssignment(assignmentID int64) (time.Time, error) {

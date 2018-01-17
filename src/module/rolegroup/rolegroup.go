@@ -39,7 +39,8 @@ func SelectByPage(limit, offset int, isCount bool) ([]RoleGroup, int, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			id,
-			name
+			name,
+			updated_at
 		FROM
 			rolegroups
 		LIMIT %d
@@ -104,6 +105,7 @@ func GetModuleList() []string {
 		ModuleSchedule,
 		ModuleAssignment,
 		ModuleInformation,
+		ModuleTutorial,
 	}
 }
 
@@ -307,4 +309,15 @@ func Delete(rolegroupID int64, tx *sqlx.Tx) error {
 	}
 
 	return nil
+}
+
+// Search ..
+func Search(name string) ([]RoleGroup, error) {
+	roles := []RoleGroup{}
+	query := fmt.Sprintf("SELECT id, name FROM rolegroups WHERE name LIKE ('%%%s%%')", name)
+	err := conn.DB.Select(&roles, query)
+	if err != nil {
+		return roles, err
+	}
+	return roles, nil
 }

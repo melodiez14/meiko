@@ -10,6 +10,11 @@ const (
 	MaxDesc                 = 1000
 	StatusUploadNotRequired = 0
 	StatusUploadRequired    = 1
+	MaxFile                 = 5
+	MinFile                 = 1
+	MaxSizeFile             = 100
+	MinSizeFile             = 1
+	MaxPage                 = 10
 )
 
 // Assignment struct ...
@@ -20,8 +25,18 @@ type Assignment struct {
 	Description      sql.NullString `db:"description"`
 	GradeParameterID int64          `db:"grade_parameters_id"`
 	DueDate          time.Time      `db:"due_date"`
+	MaxSize          sql.NullInt64  `db:"max_size"`
+	MaxFile          sql.NullInt64  `db:"max_file"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
+}
+
+// ConciseAssignment ..
+type ConciseAssignment struct {
+	ID      int64     `db:"id"`
+	Name    string    `db:"name"`
+	DueDate time.Time `db:"due_date"`
+	Status  int8      `db:"status"`
 }
 
 // UserAssignment struct ...
@@ -32,6 +47,13 @@ type UserAssignment struct {
 	Description  sql.NullString  `db:"description"`
 	CreatedAt    time.Time       `db:"created_at"`
 	UpdatedAt    time.Time       `db:"updated_at"`
+}
+
+// UserScore  struct ...
+type UserScore struct {
+	UserID    int64           `db:"users_id"`
+	Score     sql.NullFloat64 `db:"score"`
+	UpdatedAt time.Time       `db:"updated_at"`
 }
 
 // File struct ...

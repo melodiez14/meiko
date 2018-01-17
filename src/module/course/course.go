@@ -954,9 +954,9 @@ func GetScheduleIDByGP(gpID int64) (int64, error) {
 func GetGradeParametersID(AssignmentID int64) int64 {
 	query := fmt.Sprintf(`
 		SELECT 
-			asg.grade_parameters_id
+			grade_parameters_id
 		FROM
-			assignments asg
+			assignments
 		WHERE
 			id = (%d)
 		`, AssignmentID)
@@ -1386,4 +1386,22 @@ func SelectInvolved(scheduleID int64) ([]int64, error) {
 		return usersID, err
 	}
 	return usersID, nil
+}
+
+// SelectIDBySchedule ..
+func SelectIDBySchedule(scheduleID int64) ([]int64, error) {
+	var ids []int64
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id=(%d) AND status = 1
+		`, scheduleID)
+	err := conn.DB.Select(&ids, query)
+	if err != nil {
+		return ids, err
+	}
+	return ids, nil
 }

@@ -39,7 +39,6 @@ func (params createParams) validate() (createArgs, error) {
 	if err != nil {
 		return args, nil
 	}
-
 	// validate all modules
 	for mdl, roles := range modules {
 		listModule := rg.GetModuleList()
@@ -159,4 +158,14 @@ func (params updateParams) validate() (updateArgs, error) {
 	}
 
 	return updateArgs{id: id, name: name, modules: modules}, nil
+}
+
+func (params searchParams) validate() (searchArgs, error) {
+
+	text := html.EscapeString(params.Text)
+	text = helper.Trim(text)
+
+	return searchArgs{
+		Text: text,
+	}, nil
 }
