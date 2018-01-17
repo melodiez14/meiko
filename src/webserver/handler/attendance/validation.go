@@ -14,27 +14,13 @@ import (
 func (params listStudentParams) validate() (listStudentArgs, error) {
 	var args listStudentArgs
 
-	if helper.IsEmpty(params.meetingNumber) {
-		return args, fmt.Errorf("Meeting number cannot be empty")
-	}
-
-	if helper.IsEmpty(params.scheduleID) {
-		return args, fmt.Errorf("ScheduleID cannot be empty")
-	}
-
-	meetingNumber, err := strconv.ParseUint(params.meetingNumber, 10, 8)
-	if err != nil {
-		return args, err
-	}
-
-	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	meetingID, err := strconv.ParseUint(params.meetingID, 10, 64)
 	if err != nil {
 		return args, err
 	}
 
 	return listStudentArgs{
-		meetingNumber: uint8(meetingNumber),
-		scheduleID:    scheduleID,
+		meetingID: meetingID,
 	}, nil
 }
 
@@ -128,7 +114,7 @@ func (params createMeetingParams) validate() (createMeetingArgs, error) {
 		return args, err
 	}
 
-	t := time.Unix(0, timeInt)
+	t := time.Unix(timeInt, 0)
 
 	var users []int64
 	if !helper.IsEmpty(params.users) {

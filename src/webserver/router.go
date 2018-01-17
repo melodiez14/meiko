@@ -82,6 +82,10 @@ func loadRouter(r *httprouter.Router) {
 	r.POST("/api/admin/v1/course/:schedule_id/assistant", auth.MustAuthorize(course.AddAssistantHandler))
 	r.GET("/api/admin/v1/list/course/parameter", auth.MustAuthorize(course.ListParameterHandler))
 	r.GET("/api/admin/v1/list/course/search", auth.MustAuthorize(course.SearchHandler))
+	r.GET("/api/admin/v1/list/course/enrolled", auth.MustAuthorize(course.ListEnrolledHandler))
+	r.PATCH("/api/admin/v1/course/:schedule_id/involved", auth.MustAuthorize(course.AddInvolvedHandler))
+	r.GET("/api/admin/v1/course/:schedule_id/involved", auth.MustAuthorize(course.GetInvolvedHandler))
+	r.GET("/api/admin/v1/course/:schedule_id/search", auth.MustAuthorize(course.SearchUninvolvedHandler))
 	// ======================== End Course Handler ======================
 
 	// ======================== Tutorial Handler ========================
@@ -94,13 +98,14 @@ func loadRouter(r *httprouter.Router) {
 
 	// ======================= Attendance Handler =======================
 	// Admin section
-	r.GET("/api/v1/attendance/list", auth.MustAuthorize(attendance.ListStudentHandler))
-	r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetAttendanceHandler))
 	r.GET("/api/admin/v1/attendance", auth.MustAuthorize(attendance.ReadMeetingHandler))
 	r.POST("/api/admin/v1/attendance", auth.MustAuthorize(attendance.CreateMeetingHandler))
 	r.GET("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.ReadMeetingDetailHandler))
 	r.DELETE("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.DeleteMeetingHandler))
 	r.PATCH("/api/admin/v1/attendance/:meeting_id", auth.MustAuthorize(attendance.UpdateMeetingHandler))
+	r.GET("/api/admin/v1/list/attendant", auth.MustAuthorize(attendance.ListStudentHandler))
+	// User section
+	r.GET("/api/v1/attendance/summary", auth.MustAuthorize(attendance.GetAttendanceHandler))
 	// ===================== End Attendance Handler =====================
 	// =========================== Bot Handler ==========================
 	// User section

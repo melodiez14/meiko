@@ -41,6 +41,7 @@ func GetMeetingByID(id uint64) (Meeting, error) {
 	query := fmt.Sprintf(`
 		SELECT
 			id,
+			subject,
 			number,
 			description,
 			date,

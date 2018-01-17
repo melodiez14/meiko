@@ -52,9 +52,9 @@ func IsExistByGradeParameterID(gpID int64) bool {
 		SELECT
 			id
 		FROM
-			grade_parameters
+			assignments
 		WHERE
-			id = (%d)
+			grade_parameters_id = (%d)
 		LIMIT 1;
 	`, gpID)
 	err := conn.DB.Get(&x, query)

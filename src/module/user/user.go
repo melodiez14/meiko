@@ -798,3 +798,45 @@ func SelectDistinctRolegroupID() ([]int64, error) {
 
 	return rolegroupsID, nil
 }
+
+func Search(text string) ([]User, error) {
+	var users []User
+	query := fmt.Sprintf(`
+		SELECT
+			identity_code,
+			name
+		FROM
+			users
+		WHERE
+			identity_code LIKE '%s%%' OR
+			name LIKE '%s%%'
+		LIMIT 5`, text, text)
+	err := conn.DB.Select(&users, query)
+	if err != nil {
+		return users, err
+	}
+	return users, nil
+}
+
+func SearchUninvolved(text string, usersID []int64) ([]User, error) {
+	var users []User
+	usersStr := helper.Int64ToStringSlice(usersID)
+	queryUser := strings.Join(usersStr, ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			identity_code,
+			name
+		FROM
+			users
+		WHERE
+			id NOT IN (%s) AND (
+				identity_code LIKE '%s%%' OR
+				name LIKE '%s%%'
+			)
+		LIMIT 5`, queryUser, text, text)
+	err := conn.DB.Select(&users, query)
+	if err != nil {
+		return users, err
+	}
+	return users, nil
+}

@@ -53,9 +53,8 @@ type FileAssignment struct {
 
 // GradeParameter struct ...
 type GradeParameter struct {
-	Type         string
-	Percentage   float32
-	StatusChange uint8
+	Type       string
+	Percentage float32
 }
 
 //DetailAssignment struct ...
