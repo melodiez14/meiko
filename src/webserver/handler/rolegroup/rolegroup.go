@@ -108,7 +108,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	if len(args.modules) > 1 {
+	if len(args.modules) > 0 {
 		err = rg.InsertModuleAccess(rolegroupID, args.modules, tx)
 		if err != nil {
 			tx.Rollback()
@@ -419,5 +419,37 @@ func SearchHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(roles))
+	return
+}
+
+// ListHandler ..
+func ListHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	res := [8]string{rg.ModuleUser, rg.ModuleCourse, rg.ModuleRole, rg.ModuleAttendance, rg.ModuleSchedule, rg.ModuleAssignment, rg.ModuleInformation, rg.ModuleTutorial}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
+	return
+}
+
+// ListAbilitiesHandler ..
+func ListAbilitiesHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	if !sess.IsHasRoles(rg.ModuleRole, rg.RoleXRead, rg.RoleRead) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusForbidden).
+			AddError("You don't have privilege"))
+		return
+	}
+	res := [8]string{rg.RoleCreate, rg.RoleRead, rg.RoleUpdate, rg.RoleDelete, rg.RoleXCreate, rg.RoleXRead, rg.RoleXUpdate, rg.RoleXDelete}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(res))
 	return
 }

@@ -39,7 +39,6 @@ func (params createParams) validate() (createArgs, error) {
 	if err != nil {
 		return args, nil
 	}
-
 	// validate all modules
 	for mdl, roles := range modules {
 		listModule := rg.GetModuleList()

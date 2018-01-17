@@ -105,6 +105,7 @@ func GetModuleList() []string {
 		ModuleSchedule,
 		ModuleAssignment,
 		ModuleInformation,
+		ModuleTutorial,
 	}
 }
 
