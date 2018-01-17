@@ -29,6 +29,7 @@ type readRoles struct {
 	ID            int64  `json:"id"`
 	Name          string `json:"name"`
 	IsDeleteAllow bool   `json:"is_delete_allow"`
+	CreatedAt     string `json:"created_at"`
 }
 
 type readResponse struct {

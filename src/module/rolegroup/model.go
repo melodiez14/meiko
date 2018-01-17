@@ -1,5 +1,9 @@
 package rolegroup
 
+import (
+	"time"
+)
+
 const (
 	ModuleUser        = "users"
 	ModuleCourse      = "courses"
@@ -21,8 +25,9 @@ const (
 )
 
 type RoleGroup struct {
-	ID   int64  `db:"id"`
-	Name string `db:"name"`
+	ID        int64     `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"updated_at"`
 }
 
 type Privilege struct {

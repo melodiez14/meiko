@@ -53,6 +53,8 @@ func loadRouter(r *httprouter.Router) {
 	r.PATCH("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.UpdateHandler))
 	r.DELETE("/api/admin/v1/role/:rolegroup_id", auth.MustAuthorize(rolegroup.DeleteHandler))
 	r.GET("/api/admin/v1/list/role/search", auth.MustAuthorize(rolegroup.SearchHandler))
+	r.GET("/api/admin/v1/list/role", auth.MustAuthorize(rolegroup.ListHandler))
+	r.GET("/api/admin/v1/list/abilities", auth.MustAuthorize(rolegroup.ListAbilitiesHandler))
 	// ====================== End Rolegroup Handler =====================
 
 	// ========================== File Handler ==========================
