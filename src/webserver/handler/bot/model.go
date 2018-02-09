@@ -33,6 +33,11 @@ var msgAboutBot []string
 var msgAboutStudent []student
 var msgAboutCreator []string
 var msgKidding []string
+var msgAssistant []string
+var msgInformation []string
+var msgAssignment []string
+var msgSchedule []string
+var msgGrade []string
 
 type sAssistant string
 type sSchedule string

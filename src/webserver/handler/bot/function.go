@@ -46,8 +46,7 @@ func generateMessage(confidence float64) string {
 	return response
 }
 
-func handleAssistant(text string, userID int64) ([]map[string]interface{}, error) {
-
+func handleAssistant(text string, userID int64) ([]map[string]interface{}, string, error) {
 	args := []map[string]interface{}{}
 	var filterCoursesRgx sql.NullString
 
@@ -72,11 +71,11 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 
 	assistants, err := bot.SelectAssistantWithCourse(userID, filterCoursesRgx, filterDays)
 	if err != nil {
-		return args, err
+		return args, "", err
 	}
 
 	if len(assistants) < 1 {
-		return args, nil
+		return args, "", nil
 	}
 
 	mapAssistant := map[int64]map[string]interface{}{}
@@ -116,8 +115,14 @@ func handleAssistant(text string, userID int64) ([]map[string]interface{}, error
 	for _, val := range mapAssistant {
 		args = append(args, val)
 	}
+	if len(args) <= 0 {
 
-	return args, nil
+	}
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAssistant))
+
+	nilMsg := msgAssistant[index]
+	return args, nilMsg, nil
 }
 
 func handleInformation(text string, userID int64) ([]map[string]interface{}, error) {
@@ -176,7 +181,7 @@ func handleInformation(text string, userID int64) ([]map[string]interface{}, err
 	return args, nil
 }
 
-func handleSchedule(text string, userID int64) ([]map[string]interface{}, error) {
+func handleSchedule(text string, userID int64) ([]map[string]interface{}, string, error) {
 
 	args := []map[string]interface{}{}
 	params := sEntity{
@@ -201,7 +206,7 @@ func handleSchedule(text string, userID int64) ([]map[string]interface{}, error)
 
 	schedules, err := bot.SelectScheduleWithCourse(userID, filterCoursesRgx, filterDays)
 	if err != nil {
-		return args, err
+		return args, "", err
 	}
 
 	for _, val := range schedules {
@@ -216,11 +221,14 @@ func handleSchedule(text string, userID int64) ([]map[string]interface{}, error)
 			"time":        t,
 		})
 	}
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAssistant))
 
-	return args, nil
+	nilMsg := msgSchedule[index]
+	return args, nilMsg, nil
 }
 
-func handleAssignment(text string, userID int64) ([]map[string]interface{}, error) {
+func handleAssignment(text string, userID int64) ([]map[string]interface{}, string, error) {
 
 	args := []map[string]interface{}{}
 	params := sEntity{
@@ -242,7 +250,7 @@ func handleAssignment(text string, userID int64) ([]map[string]interface{}, erro
 
 	assignments, err := bot.SelectAssignmentWithCourse(userID, filterCoursesRgx, filterTime)
 	if err != nil {
-		return args, err
+		return args, "", err
 	}
 
 	for _, val := range assignments {
@@ -255,10 +263,14 @@ func handleAssignment(text string, userID int64) ([]map[string]interface{}, erro
 		})
 	}
 
-	return args, nil
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAssignment))
+
+	nilMsg := msgAssignment[index]
+	return args, nilMsg, nil
 }
 
-func handleGrade(text string, userID int64) ([]map[string]interface{}, error) {
+func handleGrade(text string, userID int64) ([]map[string]interface{}, string, error) {
 
 	args := []map[string]interface{}{}
 	params := sEntity{
@@ -280,7 +292,7 @@ func handleGrade(text string, userID int64) ([]map[string]interface{}, error) {
 
 	grades, err := bot.SelectGradeWithCourse(userID, filterCoursesRgx, filterTime)
 	if err != nil {
-		return args, err
+		return args, "", err
 	}
 
 	for _, val := range grades {
@@ -293,7 +305,11 @@ func handleGrade(text string, userID int64) ([]map[string]interface{}, error) {
 		})
 	}
 
-	return args, nil
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgGrade))
+
+	nilMsg := msgGrade[index]
+	return args, nilMsg, nil
 }
 
 func handleGreeting(username string) string {

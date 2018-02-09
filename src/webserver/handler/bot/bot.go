@@ -47,18 +47,34 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	msgResp := msg[index]
 	// convert intent into assistant if the answer is confidence
 	data := []map[string]interface{}{}
+	nilMsg := ""
 	if levelConfidence != "notsure" {
 		switch intent {
 		case intentAssistant:
-			data, err = handleAssistant(args.NormalizedText, sess.ID)
+			data, nilMsg, err = handleAssistant(args.NormalizedText, sess.ID)
+			if len(data) <= 0 {
+				msgResp = nilMsg
+			}
 		case intentGrade:
-			data, err = handleGrade(args.NormalizedText, sess.ID)
+			data, nilMsg, err = handleGrade(args.NormalizedText, sess.ID)
+			if len(data) <= 0 {
+				msgResp = nilMsg
+			}
 		case intentAssignment:
-			data, err = handleAssignment(args.NormalizedText, sess.ID)
+			data, nilMsg, err = handleAssignment(args.NormalizedText, sess.ID)
+			if len(data) <= 0 {
+				msgResp = nilMsg
+			}
 		case intentInformation:
 			data, err = handleInformation(args.NormalizedText, sess.ID)
+			if len(data) <= 0 {
+				msgResp = nilMsg
+			}
 		case intentSchedule:
-			data, err = handleSchedule(args.NormalizedText, sess.ID)
+			data, nilMsg, err = handleSchedule(args.NormalizedText, sess.ID)
+			if len(data) <= 0 {
+				msgResp = nilMsg
+			}
 		case intentGreeting:
 			intent = intentOther
 			msgResp = handleGreeting(sess.Name)

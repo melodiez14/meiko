@@ -142,4 +142,25 @@ func initMessage() {
 	msgKidding = []string{
 		"Ciyee yang lagi bercanda wkwk",
 	}
+	msgAssistant = []string{
+		"Belum ada pengajar, tunggu yak",
+		"Pengajar kamu sedang di atur oleh sistem",
+		"Sabar yak belum ada pengajar",
+	}
+	msgAssignment = []string{
+		"Yes, tidak ada assignment, kamu boleh liburan",
+		"Belum ada assignment, kamu boleh main sama pacar kamu",
+	}
+	msgInformation = []string{
+		"Informasi belum ada, nanti aku kabarin via notifikasi ya",
+		"Belum ada sayang, selamat bersenang-senang",
+	}
+	msgGrade = []string{
+		"Nilai kamu belum keluar, tunggu ya nanti aku kabarin",
+		"Nilai kamu belum keluar, santai nilai kamu pasti bagus",
+	}
+	msgSchedule = []string{
+		"yes, tidak ada praktikum. kamu boleh bersenang-senang",
+		"Alhamdulilah tidak ada praktikum. yuk perbanyak berdzikir",
+	}
 }
