@@ -3,10 +3,10 @@
         "port": "9000"
     },
     "database": {
-        "host": "47.74.233.141",
+        "host": "localhost",
         "port": "3306",
-        "username": "asep",
-        "password": "",
+        "username": "meiko",
+        "password": "meiko",
         "driver": "mysql",
         "database": "meiko"
     },

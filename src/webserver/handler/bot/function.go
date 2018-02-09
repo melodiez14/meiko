@@ -3,14 +3,48 @@ package bot
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/melodiez14/meiko/src/module/bot"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
 	"github.com/melodiez14/meiko/src/util/helper"
 )
+
+func generateMessage(confidence float64) string {
+	messages := map[string][]string{
+		"confident": []string{
+			"Ini bro jawabannya",
+		},
+		"doubt": []string{
+			"Kayaknya sih",
+			"Mereun ya ini ge",
+		},
+		"notsure": []string{
+			"sorry nih bro, gua ga tau",
+			"kasih tau ga ya?",
+			"Kamu ngomong apa sih?",
+			"Gatau, coba tanya ke temen kamu!",
+		},
+	}
+
+	levelConfidence := "notsure"
+	if confidence >= 60 {
+		levelConfidence = "confident"
+	} else if confidence >= 30 {
+		levelConfidence = "doubt"
+	}
+
+	msg := messages[levelConfidence]
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msg))
+
+	response := msg[index]
+	return response
+}
 
 func handleAssistant(text string, userID int64) ([]map[string]interface{}, error) {
 
@@ -260,4 +294,51 @@ func handleGrade(text string, userID int64) ([]map[string]interface{}, error) {
 	}
 
 	return args, nil
+}
+
+func handleGreeting(username string) string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgGreet))
+	msg := msgGreet[index]
+
+	response := msg.text
+	if msg.isExistName {
+		response = fmt.Sprintf(msg.text, username)
+	}
+
+	return response
+}
+
+func handleAboutBot() string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAboutBot))
+	response := msgAboutBot[index]
+	return response
+}
+
+func handleAboutStudent(username string) string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAboutStudent))
+	msg := msgAboutStudent[index]
+
+	response := msg.text
+	if msg.isExistName {
+		response = fmt.Sprintf(msg.text, username)
+	}
+
+	return response
+}
+
+func handleAboutCreator() string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgAboutCreator))
+	response := msgAboutCreator[index]
+	return response
+}
+
+func handleKidding() string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msgKidding))
+	response := msgKidding[index]
+	return response
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func GetIntent(text string) (string, error) {
+func GetIntent(text string) (string, float64, error) {
 
 	data := url.Values{}
 	data.Set("text", text)
@@ -24,7 +24,7 @@ func GetIntent(text string) (string, error) {
 	params := data.Encode()
 	req, err := http.NewRequest("POST", "http://52.221.131.147/api/v1/predict", strings.NewReader(params))
 	if err != nil {
-		return "", err
+		return "unknown", 0, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(params)))
@@ -35,26 +35,22 @@ func GetIntent(text string) (string, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "unknown", err
+		return "unknown", 0, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "unknown", err
+		return "unknown", 0, err
 	}
 
 	res := GetIntentHttpResponse{}
 	err = json.Unmarshal(body, &res)
 	if err != nil {
-		return "unknown", err
+		return "unknown", 0, err
 	}
 
-	if res.Confident < 0.2 {
-		return "unknown", nil
-	}
-
-	return res.Intent, nil
+	return res.Intent, res.Confident, nil
 }
 
 func LoadByUserID(userID int64) ([]Log, error) {

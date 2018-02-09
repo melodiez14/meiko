@@ -2,6 +2,7 @@ package bot
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -29,31 +30,66 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	// get text intent
-	intent, _ := bot.GetIntent(args.NormalizedText)
+	intent, confidence, _ := bot.GetIntent(args.NormalizedText)
 
-	// convert intent into assistant
+	// generate message by confidence
+	levelConfidence := "notsure"
+	if confidence >= 0.6 {
+		levelConfidence = "confident"
+	} else if confidence >= 0.3 {
+		levelConfidence = "doubt"
+	}
+
+	// get message
+	msg := msgConf[levelConfidence]
+	rand.Seed(time.Now().UTC().UnixNano())
+	index := rand.Intn(len(msg))
+
+	msgResp := msg[index]
+
+	intent = intentGreeting
+
+	// convert intent into assistant if the answer is confidence
 	data := []map[string]interface{}{}
-	switch intent {
-	case intentAssistant:
-		data, err = handleAssistant(args.NormalizedText, sess.ID)
-	case intentGrade:
-		data, err = handleGrade(args.NormalizedText, sess.ID)
-	case intentAssignment:
-		data, err = handleAssignment(args.NormalizedText, sess.ID)
-	case intentInformation:
-		data, err = handleInformation(args.NormalizedText, sess.ID)
-	case intentSchedule:
-		data, err = handleSchedule(args.NormalizedText, sess.ID)
-	case intentUnknown:
-		break
-	default:
-		break
+	if levelConfidence != "notsure" {
+		switch intent {
+		case intentAssistant:
+			data, err = handleAssistant(args.NormalizedText, sess.ID)
+		case intentGrade:
+			data, err = handleGrade(args.NormalizedText, sess.ID)
+		case intentAssignment:
+			data, err = handleAssignment(args.NormalizedText, sess.ID)
+		case intentInformation:
+			data, err = handleInformation(args.NormalizedText, sess.ID)
+		case intentSchedule:
+			data, err = handleSchedule(args.NormalizedText, sess.ID)
+		case intentGreeting:
+			intent = intentOther
+			msgResp = handleGreeting(sess.Name)
+		case intentAboutBot:
+			intent = intentOther
+			msgResp = handleAboutBot()
+		case intentAboutStudent:
+			intent = intentOther
+			msgResp = handleAboutStudent(sess.Name)
+		case intentAboutCreator:
+			intent = intentOther
+			msgResp = handleAboutCreator()
+		case intentKidding:
+			intent = intentOther
+			msgResp = handleKidding()
+		case intentUnknown:
+			intent = intentOther
+		default:
+			break
+		}
 	}
 
 	// intent and entity
 	respData := map[string]interface{}{
 		"intent": intent,
 		"entity": data,
+		"text":   msgResp,
 	}
 
 	// log message into database

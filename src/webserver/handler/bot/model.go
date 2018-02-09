@@ -3,12 +3,18 @@ package bot
 import "database/sql"
 
 const (
-	intentAssistant   = "assistant"
-	intentSchedule    = "schedule"
-	intentInformation = "information"
-	intentGrade       = "grade"
-	intentAssignment  = "assignment"
-	intentUnknown     = "unknown"
+	intentAssistant    = "assistant"
+	intentSchedule     = "schedule"
+	intentInformation  = "information"
+	intentGrade        = "grade"
+	intentAssignment   = "assignment"
+	intentUnknown      = "unknown"
+	intentGreeting     = "greeting"
+	intentAboutBot     = "aboutbot"
+	intentAboutCreator = "aboutcreator"
+	intentAboutStudent = "aboutstudent"
+	intentKidding      = "kidding"
+	intentOther        = "messageonly"
 
 	rgxMonday    = "(senin|senen|monday)"
 	rgxTuesday   = "(selasa|tuesday)"
@@ -21,6 +27,12 @@ const (
 
 var rgxAssistant string
 var rgxCourse string
+var msgConf map[string][]string
+var msgGreet []greeting
+var msgAboutBot []string
+var msgAboutStudent []student
+var msgAboutCreator []string
+var msgKidding []string
 
 type sAssistant string
 type sSchedule string
@@ -60,4 +72,14 @@ type loadHistoryArgs struct {
 type loadHistoryResponse struct {
 	TimeStamp int64       `json:"time"`
 	Response  interface{} `json:"message"`
+}
+
+type greeting struct {
+	text        string
+	isExistName bool
+}
+
+type student struct {
+	text        string
+	isExistName bool
 }

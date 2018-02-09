@@ -15,6 +15,7 @@ func Init() {
 	log.Println("Initializing Bot")
 	initRgxAsistant()
 	initRgxCourse()
+	initMessage()
 	log.Println("Bot successfully initialized")
 }
 
@@ -89,4 +90,56 @@ func initRgxCourse() {
 	}
 
 	rgxCourse = strings.Join(nameGroup, "|")
+}
+
+func initMessage() {
+	msgConf = map[string][]string{
+		"confident": []string{
+			"Ini bro jawabannya",
+			"Ini dia",
+			"Sikat gan!",
+		},
+		"doubt": []string{
+			"Kayaknya sih",
+			"Mereun ya ini ge",
+		},
+		"notsure": []string{
+			"sorry nih bro, gua ga tau",
+			"kasih tau ga ya?",
+			"Kamu ngomong apa sih?",
+			"Gatau, coba tanya ke temen kamu!",
+		},
+	}
+
+	msgGreet = []greeting{
+		greeting{text: "Hello my friend", isExistName: false},
+		greeting{text: "Hey", isExistName: false},
+		greeting{text: "Whatsup bro? What can i help?", isExistName: false},
+		greeting{text: "Hola hola", isExistName: false},
+		greeting{text: "Sup?", isExistName: false},
+		greeting{text: "Hello %s", isExistName: true},
+		greeting{text: "Hey %s. My buddy", isExistName: true},
+	}
+
+	msgAboutBot = []string{
+		"Pengen tau aja atau pengen tau banget?",
+		"Aku robot",
+		"Aku owl asisten. aku bisa ngasih tau kamu mengenai jadwal, berita, tugas, jadwal, dan asisten",
+	}
+
+	msgAboutStudent = []student{
+		student{text: "Kamu tuh orang paling pinter yang pernah aku kenal", isExistName: false},
+		student{text: "My best friend", isExistName: false},
+		student{text: "Anda adalah %s", isExistName: true},
+	}
+
+	msgAboutCreator = []string{
+		"Tau meiko ga? dia tuh yang bikin aku!",
+		"Yang Maha Pencipta",
+		"My creator",
+	}
+
+	msgKidding = []string{
+		"Ciyee yang lagi bercanda wkwk",
+	}
 }
