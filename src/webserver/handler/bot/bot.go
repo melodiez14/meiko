@@ -44,11 +44,7 @@ func BotHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	msg := msgConf[levelConfidence]
 	rand.Seed(time.Now().UTC().UnixNano())
 	index := rand.Intn(len(msg))
-
 	msgResp := msg[index]
-
-	intent = intentGreeting
-
 	// convert intent into assistant if the answer is confidence
 	data := []map[string]interface{}{}
 	if levelConfidence != "notsure" {

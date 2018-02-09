@@ -1,26 +1,56 @@
 package notification
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
-func Get(userID int64, page uint16, limit uint8) ([]Notification, error) {
-	var notifications []Notification
+func IsExist(userID int64, onesignalID string) bool {
 
-	startRow := uint32(page-1) * uint32(limit)
+	var x string
+	query := fmt.Sprintf(`
+		SELECT
+			'x'
+		FROM
+			notifications
+		WHERE
+			users_id = (%d) AND
+			onesignal_id = ('%s')
+		LIMIT 1;	
+	`, userID, onesignalID)
 
-	query := fmt.Sprintf(queryGet, userID, startRow, limit)
-	err := conn.DB.Select(&notifications, query)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
+	err := conn.DB.Get(&x, query)
+	if err != nil {
+		return false
 	}
-
-	return notifications, nil
+	return true
 }
 
-func (n Notification) GetURL() string {
-	return "http://URL.com"
+func Insert(userID int64, onesignalID string) error {
+	query := fmt.Sprintf(`
+		INSERT INTO
+			notifications (
+				users_id,
+				onesignal_id,
+				created_at,
+				updated_at
+			) VALUES (
+				(%d),
+				('%s'),
+				NOW(),
+				NOW()
+			);
+	`, userID, onesignalID)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	if rows, err := result.RowsAffected(); rows < 1 || err != nil {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
 }

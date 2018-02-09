@@ -1,5 +1,13 @@
 package notification
 
+type subscribeParams struct {
+	playerID string
+}
+
+type subscribeArgs struct {
+	playerID string
+}
+
 type getNotificationParam struct {
 	page string
 }

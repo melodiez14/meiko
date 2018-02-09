@@ -5,12 +5,14 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/melodiez14/meiko/src/util/auth"
+	"github.com/melodiez14/meiko/src/webserver/handler"
 	"github.com/melodiez14/meiko/src/webserver/handler/assignment"
 	"github.com/melodiez14/meiko/src/webserver/handler/attendance"
 	"github.com/melodiez14/meiko/src/webserver/handler/bot"
 	"github.com/melodiez14/meiko/src/webserver/handler/course"
 	"github.com/melodiez14/meiko/src/webserver/handler/file"
 	"github.com/melodiez14/meiko/src/webserver/handler/information"
+	"github.com/melodiez14/meiko/src/webserver/handler/notification"
 	"github.com/melodiez14/meiko/src/webserver/handler/place"
 	"github.com/melodiez14/meiko/src/webserver/handler/rolegroup"
 	"github.com/melodiez14/meiko/src/webserver/handler/tutorial"
@@ -19,6 +21,8 @@ import (
 
 // Load returns all routing of this server
 func loadRouter(r *httprouter.Router) {
+
+	r.GET("/hellohello", handler.HelloHandler)
 
 	// ========================== User Handler ==========================
 	// User section
@@ -151,6 +155,10 @@ func loadRouter(r *httprouter.Router) {
 	r.GET("/api/v1/information", auth.MustAuthorize(information.GetHandler))           // list informations
 	r.GET("/api/v1/information/:id", auth.MustAuthorize(information.GetDetailHandler)) // detail information
 	// ===================== End Information Handler ====================
+
+	// ====================== Notification Handler ======================
+	r.POST("/api/v1/notification", auth.MustAuthorize(notification.SubscribeHandler)) // list informations
+	// ==================== End Notification Handler ====================
 
 	// ========================== Place Handler =========================
 	// Public section

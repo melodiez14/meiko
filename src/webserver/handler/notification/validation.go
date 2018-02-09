@@ -2,6 +2,7 @@ package notification
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 )
 
@@ -18,5 +19,22 @@ func (n getNotificationParam) validate() (*getNotificationArgs, error) {
 
 	return &getNotificationArgs{
 		page: uint16(pg),
+	}, nil
+}
+
+func (params subscribeParams) validate() (subscribeArgs, error) {
+
+	var args subscribeArgs
+	valid, err := regexp.MatchString(`^[\w\d-]{36}$`, params.playerID)
+	if err != nil {
+		return args, err
+	}
+
+	if !valid {
+		return args, fmt.Errorf("Invalid PlayerID")
+	}
+
+	return subscribeArgs{
+		playerID: params.playerID,
 	}, nil
 }

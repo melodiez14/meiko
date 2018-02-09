@@ -4,49 +4,42 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/melodiez14/meiko/src/module/notification"
+	nf "github.com/melodiez14/meiko/src/module/notification"
 	"github.com/melodiez14/meiko/src/util/auth"
 	"github.com/melodiez14/meiko/src/webserver/template"
 )
 
-func GetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func SubscribeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
 
-	param := getNotificationParam{
-		page: r.FormValue("_pg"),
+	params := subscribeParams{
+		playerID: r.FormValue("player_id"),
 	}
 
-	args, err := param.validate()
+	args, err := params.validate()
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
-			AddError(err.Error()))
+			AddError("Invalid Request"))
 		return
 	}
 
-	const limit = uint8(10)
-	u := r.Context().Value("User").(*auth.User)
+	if nf.IsExist(sess.ID, args.playerID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			SetMessage("Invalid Request"))
+		return
+	}
 
-	n, err := notification.Get(u.ID, args.page, limit)
+	err = nf.Insert(sess.ID, args.playerID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusInternalServerError).
-			AddError(err.Error()))
+			SetCode(http.StatusInternalServerError))
 		return
-	}
-
-	var res []Notification
-	for _, v := range n {
-		res = append(res, Notification{
-			ID:          v.ID,
-			Name:        v.Name,
-			Description: v.Description,
-			URL:         v.GetURL(),
-			CreatedAt:   v.CreatedAt.Unix(),
-		})
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetData(res))
+		SetMessage("Success"))
 	return
 }
