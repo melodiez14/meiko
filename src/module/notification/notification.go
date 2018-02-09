@@ -58,6 +58,27 @@ func Insert(userID int64, onesignalID string) error {
 	return nil
 }
 
+func Delete(userID int64, onesignalID string) error {
+	query := fmt.Sprintf(`
+		DELETE FROM
+			notifications
+		WHERE
+			users_id = (%d) AND
+			onesignal_id = ('%s');
+	`, userID, onesignalID)
+
+	result, err := conn.DB.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	if rows, err := result.RowsAffected(); rows < 1 || err != nil {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
+
 func Push(title, description string, playerID []string) error {
 
 	payload := map[string]interface{}{

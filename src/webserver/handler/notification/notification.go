@@ -26,12 +26,47 @@ func SubscribeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 	if nf.IsExist(sess.ID, args.playerID) {
 		template.RenderJSONResponse(w, new(template.Response).
-			SetCode(http.StatusBadRequest).
-			SetMessage("Invalid Request"))
+			SetCode(http.StatusOK).
+			SetMessage("Success"))
 		return
 	}
 
 	err = nf.Insert(sess.ID, args.playerID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
+	return
+}
+
+func UnSubscribeHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+
+	params := subscribeParams{
+		playerID: r.FormValue("player_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if nf.IsExist(sess.ID, args.playerID) {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetMessage("Success"))
+		return
+	}
+
+	err = nf.Delete(sess.ID, args.playerID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))

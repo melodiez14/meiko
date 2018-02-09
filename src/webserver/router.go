@@ -157,7 +157,8 @@ func loadRouter(r *httprouter.Router) {
 	// ===================== End Information Handler ====================
 
 	// ====================== Notification Handler ======================
-	r.POST("/api/v1/notification", auth.MustAuthorize(notification.SubscribeHandler)) // list informations
+	r.POST("/api/v1/notification", auth.MustAuthorize(notification.SubscribeHandler))     // subscribe notification
+	r.DELETE("/api/v1/notification", auth.MustAuthorize(notification.UnSubscribeHandler)) // unsubsribe notification
 	// ==================== End Notification Handler ====================
 
 	// ========================== Place Handler =========================
