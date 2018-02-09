@@ -3,7 +3,7 @@
         "port": "9000"
     },
     "database": {
-        "host": "localhost",
+        "host": "192.168.43.33",
         "port": "3306",
         "username": "meiko",
         "password": "meiko",
