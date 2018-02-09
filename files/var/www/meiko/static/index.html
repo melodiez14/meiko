@@ -18,12 +18,33 @@
     <link rel="shortcut icon" href="/static/img/logo256.png">
     <link rel="icon" href="/static/img/logo256.png" sizes="256x256">
     <link rel="apple-touch-icon" href="/static/img/logo256.png" sizes="256x256">
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js"></script>
     <script>
         var OneSignal = window.OneSignal || [];
         OneSignal.push(function() {
             OneSignal.init({
                 appId: "9f1b7d96-d6d8-4e3f-9d2b-9978f5f2b5a1",
+                autoRegister: true,
+                notifyButton: {
+                    enable: false
+                }
+            });
+            OneSignal.on('subscriptionChange', function(isSubscribed) {
+                if (isSubscribed) {
+                    OneSignal.getUserId(function(playerID) {
+                        var formData = new FormData();
+                        formData.append('player_id', playerID);
+                        fetch(`/api/v1/notification`, {
+                            credentials: 'include',
+                            method: 'POST',
+                            body: formData
+                        }).then(function(response) {
+                            if (response.status === 200) {
+                                return response.json().then(function() {});
+                            }
+                        });
+                    });
+                }
             });
         });
     </script>
