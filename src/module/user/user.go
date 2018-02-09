@@ -783,6 +783,24 @@ func SelectIDByScheduleID(scheduleID int64, limit, offset int) ([]int64, error) 
 	return result, nil
 }
 
+// SelectIDByScheduleID2 ..
+func SelectIDByScheduleID2(scheduleID int64) ([]int64, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d) AND status = 1
+		`, scheduleID)
+	var result []int64
+	err := conn.DB.Select(&result, query)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 // SelectCountByScheduleID ..
 func SelectCountByScheduleID(scheduleID int64) (int, error) {
 	query := fmt.Sprintf(`

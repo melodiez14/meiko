@@ -11,8 +11,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 	asg "github.com/melodiez14/meiko/src/module/assignment"
 	att "github.com/melodiez14/meiko/src/module/attendance"
+	bt "github.com/melodiez14/meiko/src/module/bot"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	fl "github.com/melodiez14/meiko/src/module/file"
+	nf "github.com/melodiez14/meiko/src/module/notification"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
 	usr "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/auth"
@@ -579,6 +581,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	tx := conn.DB.MustBegin()
 	id, err := asg.Insert(args.name, args.description, args.gpID, args.maxSizeFile, args.maxFile, args.dueDate, args.status, tx)
 	if err != nil {
+		fmt.Println(err.Error())
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
@@ -605,6 +608,55 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			return
 		}
 	}
+
+	ids, err := usr.SelectIDByScheduleID2(scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+
+	pids, err := nf.SelectPlayerID(ids)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	var playerIDs []string
+	var subscribedIDs []int64
+	for _, val := range pids {
+		playerIDs = append(playerIDs, val.OneSignalID)
+		subscribedIDs = append(subscribedIDs, val.UserID)
+	}
+	desc := ""
+	if args.description.Valid {
+		desc = args.description.String
+	}
+	idCourse, err := cs.GetCourseID(scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	name, err := cs.GetName(idCourse)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	err = bt.InsertAssignment(name, desc, name, "Ini tugas baru", "assignment", args.dueDate, id, ids)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError(err.Error()))
+		return
+	}
+	nf.Push(name, "Ini tugas baru, silahkan check", playerIDs)
+
 	tx.Commit()
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).

@@ -2,11 +2,14 @@ package notification
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/melodiez14/meiko/src/util/conn"
+	"github.com/melodiez14/meiko/src/util/helper"
 )
 
 func IsExist(userID int64, onesignalID string) bool {
@@ -91,4 +94,22 @@ func Push(title, description string, playerID []string) error {
 	defer resp.Body.Close()
 
 	return nil
+}
+func SelectPlayerID(usersID []int64) ([]Notification, error) {
+	var ids []Notification
+	queryIdentity := strings.Join(helper.Int64ToStringSlice(usersID), ", ")
+	query := fmt.Sprintf(`
+		SELECT
+			onesignal_id,
+			users_id
+		FROM 
+			notifications
+		WHERE
+			users_id IN (%s)
+		`, queryIdentity)
+	err := conn.DB.Select(&ids, query)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	return ids, nil
 }
