@@ -7,10 +7,13 @@ import (
 	"github.com/melodiez14/meiko/src/webserver/template"
 
 	"github.com/julienschmidt/httprouter"
+	bt "github.com/melodiez14/meiko/src/module/bot"
 	"github.com/melodiez14/meiko/src/module/course"
 	cs "github.com/melodiez14/meiko/src/module/course"
 	inf "github.com/melodiez14/meiko/src/module/information"
+	nf "github.com/melodiez14/meiko/src/module/notification"
 	rg "github.com/melodiez14/meiko/src/module/rolegroup"
+	us "github.com/melodiez14/meiko/src/module/user"
 	"github.com/melodiez14/meiko/src/util/auth"
 )
 
@@ -155,7 +158,37 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			AddError(err.Error()))
 		return
 	}
+	if args.ScheduleID != 0 {
+		ids, err := us.SelectIDByScheduleID2(args.ScheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError(err.Error()))
+			return
+		}
 
+		pids, err := nf.SelectPlayerID(ids)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError(err.Error()))
+			return
+		}
+		var playerIDs []string
+		var subscribedIDs []int64
+		for _, val := range pids {
+			playerIDs = append(playerIDs, val.OneSignalID)
+			subscribedIDs = append(subscribedIDs, val.UserID)
+		}
+		err = bt.InsertMultiple(args.Title, args.Description, "Information", "Informasi baru", ids)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError(err.Error()))
+			return
+		}
+		nf.Push("Tugas Baru", "Ini nih", playerIDs)
+	}
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Information created successfully"))

@@ -109,7 +109,7 @@ type createArgs struct {
 	name             string
 	description      sql.NullString
 	status           int8
-	dueDate          string
+	dueDate          time.Time
 	maxSizeFile      int64
 	allowedTypesFile []string
 	maxFile          int64

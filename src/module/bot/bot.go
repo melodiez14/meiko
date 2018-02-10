@@ -16,6 +16,84 @@ import (
 	"github.com/melodiez14/meiko/src/util/conn"
 )
 
+func InsertMultiple(title, description, intent, msgResp string, usersID []int64) error {
+	message := map[string]interface{}{
+		"intent": intent,
+		"entity": []map[string]interface{}{
+			map[string]interface{}{
+				"title":       title,
+				"description": description,
+				"posted_at":   time.Now().Unix(),
+			},
+		},
+		"text": msgResp,
+	}
+	jsonPayload, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	var value []string
+	length := len(usersID)
+	for i := 0; i < length; i++ {
+		value = append(value, fmt.Sprintf("('%s', %d, %d, NOW())", string(jsonPayload), usersID[i], StatusBot))
+	}
+	queryValue := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+		bot_logs(
+			message,
+			users_id,
+			status,
+			created_at
+		) VALUES %s`, queryValue)
+	_, err = conn.DB.Exec(query)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func InsertAssignment(name, description, courseName, msgResp, intent string, dueDate time.Time, id int64, usersID []int64) error {
+	path := fmt.Sprintf(`/api/v1/assignment/%d`, id)
+	fmt.Println(path)
+	message := map[string]interface{}{
+		"intent": intent,
+		"entity": []map[string]interface{}{
+			map[string]interface{}{
+				"url":         path,
+				"name":        name,
+				"description": description,
+				"due_date":    dueDate.Unix(),
+				"course_name": courseName,
+			},
+		},
+		"text": msgResp,
+	}
+	jsonPayload, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	var value []string
+	length := len(usersID)
+	for i := 0; i < length; i++ {
+		value = append(value, fmt.Sprintf("('%s', %d, %d, NOW())", string(jsonPayload), usersID[i], StatusBot))
+	}
+	queryValue := strings.Join(value, ", ")
+	query := fmt.Sprintf(`
+		INSERT INTO
+		bot_logs(
+			message,
+			users_id,
+			status,
+			created_at
+		) VALUES %s`, queryValue)
+	_, err = conn.DB.Exec(query)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func GetIntent(text string) (string, float64, error) {
 
 	data := url.Values{}
