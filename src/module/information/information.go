@@ -259,12 +259,17 @@ func SelectByPage(scheduleID []int64, total, offset int64, column ...string) ([]
 	}
 	ids := strings.Join(d, ", ")
 	cols := strings.Join(c, ", ")
+	// set "NULL" to ids if ids is nil
+	if ids == "" {
+		fmt.Println("ids: " + ids + " end")
+		ids = "NULL"
+	}
 	query := fmt.Sprintf(`
 		SELECT
 			%s
 		FROM
 			informations
-			WHERE
+		WHERE 
 			schedules_id IS NULL
 		OR
 			schedules_id IN (%s)
