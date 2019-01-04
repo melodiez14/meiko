@@ -1086,6 +1086,10 @@ func SelectJoinScheduleCourse(scheduleID []int64) ([]CourseConcise, error) {
 	var res []CourseConcise
 	id := helper.Int64ToStringSlice(scheduleID)
 	queryID := strings.Join(id, ", ")
+	if queryID == "" {
+		queryID = "NULL"
+		fmt.Println("queryID: ", queryID)
+	}
 	query := fmt.Sprintf(`
 		SELECT
 			sc.id,
