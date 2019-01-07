@@ -1,0 +1,54 @@
+version: "3"
+services:
+  mysql:
+    image: mysql:5.6
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: meiko
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - mysql-net
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379"
+    networks:
+    - redis-net
+  be:
+    image: melodiez14/meiko:latest
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - mysql-net
+      - redis-net
+      - app-net
+    restart: on-failure
+    volumes:
+      - be-data:/var/www/meiko/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  fe:
+    image: melodiez14/lancelot:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - be
+    networks:
+      - app-net
+    restart: on-failure
+networks:
+  mysql-net:
+  redis-net:
+  app-net:
+volumes:
+  mysql-data:
+  be-data:

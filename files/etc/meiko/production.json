@@ -1,17 +1,17 @@
 {
     "webserver": {
-        "port": "80"
+        "port": "9000"
     },
     "database": {
-        "host": "localhost",
+        "host": "mysql",
         "port": "3306",
-        "username": "meiko",
-        "password": "Meiko@123",
+        "username": "root",
+        "password": "root",
         "driver": "mysql",
         "database": "meiko"
     },
     "redis": {
-        "address": "localhost:6379",
+        "address": "redis:6379",
         "password": ""
     },
     "email": {
