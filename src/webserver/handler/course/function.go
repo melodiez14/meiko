@@ -33,6 +33,7 @@ func getLast(userID int64) ([]getResponse, error) {
 			Time:        t,
 			Place:       val.Schedule.PlaceID,
 			Status:      "enrolled",
+			Year:        val.Schedule.Year,
 		})
 	}
 
@@ -65,6 +66,7 @@ func getCurrent(userID int64) ([]getResponse, error) {
 			Time:        t,
 			Place:       val.Schedule.PlaceID,
 			Status:      "enrolled",
+			Year:        val.Schedule.Year,
 		})
 	}
 
@@ -107,6 +109,7 @@ func getAll(userID int64) ([]getResponse, error) {
 				Time:        t,
 				Place:       val.Schedule.PlaceID,
 				Status:      "enrolled",
+				Year:        val.Schedule.Year,
 			})
 		} else if helper.Int64InSlice(val.Schedule.ID, unapproved) {
 			waitingResp = append(waitingResp, getResponse{
@@ -119,6 +122,7 @@ func getAll(userID int64) ([]getResponse, error) {
 				Time:        t,
 				Place:       val.Schedule.PlaceID,
 				Status:      "waiting",
+				Year:        val.Schedule.Year,
 			})
 		} else {
 			unenrolledResp = append(unenrolledResp, getResponse{
@@ -131,6 +135,7 @@ func getAll(userID int64) ([]getResponse, error) {
 				Time:        t,
 				Place:       val.Schedule.PlaceID,
 				Status:      "unenrolled",
+				Year:        val.Schedule.Year,
 			})
 		}
 	}

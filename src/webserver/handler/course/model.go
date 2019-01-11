@@ -177,6 +177,7 @@ type getResponse struct {
 	Time        string `json:"time"`
 	Day         string `json:"day"`
 	Place       string `json:"place"`
+	Year        int16  `json:"year"`
 }
 
 type getDetailParams struct {
