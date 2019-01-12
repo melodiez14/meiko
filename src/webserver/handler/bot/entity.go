@@ -119,6 +119,8 @@ func (params *sEntity) getTime() []time.Time {
 		`kemarin`:         now.AddDate(0, 0, -1),
 		`kemaren`:         now.AddDate(0, 0, -1),
 		`hari\s*ini`:      now.AddDate(0, 0, 0),
+		`esok`:            now.AddDate(0, 0, 1),
+		`lusa`:            now.AddDate(0, 0, 2),
 	}
 
 	for i, val := range patternWord {

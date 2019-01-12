@@ -22,7 +22,7 @@ func GetIntent(text string) (string, error) {
 	data.Set("text", text)
 
 	params := data.Encode()
-	req, err := http.NewRequest("POST", "http://13.229.165.87/api/v1/predict", strings.NewReader(params))
+	req, err := http.NewRequest("POST", "http://52.221.131.147/api/v1/predict", strings.NewReader(params))
 	if err != nil {
 		return "", err
 	}
@@ -35,23 +35,23 @@ func GetIntent(text string) (string, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "unknown", err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "unknown", err
 	}
 
 	res := GetIntentHttpResponse{}
 	err = json.Unmarshal(body, &res)
 	if err != nil {
-		return "", err
+		return "unknown", err
 	}
 
-	if res.Confident < 0.5 {
-		return "", nil
+	if res.Confident < 0.2 {
+		return "unknown", nil
 	}
 
 	return res.Intent, nil

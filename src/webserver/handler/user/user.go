@@ -208,6 +208,11 @@ func ReadHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if !helper.IsEmpty(r.FormValue("q")) {
+		search(w, r, ps)
+		return
+	}
+
 	params := getVerifiedParams{
 		Page:  r.FormValue("pg"),
 		Total: r.FormValue("ttl"),

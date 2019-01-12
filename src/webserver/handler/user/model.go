@@ -608,3 +608,8 @@ type createArgs struct {
 	Name         string
 	Email        string
 }
+
+type searchResponse struct {
+	IdentityCode int64  `json:"id"`
+	Name         string `json:"name"`
+}

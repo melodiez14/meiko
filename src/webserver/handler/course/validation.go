@@ -196,10 +196,6 @@ func (params createParams) validate() (createArgs, error) {
 
 		for _, val := range gp {
 			percentage += val.Percentage
-			// check status change
-			if val.StatusChange != cs.GradeParameterStatusChange && val.StatusChange != cs.GradeParameterStatusUnchange {
-				return args, fmt.Errorf("Invalid grade parameter")
-			}
 			// validate type
 			if !helper.IsStringInSlice(val.Type, gpType) {
 				return args, fmt.Errorf("Invalid grade parameter")
@@ -442,17 +438,14 @@ func (params updateParams) validate() (updateArgs, error) {
 		var gpChoosen []string
 		for _, val := range gp {
 			percentage += val.Percentage
-			// check status change
-			if val.StatusChange != cs.GradeParameterStatusChange && val.StatusChange != cs.GradeParameterStatusUnchange {
-				return args, fmt.Errorf("Invalid grade parameter")
-			}
 			// validate type
 			if !helper.IsStringInSlice(val.Type, gpType) {
 				return args, fmt.Errorf("Invalid grade parameter")
 			}
-			if !helper.IsStringInSlice(val.Type, gpChoosen) {
+			if helper.IsStringInSlice(val.Type, gpChoosen) {
 				return args, fmt.Errorf("Invalid grade parameter should be unique")
 			}
+			gpChoosen = append(gpChoosen, val.Type)
 			gps = append(gps, val)
 		}
 
@@ -608,5 +601,74 @@ func (params enrollRequestParams) validate() (enrollRequestArgs, error) {
 	return enrollRequestArgs{
 		payload:    params.payload,
 		scheduleID: scheduleID,
+	}, nil
+}
+
+func (params addInvolvedParams) validate() (addInvolvedArgs, error) {
+	var args addInvolvedArgs
+
+	identityCode, err := strconv.ParseInt(params.identityCode, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	role := 0
+	switch params.role {
+	case "assistant":
+		role = cs.PStatusAssistant
+	case "student":
+		role = cs.PStatusStudent
+	default:
+		return args, fmt.Errorf("Invalid Role")
+	}
+
+	// student can be add and activate if there is a request
+	if role == cs.PStatusStudent && params.status != "add" && params.status != "active" {
+		return args, fmt.Errorf("Student status must be add or active")
+		// admin can only add
+	} else if role == cs.PStatusAssistant && params.status != "add" {
+		return args, fmt.Errorf("Assistant status must be add")
+	}
+
+	return addInvolvedArgs{
+		identityCode: identityCode,
+		scheduleID:   scheduleID,
+		role:         role,
+		status:       params.status,
+	}, nil
+}
+
+func (params getInvolvedParams) validate() (getInvolvedArgs, error) {
+	var args getInvolvedArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	return getInvolvedArgs{
+		role:       params.role,
+		scheduleID: scheduleID,
+	}, nil
+}
+
+func (params searchUninvolvedParams) validate() (searchUninvolvedArgs, error) {
+	var args searchUninvolvedArgs
+
+	scheduleID, err := strconv.ParseInt(params.scheduleID, 10, 64)
+	if err != nil {
+		return args, err
+	}
+
+	text := html.EscapeString(params.text)
+
+	return searchUninvolvedArgs{
+		scheduleID: scheduleID,
+		text:       text,
 	}, nil
 }

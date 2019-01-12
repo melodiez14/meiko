@@ -11,13 +11,11 @@ type summaryResponse struct {
 }
 
 type listStudentParams struct {
-	meetingNumber string
-	scheduleID    string
+	meetingID string
 }
 
 type listStudentArgs struct {
-	meetingNumber uint8
-	scheduleID    int64
+	meetingID uint64
 }
 
 type listStudentResponse struct {
@@ -44,13 +42,13 @@ type readMeetings struct {
 	MeetingNumber  uint8  `json:"number"`
 	Date           int64  `json:"date"`
 	TotalAttendant uint16 `json:"total_attendant"`
-	TotalStudent   uint16 `json:"total_student"`
 }
 
 type readMeetingResponse struct {
-	TotalPage int            `json:"total_page"`
-	Page      int            `json:"page"`
-	Meetings  []readMeetings `json:"meetings"`
+	TotalPage    int            `json:"total_page"`
+	Page         int            `json:"page"`
+	Meetings     []readMeetings `json:"meetings"`
+	TotalStudent int            `json:"total_student"`
 }
 
 type readMeetingDetailParams struct {
@@ -71,7 +69,7 @@ type readMeetingDetailResponse struct {
 	ID            uint64    `json:"meeting_id"`
 	Subject       string    `json:"subject"`
 	MeetingNumber uint8     `json:"meeting_number"`
-	Description   string    `json:"desciption"`
+	Description   string    `json:"description"`
 	Date          int64     `json:"date"`
 	Student       []student `json:"student"`
 }

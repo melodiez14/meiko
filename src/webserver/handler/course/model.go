@@ -81,9 +81,8 @@ type listParameterResponse struct {
 }
 
 type gradeParameter struct {
-	Type         string  `json:"type"`
-	Percentage   float32 `json:"percentage"`
-	StatusChange uint8   `json:"status_change"`
+	Type       string  `json:"type"`
+	Percentage float32 `json:"percentage"`
 }
 
 type createParams struct {
@@ -205,6 +204,7 @@ type getAssistantArgs struct {
 }
 
 type getAssistantResponse struct {
+	IdentityCode int64  `json:"id"`
 	Name         string `json:"name"`
 	Roles        string `json:"role"`
 	Phone        string `json:"phone_number"`
@@ -236,9 +236,8 @@ type readScheduleParameterArgs struct {
 }
 
 type readScheduleParameterResponse struct {
-	Type         string  `json:"type"`
-	Percentage   float32 `json:"percentage"`
-	StatusChange uint8   `json:"status_change"`
+	Type       string  `json:"type"`
+	Percentage float32 `json:"percentage"`
 }
 
 type listStudentParams struct {
@@ -308,4 +307,49 @@ type enrollRequestParams struct {
 type enrollRequestArgs struct {
 	scheduleID int64
 	payload    string
+}
+
+type addInvolvedParams struct {
+	identityCode string
+	scheduleID   string
+	role         string
+	status       string
+}
+
+type addInvolvedArgs struct {
+	identityCode int64
+	scheduleID   int64
+	role         int
+	status       string
+}
+
+type getInvolvedParams struct {
+	role       string
+	scheduleID string
+}
+
+type getInvolvedArgs struct {
+	role       string
+	scheduleID int64
+}
+
+type getInvolvedResponse struct {
+	ID          int64  `json:"user_id"`
+	Name        string `json:"name"`
+	IsActivated bool   `json:"is_activated"`
+}
+
+type searchUninvolvedParams struct {
+	scheduleID string
+	text       string
+}
+
+type searchUninvolvedArgs struct {
+	scheduleID int64
+	text       string
+}
+
+type searchUninvolvedResponse struct {
+	IdentityCode int64  `json:"id"`
+	Name         string `json:"name"`
 }

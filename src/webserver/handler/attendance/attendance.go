@@ -71,8 +71,7 @@ func ListStudentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 
 	params := listStudentParams{
-		meetingNumber: r.FormValue("meeting_number"),
-		scheduleID:    r.FormValue("schedule_id"),
+		meetingID: r.FormValue("meeting_id"),
 	}
 
 	args, err := params.validate()
@@ -83,8 +82,8 @@ func ListStudentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	// check is valid meeting number and schedule id
-	_, err = atd.GetMeeting(args.meetingNumber, args.scheduleID)
+	// get attendance
+	meeting, err := atd.GetMeetingByID(args.meetingID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusBadRequest).
@@ -92,41 +91,53 @@ func ListStudentHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	studentID, err := cs.SelectEnrolledStudentID(args.scheduleID)
+	// get list of enrolled users_id
+	enrolledID, err := cs.SelectEnrolledStudentID(meeting.ScheduleID)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
 
-	var resp []listStudentResponse
-	if len(studentID) < 1 {
+	resp := []listStudentResponse{}
+	if len(enrolledID) < 1 {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusOK).
 			SetData(resp))
 		return
 	}
 
-	users, err := usr.SelectByID(studentID, true, usr.ColID, usr.ColName, usr.ColIdentityCode)
+	users, err := usr.SelectByID(enrolledID, true, usr.ColID, usr.ColName, usr.ColIdentityCode)
 	if err != nil {
 		template.RenderJSONResponse(w, new(template.Response).
 			SetCode(http.StatusInternalServerError))
 		return
 	}
 
-	// need to get attendances table per meetings number
+	atdUser, err := atd.SelectUserIDByMeetingID(meeting.ID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	var status string
 	for _, val := range users {
+		status = "absent"
+		if helper.Int64InSlice(val.ID, atdUser) {
+			status = "present"
+		}
 		resp = append(resp, listStudentResponse{
 			IdentityCode: val.IdentityCode,
 			StudentName:  val.Name,
-			Status:       "absent",
+			Status:       status,
 		})
 	}
-
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetData(resp))
 	return
+
 }
 
 // CreateMeetingHandler ...
@@ -507,8 +518,6 @@ func ReadMeetingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	totalStudent := uint16(len(enrolled))
-
 	respMeetings := []readMeetings{}
 	for _, val := range meetings {
 		respMeetings = append(respMeetings, readMeetings{
@@ -517,19 +526,24 @@ func ReadMeetingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 			MeetingNumber:  val.Number,
 			Date:           val.Date.Unix(),
 			TotalAttendant: val.TotalAttendant,
-			TotalStudent:   totalStudent,
 		})
 	}
 
+	totalStudent := len(enrolled)
 	totalPage := count / args.total
 	if count%args.total > 0 {
 		totalPage++
 	}
 
+	if totalPage < 1 {
+		totalPage = 1
+	}
+
 	resp := readMeetingResponse{
-		TotalPage: totalPage,
-		Page:      args.page,
-		Meetings:  respMeetings,
+		TotalPage:    totalPage,
+		Page:         args.page,
+		Meetings:     respMeetings,
+		TotalStudent: totalStudent,
 	}
 
 	template.RenderJSONResponse(w, new(template.Response).

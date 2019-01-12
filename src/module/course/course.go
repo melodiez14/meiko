@@ -542,7 +542,7 @@ func IsExistScheduleID(scheduleID int64) bool {
 func UpdateSchedule(scheduleID int64, startTime, endTime, year int16, semester, day, status int8, class, courseID, placeID string, tx ...*sqlx.Tx) error {
 
 	query := fmt.Sprintf(`
-		UPDATE 
+		UPDATE
 			schedules
 		SET
 			status = (%d),
@@ -781,14 +781,13 @@ func SelectByName(name string) ([]Course, error) {
 	return courses, nil
 }
 
-func InsertGradeParameter(typ string, percentage float32, statusChange uint8, scheduleID int64, tx *sqlx.Tx) error {
+func InsertGradeParameter(typ string, percentage float32, scheduleID int64, tx *sqlx.Tx) error {
 
 	query := fmt.Sprintf(`
 		INSERT INTO
 		grade_parameters (
 			type,
 			percentage,
-			status_change,
 			schedules_id,
 			created_at,
 			updated_at
@@ -797,11 +796,10 @@ func InsertGradeParameter(typ string, percentage float32, statusChange uint8, sc
 			('%s'),
 			(%f),
 			(%d),
-			(%d),
 			NOW(),
 			NOW()
 		);
-		`, typ, percentage, statusChange, scheduleID)
+		`, typ, percentage, scheduleID)
 
 	var result sql.Result
 	var err error
@@ -835,7 +833,6 @@ func SelectGPBySchedule(scheduleID []int64) ([]GradeParameter, error) {
 			id,
 			type,
 			percentage,
-			status_change,
 			schedules_id
 		FROM
 			grade_parameters
@@ -902,19 +899,18 @@ func DeleteGradeParameter(id int64, tx *sqlx.Tx) error {
 	return nil
 }
 
-func UpdateGradeParameter(typ string, percentage float32, statusChange uint8, scheduleID int64, tx *sqlx.Tx) error {
+func UpdateGradeParameter(typ string, percentage float32, scheduleID int64, tx *sqlx.Tx) error {
 
 	query := fmt.Sprintf(`
 		UPDATE
 			grade_parameters
 		SET
 			percentage = (%f),
-			status_change = (%d),
 			updated_at = NOW()
 		WHERE
 			type = ('%s') AND
 			schedules_id = (%d);
-		`, percentage, statusChange, typ, scheduleID)
+		`, percentage, typ, scheduleID)
 
 	var result sql.Result
 	var err error
@@ -1295,6 +1291,101 @@ func DeleteUserRelation(userID, scheduleID int64) error {
 	}
 
 	return nil
+}
+
+// InsertInvolved ...
+func InsertInvolved(userID, scheduleID int64, role int, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		INSERT INTO
+			p_users_schedules (
+				users_id,
+				schedules_id,
+				status,
+				created_at,
+				updated_at
+			) VALUES (
+				(%d),
+				(%d),
+				(%d),
+				NOW(),
+				NOW()
+			);
+	`, userID, scheduleID, role)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ActivateStudent ...
+func ActivateStudent(userID, scheduleID int64, tx *sqlx.Tx) error {
+
+	query := fmt.Sprintf(`
+		UPDATE
+			p_users_schedules
+		SET
+			status = (%d),
+			updated_at = NOW()
+		WHERE
+			users_id = (%d) AND
+			schedules_id = (%d);
+	`, PStatusStudent, userID, scheduleID)
+
+	var err error
+	if tx != nil {
+		_, err = tx.Exec(query)
+	} else {
+		_, err = conn.DB.Exec(query)
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SelectUnapproved(scheduleID int64) ([]int64, error) {
+	var usersID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d) AND
+			status = (%d);
+		`, scheduleID, PStatusStudent)
+	err := conn.DB.Select(&usersID, query)
+	if err != nil {
+		return usersID, err
+	}
+	return usersID, nil
+}
+
+func SelectInvolved(scheduleID int64) ([]int64, error) {
+	var usersID []int64
+	query := fmt.Sprintf(`
+		SELECT
+			users_id
+		FROM
+			p_users_schedules
+		WHERE
+			schedules_id = (%d)
+		`, scheduleID)
+	err := conn.DB.Select(&usersID, query)
+	if err != nil {
+		return usersID, err
+	}
+	return usersID, nil
 }
 
 // SelectIDBySchedule ..

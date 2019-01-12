@@ -158,7 +158,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	// set grade parameter
 	if len(args.GradeParameter) > 0 {
 		for _, val := range args.GradeParameter {
-			err = cs.InsertGradeParameter(val.Type, val.Percentage, val.StatusChange, scheduleID, tx)
+			err = cs.InsertGradeParameter(val.Type, val.Percentage, scheduleID, tx)
 			if err != nil {
 				tx.Rollback()
 				template.RenderJSONResponse(w, new(template.Response).
@@ -177,7 +177,7 @@ func CreateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
-		SetMessage("Success"))
+		SetData(scheduleID))
 	return
 }
 
@@ -576,7 +576,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// update the parameter
 	for _, val := range gpsUpdate {
-		err := cs.UpdateGradeParameter(val.Type, val.Percentage, val.StatusChange, args.ScheduleID, tx)
+		err := cs.UpdateGradeParameter(val.Type, val.Percentage, args.ScheduleID, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
@@ -587,7 +587,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	// insert the parameter
 	for _, val := range gpsInsert {
-		err := cs.InsertGradeParameter(val.Type, val.Percentage, val.StatusChange, args.ScheduleID, tx)
+		err := cs.InsertGradeParameter(val.Type, val.Percentage, args.ScheduleID, tx)
 		if err != nil {
 			tx.Rollback()
 			template.RenderJSONResponse(w, new(template.Response).
@@ -769,7 +769,7 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 
 	var users []user.User
 	if len(uIDs) > 0 {
-		users, err = user.SelectByID(uIDs, false, user.ColEmail, user.ColPhone, user.ColName)
+		users, err = user.SelectByID(uIDs, false, user.ColEmail, user.ColPhone, user.ColName, user.ColIdentityCode)
 		if err != nil {
 			template.RenderJSONResponse(w, new(template.Response).
 				SetCode(http.StatusInternalServerError))
@@ -805,6 +805,7 @@ func GetAssistantHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		}
 
 		res = append(res, getAssistantResponse{
+			IdentityCode: val.IdentityCode,
 			Name:         val.Name,
 			Email:        val.Email,
 			Phone:        phone,
@@ -951,12 +952,11 @@ func ReadScheduleParameterHandler(w http.ResponseWriter, r *http.Request, ps htt
 		return
 	}
 
-	var resp []readScheduleParameterResponse
+	resp := []readScheduleParameterResponse{}
 	for _, val := range gps {
 		resp = append(resp, readScheduleParameterResponse{
-			Type:         val.Type,
-			Percentage:   val.Percentage,
-			StatusChange: val.StatusChange,
+			Type:       val.Type,
+			Percentage: val.Percentage,
 		})
 	}
 
@@ -1240,5 +1240,226 @@ func EnrollRequestHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	template.RenderJSONResponse(w, new(template.Response).
 		SetCode(http.StatusOK).
 		SetMessage("Success"))
+	return
+}
+
+func AddInvolvedHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	sess := r.Context().Value("User").(*auth.User)
+	params := addInvolvedParams{
+		identityCode: r.FormValue("user_id"),
+		scheduleID:   ps.ByName("schedule_id"),
+		role:         r.FormValue("role"),
+		status:       r.FormValue("status"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	// check if creator or assistant of specific schedule id
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		if !cs.IsCreator(sess.ID, args.scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("You are not authorized"))
+			return
+		}
+	}
+
+	user, err := user.GetByIdentityCode(args.identityCode, user.ColID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	if args.status == "add" {
+		// if error, then it exists in table
+		err = cs.InsertInvolved(user.ID, args.scheduleID, args.role, nil)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid Request"))
+			return
+		}
+	} else {
+		// if error, then it doenst exist in table
+		err = cs.ActivateStudent(user.ID, args.scheduleID, nil)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusBadRequest).
+				AddError("Invalid Request"))
+			return
+		}
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetMessage("Success"))
+	return
+}
+
+func GetInvolvedHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	params := getInvolvedParams{
+		role:       r.FormValue("role"),
+		scheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	// check if creator or assistant of specific schedule id
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		if !cs.IsCreator(sess.ID, args.scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("You are not authorized"))
+			return
+		}
+	}
+
+	resp := []getInvolvedResponse{}
+	if args.role == "assistant" {
+		uid, err := cs.SelectAssistantID(args.scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		users, err := user.SelectByID(uid, true, user.ColIdentityCode, user.ColName)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		for _, val := range users {
+			resp = append(resp, getInvolvedResponse{
+				ID:          val.ID,
+				Name:        val.Name,
+				IsActivated: true,
+			})
+		}
+	} else if args.role == "student" {
+		uid, err := cs.SelectUnapproved(args.scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		users, err := user.SelectByID(uid, true, user.ColIdentityCode, user.ColName)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		for _, val := range users {
+			resp = append(resp, getInvolvedResponse{
+				ID:          val.ID,
+				Name:        val.Name,
+				IsActivated: false,
+			})
+		}
+
+		uid, err = cs.SelectEnrolledStudentID(args.scheduleID)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		users, err = user.SelectByID(uid, true, user.ColIdentityCode, user.ColName)
+		if err != nil {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusInternalServerError))
+			return
+		}
+
+		for _, val := range users {
+			resp = append(resp, getInvolvedResponse{
+				ID:          val.ID,
+				Name:        val.Name,
+				IsActivated: true,
+			})
+		}
+	}
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
+	return
+}
+
+func SearchUninvolvedHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	sess := r.Context().Value("User").(*auth.User)
+	params := searchUninvolvedParams{
+		text:       r.FormValue("q"),
+		scheduleID: ps.ByName("schedule_id"),
+	}
+
+	args, err := params.validate()
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusBadRequest).
+			AddError("Invalid Request"))
+		return
+	}
+
+	// check if creator or assistant of specific schedule id
+	if !cs.IsAssistant(sess.ID, args.scheduleID) {
+		if !cs.IsCreator(sess.ID, args.scheduleID) {
+			template.RenderJSONResponse(w, new(template.Response).
+				SetCode(http.StatusForbidden).
+				AddError("You are not authorized"))
+			return
+		}
+	}
+
+	resp := []searchUninvolvedResponse{}
+	if len(args.text) < 3 {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusOK).
+			SetData(resp))
+		return
+	}
+
+	usersID, err := cs.SelectInvolved(args.scheduleID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	users, err := user.SearchUninvolved(args.text, usersID)
+	if err != nil {
+		template.RenderJSONResponse(w, new(template.Response).
+			SetCode(http.StatusInternalServerError))
+		return
+	}
+
+	for _, val := range users {
+		resp = append(resp, searchUninvolvedResponse{
+			IdentityCode: val.IdentityCode,
+			Name:         val.Name,
+		})
+	}
+
+	template.RenderJSONResponse(w, new(template.Response).
+		SetCode(http.StatusOK).
+		SetData(resp))
 	return
 }

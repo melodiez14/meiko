@@ -135,6 +135,7 @@ func handleInformation(text string, userID int64) ([]map[string]interface{}, err
 			"title":       val.Title,
 			"description": val.Description.String,
 			"posted_at":   val.CreatedAt.Unix(),
+			"image":       "/api/v1/file/default/information.png",
 		})
 	}
 
