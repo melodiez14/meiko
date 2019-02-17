@@ -17,6 +17,13 @@ services:
       - "6379"
     networks:
     - redis-net
+  owl-recognizer:
+    image: melodiez14/recognizer:latest
+    ports:
+      - "80"
+    networks:
+      - recognizer-net
+    restart: on-failure
   be:
     image: melodiez14/meiko:latest
     ports:
@@ -36,19 +43,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-  fe:
-    image: melodiez14/lancelot:latest
-    ports:
-      - "3000:3000"
-    depends_on:
-      - be
-    networks:
-      - app-net
-    restart: on-failure
+  # fe:
+  #   image: melodiez14/lancelot:latest
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - be
+  #   networks:
+  #     - app-net
+  #   restart: on-failure
 networks:
   mysql-net:
   redis-net:
   app-net:
+  recognizer-net:
 volumes:
   mysql-data:
   be-data:

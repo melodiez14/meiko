@@ -259,17 +259,31 @@ func SelectByPage(scheduleID []int64, total, offset int64, column ...string) ([]
 	}
 	ids := strings.Join(d, ", ")
 	cols := strings.Join(c, ", ")
-	query := fmt.Sprintf(`
-		SELECT
-			%s
-		FROM
-			informations
-			WHERE
-			schedules_id IS NULL
-		OR
-			schedules_id IN (%s)
-		ORDER BY created_at DESC
-		LIMIT %d OFFSET %d`, cols, ids, total, offset)
+	var query string
+	if len(ids) == 0 {
+		query = fmt.Sprintf(`
+			SELECT
+				%s
+			FROM
+				informations
+				WHERE
+				schedules_id IS NULL
+			ORDER BY created_at DESC
+			LIMIT %d OFFSET %d`, cols, total, offset)
+	} else {
+		query = fmt.Sprintf(`
+			SELECT
+				%s
+			FROM
+				informations
+				WHERE
+				schedules_id IS NULL
+			OR
+				schedules_id IN (%s)
+			ORDER BY created_at DESC
+			LIMIT %d OFFSET %d`, cols, ids, total, offset)
+	}
+
 	err := conn.DB.Select(&info, query)
 	if err != nil {
 		return info, err

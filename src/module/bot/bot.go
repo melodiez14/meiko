@@ -22,7 +22,7 @@ func GetIntent(text string) (string, error) {
 	data.Set("text", text)
 
 	params := data.Encode()
-	req, err := http.NewRequest("POST", "http://52.221.131.147/api/v1/predict", strings.NewReader(params))
+	req, err := http.NewRequest("POST", "http://owl-recognizer/api/v1/predict", strings.NewReader(params))
 	if err != nil {
 		return "", err
 	}
